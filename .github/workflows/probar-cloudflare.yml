@@ -1,0 +1,37 @@
+name: Probar Cloudflare
+
+# Prueba rápida (1 minuto) de que el token y el Account ID de Cloudflare sirven, sin tocar la página publicada.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['.github/workflows/probar-cloudflare.yml', 'web/publicar.sh']
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Revisar token y cuenta
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "::notice title=Cuenta::Account ID de ${#CLOUDFLARE_ACCOUNT_ID} caracteres; solo letras a-f y números: $( [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[0-9a-f]{32}$ ]] && echo sí || echo NO )"
+          echo "::notice title=Token::Token de ${#CLOUDFLARE_API_TOKEN} caracteres; empieza con $(echo "$CLOUDFLARE_API_TOKEN" | cut -c1-5); espacios: $( [[ "$CLOUDFLARE_API_TOKEN" =~ [[:space:]] ]] && echo SÍ || echo no )"
+          U=$(curl -s https://api.cloudflare.com/client/v4/user/tokens/verify -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | tr -d '\n' | head -c 400)
+          A=$(curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/tokens/verify" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | tr -d '\n' | head -c 400)
+          P=$(curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | tr -d '\n' | head -c 500)
+          echo "::notice title=Verificar token (usuario)::$U"
+          echo "::notice title=Verificar token (cuenta)::$A"
+          echo "::notice title=Proyectos de Pages::$P"
+      - name: Publicar una página de prueba en una rama aparte
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          mkdir -p prueba && echo '<!doctype html><title>Prueba Fermil</title><p>Prueba del robot de Ferretería Fermil.</p>' > prueba/index.html
+          limpiar() { tr '\r\n' '  ' | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/%/%25/g' | tail -c "${1:-800}"; }
+          npx --yes wrangler@4 pages project create ferreteria-fermil --production-branch=main > crear.log 2>&1; echo "::notice title=Crear proyecto::$(limpiar 500 < crear.log)"
+          npx --yes wrangler@4 pages deploy prueba --project-name=ferreteria-fermil --branch=prueba --commit-dirty=true > pub.log 2>&1; echo "::notice title=Publicar prueba (código $?)::$(limpiar 900 < pub.log)"
