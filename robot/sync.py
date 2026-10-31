@@ -68,16 +68,35 @@ def log(*a):
     print(time.strftime('%H:%M:%S'), *a, flush=True)
 
 
+def aviso(nivel, msg):
+    """Mensaje que se ve en GitHub sin abrir el registro (nivel: notice, warning o error)."""
+    print(f'::{nivel} title=Robot Fermil::{msg}', flush=True)
+
+
+def falla(msg):
+    aviso('error', msg)
+    sys.exit(1)
+
+
+def pistas(r):
+    """Datos de una respuesta de PLADE para diagnosticar, sin copiar su contenido."""
+    t = (r.text[:20000] if 'text' in r.headers.get('Content-Type', '') or r.content[:1] == b'<' else '').lower()
+    claves = [k for k in ('login.php', 'name="pas"', 'sesion', 'sesión', 'duplic', 'incorrect', 'cerrar', 'expir', 'permiso', 'reporte_inventario') if k in t]
+    return f'HTTP {r.status_code} · {r.headers.get("Content-Type", "?")} · {len(r.content)} bytes · {r.url.split("?")[0].replace(BASE, "")} · pistas: {", ".join(claves) or "ninguna"}'
+
+
 def entrar():
     if not USUARIO or not CLAVE:
-        sys.exit('Faltan los secretos PLADE_USUARIO y PLADE_CLAVE.')
+        falla('Faltan los secretos PLADE_USUARIO y PLADE_CLAVE.')
     s = requests.Session()
     s.headers.update(HEADERS)
     s.get(f'{BASE}/panel/login.php', timeout=60)
-    s.post(f'{BASE}/panel/login.php', data={'pc': '', 'cor': USUARIO, 'pas': CLAVE, 'bti': ''}, timeout=60)
+    r0 = s.post(f'{BASE}/panel/login.php', data={'pc': '', 'cor': USUARIO, 'pas': CLAVE, 'bti': ''}, timeout=60)
     r = s.get(f'{BASE}/panel/index.php?op=inicio', timeout=60)
-    if 'op=reporte_inventario' not in r.text and 'Buscar sub' not in r.text:
-        sys.exit('No se pudo entrar a PLADE: revisa los secretos PLADE_USUARIO y PLADE_CLAVE.')
+    aviso('notice', f'Entrada a PLADE · login: {pistas(r0)} · inicio: {pistas(r)}')
+    dentro = ('op=reporte_inventario' in r.text or 'Buscar sub' in r.text) and 'name="pas"' not in r.text.lower()
+    if not dentro:
+        falla('No se pudo entrar a PLADE: revisa PLADE_USUARIO y PLADE_CLAVE, o cierra tu sesión de PLADE en el navegador y vuelve a correr.')
     log('Sesión iniciada en PLADE')
     return s, r.text
 
@@ -104,9 +123,14 @@ def url_excel(almacen, categoria):
 def descargar_reportes(s, carpeta):
     carpeta.mkdir(parents=True, exist_ok=True)
     archivos = []
+    fallos_seguidos = 0
+    primer_fallo = None
     for alm, suc in ALMACENES:
         for cat in CATEGORIAS_PLADE:
+            if fallos_seguidos >= 3 and not archivos:
+                falla(f'PLADE no entrega los reportes en Excel. Primera respuesta: {primer_fallo}')
             destino = carpeta / f'inv_{alm}_{cat}.xlsx'
+            bajado = False
             for intento in range(3):
                 try:
                     t0 = time.time()
@@ -115,11 +139,20 @@ def descargar_reportes(s, carpeta):
                         destino.write_bytes(r.content)
                         archivos.append((str(destino), suc))
                         log(f'almacén {alm} categoría {cat}: {len(r.content)//1024} KB en {time.time()-t0:.0f}s')
+                        bajado = True
                         break
+                    if primer_fallo is None:
+                        primer_fallo = f'almacén {alm} categoría {cat}: {pistas(r)} en {time.time()-t0:.0f}s'
+                        aviso('warning', primer_fallo)
                     log(f'almacén {alm} categoría {cat}: respuesta inesperada ({r.status_code}); intento {intento + 1}')
                 except requests.RequestException as e:
+                    if primer_fallo is None:
+                        primer_fallo = f'almacén {alm} categoría {cat}: {type(e).__name__}'
+                        aviso('warning', primer_fallo)
                     log(f'almacén {alm} categoría {cat}: error {e}; intento {intento + 1}')
                 time.sleep(5)
+            fallos_seguidos = 0 if bajado else fallos_seguidos + 1
+    aviso('notice', f'Reportes de PLADE descargados: {len(archivos)} de {len(ALMACENES) * len(CATEGORIAS_PLADE)}')
     return archivos
 
 
@@ -210,13 +243,13 @@ def main():
     log(f'Tasa del día: {tasa}')
     archivos = descargar_reportes(s, RAIZ / 'reportes')
     if not archivos:
-        sys.exit('No se descargó ningún reporte de PLADE.')
+        falla('No se descargó ningún reporte de PLADE.')
     data = construir(archivos, tasa=tasa)
     productos = data['productos']
     if len(productos) < MINIMO_PRODUCTOS:
-        sys.exit(f'Solo llegaron {len(productos)} productos: no se publica para no dañar la página.')
+        falla(f'Solo llegaron {len(productos)} productos: no se publica para no dañar la página.')
     if not tasa:
-        sys.exit('No se encontró la tasa del día en PLADE: no se publica.')
+        falla('No se encontró la tasa del día en la página de inicio de PLADE: no se publica.')
     privados = [{'cod': p['c'], 'mayor': p['y'], 'stock_mayorista': p['e'].get('mayorista')}
                 for p in productos if p.get('y')]
     publico = []
@@ -227,6 +260,7 @@ def main():
     SALIDA.mkdir(parents=True, exist_ok=True)
     (SALIDA / 'catalogo.json').write_text(json.dumps({**data, 'productos': publico}, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     log(f'Catálogo público: {len(publico)} productos · actualizado {data["generado"]}')
+    aviso('notice', f'Catálogo listo: {len(publico)} productos · tasa {tasa} · {data["generado"]}')
     subir_supabase(privados)
 
 
