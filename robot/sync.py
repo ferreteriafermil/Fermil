@@ -120,6 +120,7 @@ def a_numero(t):
 
 
 def leer_tasa(html):
+    html = html.replace('&nbsp;', ' ').replace('\xa0', ' ')
     for pat in PATRONES_TASA:
         for m in re.finditer(pat, html, re.I):
             v = a_numero(m.group(1))
