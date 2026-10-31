@@ -1,0 +1,6 @@
+reportes/
+salida/
+_site/
+__pycache__/
+*.pyc
+node_modules/

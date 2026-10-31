@@ -1,0 +1,170 @@
+/* ===================== v5: marca oficial, banners con fotos, sucursales e Instagram ===================== */
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.brand{gap:10px}
+.brand-txt small{color:var(--green);font-weight:700;font-style:italic;letter-spacing:.01em}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand-txt small{color:var(--tag)}}
+.hero{height:400px}
+/* fotos enmarcadas en los banners */
+.s-ph{position:absolute;margin:0;background:#fff;padding:7px 7px 30px;border-radius:14px;box-shadow:0 22px 34px -18px rgba(0,0,0,.6)}
+.s-ph img{display:block;width:100%;height:100%;object-fit:cover;border-radius:9px}
+.s-ph figcaption{position:absolute;left:12px;bottom:7px;font-size:.8rem;font-weight:700;color:#14301a;letter-spacing:.01em}
+.slide.on .s-ph0{animation:popIn .8s .08s both}
+.slide.on .s-ph1{animation:popIn .8s .22s both}
+.slide.on .s-ph2{animation:popIn .8s .36s both}
+.s-picx{position:absolute;width:34%;aspect-ratio:1;right:2%;bottom:6%;transform:rotate(6deg)}
+.slide.on .s-picx{animation:popIn .8s .45s both}
+.sl-obra .s-ph0{width:66%;height:62%;left:0;top:14%;transform:rotate(-4deg)}
+.sl-obra .s-ph1{width:38%;height:80%;right:0;top:6%;transform:rotate(5deg)}
+.sl-herramientas .s-ph0{width:46%;height:86%;left:8%;top:5%;transform:rotate(-3deg)}
+.sl-sucursales .s-ph0{width:60%;height:50%;left:0;top:6%;transform:rotate(-4deg)}
+.sl-sucursales .s-ph1{width:30%;height:56%;right:0;top:3%;transform:rotate(5deg)}
+.sl-sucursales .s-ph2{width:52%;height:44%;left:12%;bottom:3%;transform:rotate(2deg)}
+.sl-mayoristas .s-ph0{width:48%;height:86%;left:24%;top:5%;transform:rotate(3deg)}
+/* banner de la marca con foto de fondo */
+.t-photo::before{display:none}
+.t-photo .s-bgimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.slide.on .s-bgimg{animation:kenburns 9s ease-out both}
+@keyframes kenburns{from{transform:scale(1.1)}to{transform:scale(1)}}
+.t-photo::after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(0,52,0,.96) 0%,rgba(0,70,0,.88) 36%,rgba(0,70,0,.35) 66%,rgba(0,40,0,.05) 100%)}
+.t-photo .s-text{z-index:2}
+.mk-logo{width:132px;height:63px;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+.mk-logo svg{width:100%;height:100%}
+.t-photo h2{display:flex;flex-direction:column;gap:6px}
+.t-photo .mk-name{font-size:clamp(2.2rem,4.4vw,3.6rem)}
+.t-photo h2 em{color:#f2ce14;font-size:clamp(1.5rem,2.8vw,2.3rem);line-height:1}
+.t-photo .s-cta{background:#f2ce14;color:#1b1505}
+.mk-btns{display:flex;flex-wrap:wrap;gap:10px}
+.s-cta2{margin-top:4px;border-radius:99px;padding:10px 20px;font-size:.98rem;background:transparent;color:#fff;border:2px solid rgba(255,255,255,.75)}
+.s-cta2:hover{background:rgba(255,255,255,.12)}
+/* 7ª Feria del Color, estilo del flyer */
+.t-feria{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.t-feria::before{background:
+  repeating-conic-gradient(from 0deg at 76% 58%,rgba(255,255,255,.07) 0deg 5deg,transparent 5deg 15deg),
+  radial-gradient(ellipse at 18% 22%,#3a9a36 0%,#11702a 30%,#0a5a1c 58%,#05440f 82%,#033307 100%)}
+.t-feria .s-text{gap:6px;align-items:flex-start}
+.fe-logo{width:min(360px,100%);height:auto;margin:-8px 0 0 -10px;filter:drop-shadow(0 5px 6px rgba(0,30,0,.45))}
+.fe-from{margin:0;font-weight:800;font-size:1.15rem;letter-spacing:.02em;text-transform:uppercase}
+.fe-price{position:relative;padding:3px 34px;border-radius:12px;background:linear-gradient(180deg,#fff27a,#f2ce14 45%,#e3b800);box-shadow:0 0 0 3px rgba(255,236,120,.35),0 0 28px rgba(255,230,90,.55)}
+.fe-price span{font-family:var(--f-display);font-weight:800;font-size:3.1rem;line-height:1;color:#0b4a0b;letter-spacing:.01em}
+.slide.on .fe-price{animation:pulseGlow 2.4s .9s ease-in-out infinite}
+@keyframes pulseGlow{50%{box-shadow:0 0 0 5px rgba(255,236,120,.45),0 0 40px rgba(255,230,90,.8)}}
+.fe-off{margin:4px 0 0;font-size:1.08rem}
+.fe-off b{color:#f2ce14}
+.fe-valid{margin:0;font-size:.9rem;font-style:italic;opacity:.92}
+.t-feria .s-cta{background:#f2ce14;color:#1b1505}
+.t-feria .s-art{display:grid;place-items:center}
+.fe-glow{position:absolute;left:8%;right:2%;bottom:4%;height:58%;border-radius:50%;background:radial-gradient(ellipse at 50% 60%,rgba(255,226,60,.95),rgba(242,206,20,.55) 45%,transparent 72%);filter:blur(4px)}
+.fe-cans{position:relative;width:min(470px,100%);height:auto;max-height:94%;object-fit:contain;-webkit-mask-image:radial-gradient(ellipse 56% 56% at 50% 52%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 56% 56% at 50% 52%,#000 55%,transparent 100%)}
+.slide.on .fe-cans{animation:popIn .9s .15s both}
+/* banners subidos: nunca se recortan */
+.s-img{background:#0b2a10;overflow:hidden}
+.s-img .bn-bg{position:absolute;inset:-20px;width:calc(100% + 40px);height:calc(100% + 40px);object-fit:cover;filter:blur(18px) brightness(.7)}
+.s-img .bn-fg{position:relative;width:100%;height:100%;object-fit:cover}
+.s-img a,.s-img button{position:relative}
+@media (max-width:760px){
+  .hero{min-height:560px}
+  .s-img .bn-fg{object-fit:contain}
+  .t-feria{grid-template-columns:1fr}
+  .fe-logo{width:min(300px,86%)}
+  .fe-price span{font-size:2.5rem}
+  .fe-cans{width:min(330px,92%)}
+  .t-photo::after{background:linear-gradient(180deg,rgba(0,52,0,.95) 0%,rgba(0,70,0,.85) 55%,rgba(0,52,0,.55) 100%)}
+  .t-photo .s-bgimg{object-position:70% center}
+  .mk-logo{width:110px;height:52px}
+  .s-art .s-ph{padding:5px 5px 24px}
+  .sl-obra .s-ph0{width:62%;height:78%;left:2%;top:8%}
+  .sl-obra .s-ph1{width:40%;height:92%;right:2%;top:2%}
+  .sl-herramientas .s-ph0{width:52%;left:6%;height:94%;top:2%}
+  .sl-sucursales .s-ph0{width:58%;height:56%;left:0;top:2%}
+  .sl-sucursales .s-ph1{width:32%;height:62%;right:0;top:0}
+  .sl-sucursales .s-ph2{width:54%;height:48%;left:10%;bottom:0}
+  .sl-mayoristas .s-ph0{width:52%;left:24%;height:94%;top:2%}
+  .s-picx{width:38%;right:4%}
+}
+/* fila de la Feria del Color */
+.sh-feria{display:flex;align-items:center;gap:10px}
+.sh-feria img{height:46px;width:auto;border-radius:8px}
+/* Instagram */
+.ig-sec{padding-top:34px}
+.ig-head{display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.ig-avatar{width:72px;height:72px;border-radius:50%;padding:3px;background:conic-gradient(from 210deg,#f2ce14,#02cf2f,#006300,#f2ce14);display:block;flex:none}
+.ig-avatar span{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:#0a7a14;border:3px solid var(--surface)}
+.ig-avatar svg{width:74%;height:auto}
+.ig-who{flex:1;min-width:200px}
+.ig-who h2{margin:0;font-family:var(--f-display);font-weight:800;text-transform:uppercase;font-size:1.9rem;line-height:1;color:var(--green)}
+.ig-who a{font-weight:700;color:var(--ink);text-decoration:none}
+.ig-who a:hover{text-decoration:underline}
+.ig-who p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.ig-follow{display:inline-flex;align-items:center;gap:8px;border-radius:99px;padding:11px 18px;text-decoration:none;color:#fff;background:linear-gradient(90deg,#006300,#0a9a1e)}
+.ig-follow svg{width:20px;height:20px}
+.ig-row{grid-auto-columns:minmax(200px,230px)}
+.ig-tile{position:relative;margin:0;aspect-ratio:9/16;border-radius:16px;overflow:hidden;background:#0b2a10;scroll-snap-align:start;box-shadow:0 12px 24px -16px rgba(0,0,0,.6)}
+.ig-tile video,.ig-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.ig-tile a{display:block;height:100%}
+.ig-tile figcaption{position:absolute;left:0;right:0;bottom:0;padding:34px 12px 12px;color:#fff;font-size:.86rem;font-weight:600;line-height:1.25;background:linear-gradient(180deg,transparent,rgba(0,0,0,.75));pointer-events:none}
+.ig-badge{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.55);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:99px;pointer-events:none}
+.ig-play{position:absolute;inset:0;border:0;background:none;cursor:pointer;padding:0}
+.ig-snd{position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.55);display:grid;place-items:center;font-size:1rem}
+.ig-tile:hover{transform:translateY(-3px);transition:transform .2s}
+/* sucursales */
+.suc-sec{padding-top:34px}
+.sec-sub{margin:0;color:var(--muted);font-size:.9rem}
+.suc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.suc-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s}
+.suc-card:hover{transform:translateY(-3px);box-shadow:0 18px 30px -22px rgba(0,40,0,.6)}
+.suc-ph{position:relative;aspect-ratio:16/10;background:#e7efe3;overflow:hidden}
+.suc-ph img,.suc-ph .suc-map{width:100%;height:100%;object-fit:cover;display:block}
+.suc-city{position:absolute;left:10px;top:10px;background:var(--tag);color:var(--tag-ink);font-size:.74rem;font-weight:800;padding:3px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em}
+.suc-body{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}
+.suc-body h3{margin:0;font-family:var(--f-display);font-weight:800;text-transform:uppercase;font-size:1.45rem;line-height:1;color:var(--green)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .suc-body h3,:root:not([data-theme="light"]) .ig-who h2{color:var(--ink)}}
+.maps-pill{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid #dadce0;background:#fff;color:#202124;text-decoration:none;box-shadow:0 1px 3px rgba(60,64,67,.18);transition:box-shadow .15s,border-color .15s}
+.maps-pill:hover,.maps-pill:focus-visible{border-color:#1a73e8;box-shadow:0 2px 8px rgba(26,115,232,.25)}
+.mp-pin{flex:none;width:26px;height:26px}
+.mp-pin svg{width:100%;height:100%}
+.mp-txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mp-txt b{font-size:.92rem;font-weight:600;line-height:1.25}
+.mp-txt small{color:#5f6368;font-size:.8rem}
+.mp-txt i{font-style:normal;color:#1a73e8;font-size:.8rem;font-weight:600;margin-top:3px}
+.suc-hours{margin:0;display:flex;gap:7px;align-items:flex-start;color:var(--muted);font-size:.84rem}
+.suc-hours svg{width:17px;height:17px;flex:none;margin-top:1px}
+.suc-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+.suc-acts .btn{flex:1;justify-content:center;text-align:center;text-decoration:none;padding:9px 12px;font-size:.88rem}
+@media (max-width:1100px){.suc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.suc-grid{grid-template-columns:1fr}}
+/* barra superior y pie */
+.bi-map{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.bi-map svg{width:14px;height:14px;flex:none}
+.bi-map:hover b{text-decoration:underline}
+.f-ig{display:inline-flex;align-items:center;gap:6px;margin-top:6px;color:var(--band-ink)!important}
+.f-ig svg{width:18px;height:18px}
+.f-addr{display:flex!important;gap:5px;align-items:flex-start;color:var(--band-ink)!important;opacity:.92}
+.f-addr svg{width:15px;height:15px;flex:none;margin-top:2px}
+.f-addr:hover{text-decoration:underline!important}
+@media (prefers-reduced-motion:reduce){.slide.on .s-bgimg,.slide.on .fe-price,.slide.on .fe-cans,.slide.on .s-ph0,.slide.on .s-ph1,.slide.on .s-ph2{animation:none}}
+/* Cómo comprar: 5 pasos con íconos, arriba en la portada */
+#comoComprar{margin-top:26px;position:relative;overflow:hidden}
+#comoComprar::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 92% 10%,rgba(242,206,20,.18),transparent 40%),repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 14px,transparent 14px 28px);pointer-events:none}
+#comoComprar > .wrap{position:relative}
+.intro-eyebrow{display:inline-block;margin-bottom:8px;font-size:.78rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:4px 11px;border-radius:99px;background:rgba(242,206,20,.18);color:var(--tag)}
+#comoComprar .flow{border:0;gap:12px;overflow:visible}
+#comoComprar .flow li{border:1px solid var(--band-line);border-radius:14px;background:rgba(255,255,255,.04);padding:16px 14px 16px;display:flex;flex-direction:column;gap:4px;transition:transform .2s,background .2s}
+#comoComprar .flow li:hover{transform:translateY(-3px);background:rgba(255,255,255,.08)}
+#comoComprar .flow li::before{left:auto;right:12px;top:12px;width:26px;height:26px;font-size:.95rem}
+#comoComprar .flow li:last-child{background:rgba(242,206,20,.14);border-color:rgba(242,206,20,.45)}
+#comoComprar .flow li:not(:last-child)::after{content:"";position:absolute;right:-11px;top:42px;width:10px;height:2px;background:var(--tag);opacity:.7}
+.fl-ic{width:48px;height:48px;border-radius:14px;background:var(--tag);color:var(--tag-ink);display:grid;place-items:center;margin-bottom:6px}
+.fl-ic svg{width:26px;height:26px}
+#comoComprar.in .flow li{animation:popIn .6s both}
+#comoComprar.in .flow li:nth-child(2){animation-delay:.08s}
+#comoComprar.in .flow li:nth-child(3){animation-delay:.16s}
+#comoComprar.in .flow li:nth-child(4){animation-delay:.24s}
+#comoComprar.in .flow li:nth-child(5){animation-delay:.32s}
+.flow-cta{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-top:16px;color:var(--band-muted);font-size:.9rem}
+.mn-how{color:var(--tag)!important;font-weight:700}
+@media (max-width:900px){#comoComprar .flow li:not(:last-child)::after{display:none}#comoComprar .flow li{border-bottom:1px solid var(--band-line)}}
+@media (max-width:520px){#comoComprar .flow{gap:10px;padding-bottom:6px}#comoComprar .flow li{border-right:1px solid var(--band-line)}}
+@media (prefers-reduced-motion:reduce){#comoComprar.in .flow li{animation:none}}
+#comoComprar .wrap{min-width:0}
+.flow-cta span{flex:1 1 220px;min-width:0}
+@media (max-width:520px){#comoComprar .flow{overflow-x:auto;overflow-y:visible;padding:2px 2px 8px}}

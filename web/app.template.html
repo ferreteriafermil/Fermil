@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogo Ferretería Fermil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/*__BASECSS__*/
+/*__EXTRACSS__*/
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="demo-bar" id="demoBar"></div>
+<div class="topbar" id="branchBar">
+  <div class="wrap tb-in">
+    <div class="tb-l">
+      <label for="branch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s7-6.3 7-12a7 7 0 0 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>Ver inventario de</label>
+      <select id="branch"></select>
+      <span class="branch-info" id="branchInfo"></span>
+    </div>
+    <div class="tb-r">
+      <span class="tasa-pill">Tasa del día <b id="tasaTop"></b></span>
+      <a class="tb-link" id="tbWa" href="#" target="_blank" rel="noopener"></a>
+      <button type="button" class="tb-admin" id="btnAdmin" data-act="admin" hidden>Administrar página</button>
+    </div>
+  </div>
+</div>
+<header class="top" id="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#todas" data-act="home">
+      <span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 340 162" aria-hidden="true" focusable="false"><ellipse cx="170" cy="81" rx="166" ry="77" fill="#f2ce14" stroke="#111" stroke-width="6"/><path transform="translate(66.5 45) scale(.72)" fill="#111" d="M35 0 139 0 133.9 14.5 48.4 14.5 18.5 100 0 100ZM58 28 129 28 124.1 42 73.8 42 53.5 100 32.8 100ZM143.4 55 181.9 55 166.2 100 127.6 100ZM153 28 240.2 28 215 100 188 100 208.3 42 148.1 42ZM163.5 0 269 0 287.8 14 256 100 236.5 100 268.1 14.5 158.6 14.5Z"/></svg></span>
+      <span class="brand-txt"><strong>Ferretería Fermil</strong><small>¡La que vende más barato!</small></span>
+    </a>
+    <form id="searchForm" class="search" role="search" autocomplete="off">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Buscar cabilla, cemento, poceta…" aria-label="Buscar productos" role="combobox" aria-autocomplete="list" aria-controls="sugg" aria-expanded="false">
+      <button type="submit" class="btn accent">Buscar</button>
+      <div id="sugg" class="sugg" role="listbox" aria-label="Sugerencias" hidden></div>
+    </form>
+    <div class="top-actions">
+      <button id="btnLogin" class="btn ghost" type="button" data-act="login" aria-label="Entrar con código"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span class="hide-sm">Mayoristas</span></button>
+      <button id="btnCart" class="btn cart-btn" type="button" data-act="cart" aria-label="Ver carrito"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20 8H6.2"/><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg><span id="cartCount" class="count">0</span><span id="cartTotalTop" class="cart-total hide-sm"></span></button>
+    </div>
+  </div>
+  <nav class="mainnav" aria-label="Menú principal">
+    <div class="wrap mn-in">
+      <button type="button" class="mn-cats" data-act="mega" aria-expanded="false" aria-controls="mega"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Categorías</button>
+      <div class="mn-links" id="mnLinks"></div>
+    </div>
+    <div class="mega" id="mega" hidden><div class="wrap mega-in"><ul class="mega-l" id="megaL"></ul><div class="mega-r" id="megaR"></div></div></div>
+  </nav>
+  <div id="roleBand" class="role-band" hidden><div class="wrap"><span class="rb-txt" id="rbTxt"></span><span class="rb-acts" id="rbActs"></span></div></div>
+</header>
+<h1 class="sr">Ferretería Fermil: catálogo en línea, presupuestos y pedidos por WhatsApp</h1>
+
+<div id="home">
+  <section class="wrap hero-sec" aria-roledescription="carrusel" aria-label="Promociones"><div class="hero" id="hero"></div></section>
+</div>
+
+<section class="wrap catrow-sec" aria-labelledby="catsTitle">
+  <div class="sec-head"><h2 id="catsTitle">Categorías</h2><div class="arrows"><button type="button" class="arw" data-act="hs" data-t="cats" data-d="-1" aria-label="Ver categorías anteriores">‹</button><button type="button" class="arw" data-act="hs" data-t="cats" data-d="1" aria-label="Ver más categorías">›</button></div></div>
+  <nav class="catrow hsx" id="cats" aria-label="Categorías"></nav>
+</section>
+
+<div id="homeMore">
+  <section class="intro reveal" id="comoComprar">
+    <div class="wrap">
+      <div class="intro-top">
+        <div><span class="intro-eyebrow">Cómo comprar en 5 pasos</span><h2 class="intro-h">Arma tu pedido y <em>termínalo por WhatsApp</em></h2></div>
+        <div class="better-card" id="betterCard">
+          <p><b>¿Compras en cantidad o pagas en divisas?</b> Un vendedor de la ferretería te puede mejorar el precio.</p>
+          <a class="btn yellow" data-better href="#" target="_blank" rel="noopener"></a>
+        </div>
+      </div>
+      <ol class="flow" aria-label="Cómo comprar">
+        <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></span><b>Busca</b>escribe el producto o entra a una categoría</li>
+        <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span><b>Selecciónalo</b>elige la cantidad y toca “Agregar”</li>
+        <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L20.5 8H6.2"/><circle cx="10" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/></svg></span><b>Ve al carrito</b>revisa todo lo que agregaste</li>
+        <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg></span><b>Elige tu forma de pago</b>cash, pago móvil, punto, Zelle, Binance…</li>
+        <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a8.4 8.4 0 0 1-12.3 7.4L3.5 20.5l1.5-4.6A8.4 8.4 0 1 1 20.5 11.6z"/><path d="M9 9.2c.3 2.4 2.4 4.5 4.8 4.9l1-1.1 1.8.8"/></svg></span><b>Envía</b>se abre WhatsApp con tu pedido listo para terminarlo</li>
+      </ol>
+      <div class="flow-cta"><button type="button" class="btn yellow" data-act="startsearch">Empezar a buscar →</button><span>No pagas en la página: el vendedor te confirma todo por WhatsApp.</span></div>
+      <div class="popular" id="popular"></div>
+    </div>
+  </section>
+  <section class="wrap perks reveal" aria-label="Por qué comprar en Fermil">
+    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l1.5-5h15L21 10"/><path d="M4 10v10h16V10"/><path d="M3 10h18"/><path d="M9 20v-5h6v5"/></svg></span><div><b>4 ferreterías</b><span>Retira en Guanare o Biscucuy</span></div></div>
+    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M16 15h2"/></svg></span><div><b>Paga como quieras</b><span>Cash, pago móvil, punto, Zelle, Binance</span></div></div>
+    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></svg></span><div><b>Ofertas en divisas</b><span>Pregunta a tu vendedor</span></div></div>
+    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/></svg></span><div><b>Pedido por WhatsApp</b><span>Arma tu carrito y envíalo</span></div></div>
+  </section>
+  <section class="wrap rec-sec reveal" aria-labelledby="row3Title" id="row3Sec">
+    <div class="sec-head"><h2 id="row3Title" class="sh-feria"><img src="media/feria-logo.jpg" alt="">Pinturas de la Feria del Color</h2><div class="arrows"><button type="button" class="arw" data-act="hs" data-t="row3" data-d="-1" aria-label="Anteriores">‹</button><button type="button" class="arw" data-act="hs" data-t="row3" data-d="1" aria-label="Siguientes">›</button></div></div>
+    <div class="hscroll hsx" id="row3"></div>
+  </section>
+  <section class="wrap rec-sec reveal" aria-labelledby="recTitle">
+    <div class="sec-head"><h2 id="recTitle">Fermil te lo recomienda</h2><div class="arrows"><button type="button" class="arw" data-act="hs" data-t="recRow" data-d="-1" aria-label="Anteriores">‹</button><button type="button" class="arw" data-act="hs" data-t="recRow" data-d="1" aria-label="Siguientes">›</button></div></div>
+    <div class="hscroll hsx" id="recRow"></div>
+  </section>
+  <section class="wrap promo2 reveal" id="promo2" aria-label="Destacados"></section>
+  <section class="wrap rec-sec reveal" aria-labelledby="row2Title">
+    <div class="sec-head"><h2 id="row2Title">Para tu obra</h2><div class="arrows"><button type="button" class="arw" data-act="hs" data-t="row2" data-d="-1" aria-label="Anteriores">‹</button><button type="button" class="arw" data-act="hs" data-t="row2" data-d="1" aria-label="Siguientes">›</button></div></div>
+    <div class="hscroll hsx" id="row2"></div>
+  </section>
+  <section class="wrap ig-sec reveal" id="igSec" aria-labelledby="igTitle"></section>
+  <section class="wrap suc-sec reveal" id="sucSec" aria-labelledby="sucTitle"></section>
+</div>
+
+<section class="wrap cathead" id="catHead" hidden></section>
+
+<main class="wrap" id="productos">
+  <div class="toolbar" id="toolbar">
+    <div class="tb-title"><h2 id="resTitle">Todos los productos</h2><span id="resCount" class="tb-count"></span><span id="qChip"></span><span id="synNote" class="syn-note" hidden></span></div>
+    <div class="tb-ctrls">
+      <label class="switch" for="onlyAvail"><input type="checkbox" id="onlyAvail" checked> Solo disponibles</label>
+      <label class="sr" for="sort">Ordenar por</label>
+      <select id="sort">
+        <option value="rel">Más relevantes</option>
+        <option value="pasc">Precio: menor a mayor</option>
+        <option value="pdesc">Precio: mayor a menor</option>
+        <option value="name">Nombre A–Z</option>
+      </select>
+      <div class="seg" role="group" aria-label="Forma de ver los productos">
+        <button type="button" data-act="view" data-view="grid">Cuadrícula</button>
+        <button type="button" data-act="view" data-view="list">Lista</button>
+        <button type="button" data-act="view" data-view="catalog">Catálogo</button>
+      </div>
+    </div>
+  </div>
+  <div id="results"></div>
+  <div id="more"></div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap f-grid" id="footer"></div>
+  <div class="foot-bottom"><div class="wrap" id="footBottom"></div></div>
+</footer>
+<a class="fab-wa" id="fabWa" href="#" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9.5 9.5c.3 1.6 1.5 3.4 3.5 4.5l1.2-1 2 1-.4 1.4c-3.2.2-6.9-3.1-7.1-6.3L10 8.5l1 2z" stroke-width="1.4"/></svg></a>
+<button type="button" class="fab-top" id="fabTop" data-act="totop" aria-label="Volver arriba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg></button>
+
+<dialog id="dlgAdmin" class="panel" aria-labelledby="adTitle"></dialog>
+
+
+<div id="mbar" class="mbar"><button type="button" data-act="cart"><span id="mbarTxt"></span><b>Ir al carrito</b></button></div>
+
+<dialog id="dlgProduct" aria-label="Detalle del producto"></dialog>
+
+<dialog id="dlgCart" class="drawer" aria-labelledby="cartTitle">
+  <div class="drawer-head"><h2 id="cartTitle">Tu carrito</h2><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+  <div class="drawer-body">
+    <div class="seg type-seg" role="group" aria-label="Qué quieres hacer">
+      <button type="button" data-act="type" data-type="pedido">Hacer pedido</button>
+      <button type="button" data-act="type" data-type="presupuesto">Sacar presupuesto</button>
+    </div>
+    <h3 class="sec-h"><span>1</span>Revisa tus productos</h3>
+    <div id="mPriceBox" class="mprice" hidden>
+      <span class="hint">Precios para este presupuesto</span>
+      <div class="seg" role="group" aria-label="Precios del presupuesto">
+        <button type="button" data-act="mprice" data-m="mayor">Mis precios al mayor</button>
+        <button type="button" data-act="mprice" data-m="cliente">Precios de un cliente</button>
+      </div>
+      <div class="field" id="mClientWrap" hidden><label for="mClient">¿De cuál cliente?</label><select id="mClient"></select></div>
+      <span class="hint">También puedes poner un descuento distinto en cada producto.</span>
+    </div>
+    <div id="cartItems"></div>
+    <div id="cartTotals"></div>
+    <div id="divBox" class="div-box" hidden></div>
+    <a class="btn better" data-better href="#" target="_blank" rel="noopener"></a>
+    <form id="orderForm" class="order-form" novalidate>
+      <h3 class="sec-h"><span>2</span>Tus datos</h3>
+      <div class="field"><label for="fNombre" id="lblNombre">Nombre *</label><input id="fNombre" autocomplete="name" placeholder="Nombre y apellido o empresa"></div>
+      <div class="row2">
+        <div class="field"><label for="fTel">Teléfono</label><input id="fTel" inputmode="tel" autocomplete="tel" placeholder="0414-0000000"></div>
+        <div class="field"><label for="fDoc">Cédula o RIF</label><input id="fDoc" autocomplete="off" placeholder="V-00000000"></div>
+      </div>
+      <fieldset class="field"><legend>Entrega</legend>
+        <div class="radios">
+          <label><input type="radio" name="entrega" value="Retiro en tienda" checked> Retiro en tienda</label>
+          <label><input type="radio" name="entrega" value="Consultar envío"> Consultar si me lo pueden enviar</label>
+        </div>
+      </fieldset>
+      <div class="field" id="fSucWrap"><label for="fSuc">Sucursal *</label><select id="fSuc"></select></div>
+      <div class="field" id="fDirWrap" hidden><label for="fDir">¿A dónde lo necesitas?</label><input id="fDir" autocomplete="street-address" placeholder="Sector, calle, referencia"></div>
+      <h3 class="sec-h"><span>3</span>Forma de pago</h3>
+      <fieldset class="field"><legend class="sr">Forma de pago</legend><div class="radios" id="payOpts"></div></fieldset>
+      <div class="field"><label for="fNota">Nota (opcional)</label><textarea id="fNota" rows="2" placeholder="Ej.: necesito el material para el sábado"></textarea></div>
+      <p id="formErr" class="err" role="alert" hidden></p>
+    </form>
+  </div>
+  <div class="drawer-foot">
+    <a class="btn wa" data-act="wa" href="#" target="_blank" rel="noopener"></a>
+    <p class="foot-note">Se abre WhatsApp con tu pedido escrito. Solo tienes que enviarlo.</p>
+    <div class="foot-row">
+      <button type="button" class="btn ghost" data-act="pdf" data-pdf>Descargar PDF</button>
+      <button type="button" class="btn ghost" data-act="quote">Ver presupuesto</button>
+      <button type="button" class="btn link" data-act="clear" id="btnClear">Vaciar</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dlgCode" class="small" aria-labelledby="cTitle">
+  <form id="codeForm" class="mf" novalidate>
+    <button type="button" class="x" data-act="close" aria-label="Cerrar">×</button>
+    <h2 id="cTitle">Entrar con código</h2>
+    <p>Si eres mayorista de Ferretería Fermil, o cliente de uno de ellos, escribe tu código.</p>
+    <label class="sr" for="cCode">Código</label>
+    <input id="cCode" autocomplete="off" placeholder="Código">
+    <p id="cErr" class="err" hidden>Ese código no existe. Revísalo o pídeselo a tu vendedor.</p>
+    <!--PRUEBA--><p class="hint">Prueba como mayorista: <code>MANUEL-01</code> · <code>LEONARDO-02</code> · <code>NOEL-03</code>. Los códigos de clientes los crea cada mayorista en su panel.</p><!--/PRUEBA-->
+    <div class="btns"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button type="submit" class="btn accent">Entrar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgPanel" class="panel" aria-labelledby="pnTitle"></dialog>
+<dialog id="dlgQuote" aria-labelledby="qTitle"></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script id="catalogo" type="application/json">__CATALOGO__</script>
+<script id="fotos" type="application/json">__FOTOS__</script>
+<script>/*__NUBE__*/</script>
+<script>
+(() => {
+'use strict';
+const DATA = JSON.parse(document.getElementById('catalogo').textContent);
+const FM_POLYS = [[[35,0],[139,0],[133.9,14.5],[48.4,14.5],[18.5,100],[0,100]],[[58,28],[129,28],[124.1,42],[73.8,42],[53.5,100],[32.8,100]],[[143.4,55],[181.9,55],[166.2,100],[127.6,100]],[[153,28],[240.2,28],[215,100],[188,100],[208.3,42],[148.1,42]],[[163.5,0],[269,0],[287.8,14],[256,100],[236.5,100],[268.1,14.5],[158.6,14.5]]];
+const LOGO_SVG = '<svg viewBox="0 0 340 162" aria-hidden="true" focusable="false"><ellipse cx="170" cy="81" rx="166" ry="77" fill="#f2ce14" stroke="#111" stroke-width="6"/><path transform="translate(66.5 45) scale(.72)" fill="#111" d="M35 0 139 0 133.9 14.5 48.4 14.5 18.5 100 0 100ZM58 28 129 28 124.1 42 73.8 42 53.5 100 32.8 100ZM143.4 55 181.9 55 166.2 100 127.6 100ZM153 28 240.2 28 215 100 188 100 208.3 42 148.1 42ZM163.5 0 269 0 287.8 14 256 100 236.5 100 268.1 14.5 158.6 14.5Z"/></svg>';
+const NUBE = (window.FERMIL_NUBE && window.FERMIL_NUBE.url && window.FERMIL_NUBE.key) ? window.FERMIL_NUBE : null;
+const nubeH = tok => Object.assign({apikey: NUBE.key, 'Content-Type': 'application/json'}, tok ? {Authorization: 'Bearer ' + tok} : {});
+async function rpc(fn, args){
+  const r = await fetch(`${NUBE.url}/rest/v1/rpc/${fn}`, {method:'POST', headers:nubeH(), body:JSON.stringify(args)});
+  if (!r.ok){
+    let msg = 'No se pudo conectar. Revisa tu internet e intenta de nuevo.';
+    try { const j = await r.json(); if (j && j.message && /intentos/i.test(j.message)) msg = j.message; } catch(e){}
+    throw new Error(msg);
+  }
+  const txt = await r.text(); return txt ? JSON.parse(txt) : null;
+}
+const rnd = n => { const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', b = new Uint8Array(n); crypto.getRandomValues(b); return Array.from(b, x => A[x % A.length]).join(''); };
+let NUBE_CODE = '';
+let FOTOS = {}; try { FOTOS = JSON.parse(document.getElementById('fotos').textContent) || {}; } catch(e){}
+
+/* ===================== CONFIGURACIÓN ===================== */
+const CONFIG = {
+  tienda: 'Ferretería Fermil',
+  telefono: '0412-2332610',
+  whatsapp: '584122332610',
+  whatsappVendedor: '584122332610',
+  tasaBs: DATA.tasa || 0,
+  pocasUnidades: 5,
+  porPagina: 24
+};
+const PAGOS = ['Cash (dólares en efectivo)', 'Pago móvil', 'Bolívares por punto de venta', 'Zelle', 'Binance (USDT)', 'Transferencia bancaria', 'Otro (lo acordamos por WhatsApp)'];
+const DIVISAS = ['Cash (dólares en efectivo)', 'Zelle', 'Binance (USDT)'];
+const MAYORISTAS = [
+  {id:'manuel',   nombre:'Manuel Pérez',          corto:'Manuel',   codigo:'MANUEL-01',   prefijo:'MANUEL', whatsapp:'584145446979'},
+  {id:'leonardo', nombre:'Leonardo Rojas',        corto:'Leonardo', codigo:'LEONARDO-02', prefijo:'LEO',    whatsapp:'584245318722'},
+  {id:'noel',     nombre:'Noel Villavicencio',    corto:'Noel',     codigo:'NOEL-03',     prefijo:'NOEL',   whatsapp:'584127819643'}
+];
+const MAY = Object.fromEntries(MAYORISTAS.map(m => [m.id, m]));
+const SUCURSALES = {
+  unda:     {nombre:'Fermil La Unda',            ciudad:'Guanare',  dir:'Av. Unda entre calles 10 y 11, Guanare 3350, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 7:00 p. m. · Dom 8:00 a. m. – 1:00 p. m.', razon:'Inversiones Fermil Centro, C.A.', rif:'J-40816397-7'},
+  quinta:   {nombre:'Fermil La Quinta',          ciudad:'Guanare',  dir:'Carrera 5 con calle 10, barrio La Arenosa, Guanare 3350, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Inversiones La Esquina del Constructor, C.A.', rif:'J-40239921-9'},
+  colonia:  {nombre:'Fermil La Colonia',         ciudad:'Guanare',  dir:'La Colonia parte baja, frente a la Ruta 1, Troncal 5, Guanare 3350, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Inversiones Fermil, C.A.', rif:'J-40025035-8'},
+  biscucuy: {nombre:'Ferreagro Fermil Biscucuy', ciudad:'Biscucuy', dir:'Av. Bolívar entre calles Páez y Negro Primero, Biscucuy 3351, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Ferreagro Fermil Biscucuy, C.A.', rif:'J-50096035-2'}
+};
+const VISTAS = [
+  {id:'guanare',  nombre:'Todas las de Guanare',          sucs:['unda','quinta','colonia']},
+  {id:'unda',     nombre:'Fermil La Unda (Guanare)',      sucs:['unda']},
+  {id:'quinta',   nombre:'Fermil La Quinta (Guanare)',    sucs:['quinta']},
+  {id:'colonia',  nombre:'Fermil La Colonia (Guanare)',   sucs:['colonia']},
+  {id:'biscucuy', nombre:'Ferreagro Fermil (Biscucuy)',   sucs:['biscucuy']},
+  {id:'todas',    nombre:'Todas las ferreterías',         sucs:['unda','quinta','colonia','biscucuy']}
+];
+const VISTA = Object.fromEntries(VISTAS.map(v => [v.id, v]));
+const CATS = [
+  {id:'construccion', nombre:'Construcción: hierro y polvos'},
+  {id:'ferreteria',   nombre:'Ferretería'},
+  {id:'herramienta',  nombre:'Herramientas'},
+  {id:'pintura',      nombre:'Pintura'},
+  {id:'electricidad', nombre:'Electricidad'},
+  {id:'iluminacion',  nombre:'Iluminación'},
+  {id:'plomeria',     nombre:'Plomería'},
+  {id:'bano',         nombre:'Baño'},
+  {id:'manguera',     nombre:'Mangueras'},
+  {id:'riego',        nombre:'Conexiones de riego'},
+  {id:'herreria',     nombre:'Herrería'},
+  {id:'hogar',        nombre:'Hogar'},
+  {id:'seguridad',    nombre:'Seguridad'},
+  {id:'hotel',        nombre:'Hotel'},
+  {id:'generica',     nombre:'Genéricos'}
+];
+const SINONIMOS = [
+  ['sucho','suncho','zuncho','estribo'],
+  ['cabilla','varilla','barra corrugada','acero de refuerzo'],
+  ['bloque','block','bloc','ladrillo','tabique'],
+  ['cemento','portland'],
+  ['pego','pegamento','adhesivo','pega'],
+  ['bombillo','foco','bombilla','ampolleta'],
+  ['tomacorriente','enchufe','toma'],
+  ['breaker','braker','breker','termomagnetico'],
+  ['interruptor','apagador','suiche','switch'],
+  ['teipe','tirro electrico','cinta aislante','tape'],
+  ['esmeril','pulidora','amoladora','esmeriladora'],
+  ['segueta','sierra'],
+  ['destornillador','desarmador','atornillador'],
+  ['llave ajustable','llave inglesa','perico'],
+  ['cinta metrica','metro','flexometro','wincha'],
+  ['tornillo','tirafondo','pija'],
+  ['ramplug','taco plastico','tarugo','chazo','anclaje'],
+  ['grifo','canilla','griferia'],
+  ['llave de paso','valvula'],
+  ['caucho','latex','pintura de caucho'],
+  ['thinner','tiner','diluyente','solvente'],
+  ['anticorrosivo','antioxido','fondo','primer'],
+  ['porcelana','fragua','boquilla'],
+  ['mortero','friso','mezcla'],
+  ['truckson','electrosoldada'],
+  ['alambre dulce','alambre de amarre'],
+  ['tubo estructural','perfil','tubular'],
+  ['lamina','chapa','plancha','zinc'],
+  ['mascarilla','tapabocas','tapaboca','cubrebocas'],
+  ['lentes','gafas','anteojos'],
+  ['carretilla','carrucha'],
+  ['brocha','pincel'],
+  ['teflon','cinta teflon'],
+  ['codo','curva'],
+  ['taladro','rotomartillo','percutor'],
+  ['cajetin','caja electrica','caja de paso'],
+  ['poceta','inodoro','wc','sanitario'],
+  ['lavamanos','lavabo'],
+  ['manguera','goma'],
+  ['aspersor','regadera','rociador'],
+  ['candado','cerradura','cerrojo'],
+  ['electrodo','soldadura']
+];
+const POPULARES = ['cemento','cabilla','pego','tubo pvc','pintura','bombillo'];
+
+/* ===================== Utilidades ===================== */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const fmt2 = new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmt0 = new Intl.NumberFormat('es-VE',{maximumFractionDigits:2});
+const usd = n => '$' + fmt2.format(n);
+const bs = n => 'Bs ' + fmt2.format(n * CONFIG.tasaBs);
+const r2 = n => Math.round(n * 100) / 100;
+const pctTxt = n => String(Math.round(n * 10) / 10).replace('.', ',');
+const clampPct = v => Math.max(0, Math.min(90, Number(v) || 0));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const store = {
+  get(k,d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const sess = {
+  get(k,d){ try{ const v = sessionStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ sessionStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const today = () => new Date().toLocaleDateString('es-VE', {day:'2-digit', month:'2-digit', year:'numeric'});
+const monthYear = () => new Date().toLocaleDateString('es-VE', {month:'long', year:'numeric'});
+const ACRON = new Set(['PVC','CPVC','THW','THHN','LED','USB','HD','AC','DC','TV','WC','N95','UV','GLP','EMT','PPR','ABS','MDF','TK','HP','CC','KG','KW','RJ45','IP','SMD']);
+const titleCase = s => s.split(/(\s+)/).map(w => { const u = w.toUpperCase(), bare = u.replace(/[^A-Z0-9Ñ]/g, ''); if (ACRON.has(bare) || (/\d/.test(w) && /[A-Za-z]/.test(w) && bare.length <= 6)) return u; return w.toLowerCase().replace(/(^|[(\/-])([a-záéíóúñ])/g, (m, a, b) => a + b.toUpperCase()); }).join('');
+
+const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
+const PRODUCTS = DATA.productos.filter(p => CAT[p.k] && !/^FLET/i.test(p.c) && !/^FLETE\b/i.test(p.n)).map((p, i) => {
+  const nombre = titleCase(p.n);
+  const n = norm(p.n);
+  return {ref:p.c, nombre, cat:p.k, sub:p.s ? titleCase(p.s) : '', marca:(p.m && !/^(GENERAL|GENERICO|GENÉRICO|AL MAYOR|SACO)$/i.test(p.m.trim())) ? titleCase(p.m) : '', unidad:(p.u || 'unidad').toLowerCase(), detal:p.v, mayor:p.y || p.v, divisas:!!p.d, e:p.e || {}, i,
+    _name:n, _words:n.split(/[^a-z0-9]+/).filter(Boolean), _ref:norm(p.c), _cat:norm(CAT[p.k].nombre + ' ' + (p.s || '') + ' ' + (p.m || ''))};
+});
+const byRef = Object.fromEntries(PRODUCTS.map(p => [p.ref, p]));
+
+/* ===================== Dibujos por categoría ===================== */
+const ILL_CSS = '.ill{stroke:#1f4a33;fill:none;stroke-linecap:round;stroke-linejoin:round}.ill .fa{fill:#e8b63a}.ill .fa2{fill:#cf961c}.ill .fb{fill:#cfe2d3}.ill .fc{fill:#d98b62}.ill .fk{fill:#e9dcc0}.ill .fg{fill:#cfd5d0}.ill .fs{fill:#1f4a33}.ill .fw{fill:#f2f4ef}.ill .fbl{fill:#9cc9e6}.ill .sl{stroke:#f2f4ef}.ill .sa{stroke:#cf961c}.ill .sb{stroke:#cfe2d3}.ill .sbl{stroke:#4f9fd1}.ill .ns{stroke:none}';
+function rebars(){
+  let s = '';
+  for (let k = 0; k < 5; k++){
+    const x1 = 12, y1 = 44 + k*7, x2 = 108, y2 = 20 + k*7;
+    s += `<path d="M${x1} ${y1} L${x2} ${y2}" stroke-width="6"/>`;
+    for (let x = 18; x < 104; x += 7){ const y = y1 + (y2 - y1) * (x - x1) / (x2 - x1); s += `<path class="sl" d="M${x-1.2} ${(y+2.2).toFixed(1)} L${x+1.2} ${(y-2.2).toFixed(1)}" stroke-width="1.3"/>`; }
+  }
+  return s + '<rect class="fa" x="54" y="20" width="11" height="52" rx="2.5" stroke-width="2.2"/><rect class="fa" x="84" y="13" width="9" height="46" rx="2.5" stroke-width="2"/>';
+}
+const SACO = '<path class="fk" d="M30 18 Q60 10 90 18 L97 76 Q60 84 23 76 Z"/><path d="M34 24 Q60 17 86 24" stroke-width="1.5" stroke-dasharray="3 3"/><path class="fa" d="M27 38 Q60 32 93 38 L95 56 Q60 62 25 56 Z" stroke-width="2"/><path d="M44 47 H76" stroke-width="2.6"/>';
+const ILL = {
+  construccion: `<g transform="translate(-4 -6) scale(.78)">${rebars()}</g><g transform="translate(46 22) scale(.62)">${SACO}</g>`,
+  ferreteria: '<path class="fg" d="M26 10 H50 L57 20 L50 30 H26 L19 20 Z" stroke-width="2.4"/><rect class="fg" x="31" y="30" width="14" height="52" stroke-width="2.4"/><path d="M31 38 L45 34 M31 46 L45 42 M31 54 L45 50 M31 62 L45 58 M31 70 L45 66 M31 78 L45 74" stroke-width="1.6"/><path class="fa" d="M76 42 L94 42 L103 58 L94 74 L76 74 L67 58 Z" stroke-width="2.4"/><circle class="fw" cx="85" cy="58" r="8" stroke-width="2.2"/><circle class="fb" cx="88" cy="20" r="11" stroke-width="2.2"/><circle class="fw" cx="88" cy="20" r="4.5" stroke-width="2"/>',
+  herramienta: '<g transform="rotate(38 60 46)"><rect class="fb" x="55" y="30" width="10" height="54" rx="4" stroke-width="2.4"/><circle class="fb" cx="60" cy="20" r="13" stroke-width="2.4"/><rect class="fw" x="55" y="4" width="10" height="15" rx="1" stroke-width="2"/></g><g transform="rotate(-38 60 46)"><rect class="fa" x="55" y="27" width="10" height="56" rx="3" stroke-width="2.4"/><path class="fs" d="M38 13 H72 Q81 13 86 20 L81 24 Q77 22 72 26 H38 Z" stroke-width="2"/></g>',
+  pintura: '<path d="M28 28 Q52 0 76 28" stroke-width="2.2"/><path class="fa" d="M28 28 V72 A24 7 0 0 0 76 72 V28"/><path class="fb" d="M28 42 H76 V58 H28 Z" stroke-width="2"/><ellipse class="fg" cx="52" cy="28" rx="24" ry="7"/><rect class="fs" x="92" y="12" width="8" height="32" rx="3" stroke-width="2"/><rect class="fg" x="89" y="44" width="14" height="8" stroke-width="2"/><path class="fa" d="M89 52 H103 V68 Q96 75 89 68 Z" stroke-width="2"/>',
+  electricidad: '<rect class="fb" x="60" y="14" width="46" height="62" rx="7"/><circle class="fw" cx="83" cy="32" r="9" stroke-width="2"/><path d="M80 29 V35 M86 29 V35" stroke-width="2.2"/><circle class="fw" cx="83" cy="58" r="9" stroke-width="2"/><path d="M80 55 V61 M86 55 V61" stroke-width="2.2"/><rect class="fa" x="16" y="38" width="24" height="22" rx="5"/><path d="M40 44 H52 M40 54 H52" stroke-width="3.2"/><path d="M16 49 Q4 50 6 66 Q8 84 32 82" stroke-width="3"/>',
+  iluminacion: '<path class="sa" d="M16 30 H26 M94 30 H104 M27 9 L34 16 M93 9 L86 16 M60 0 V5" stroke-width="3.2"/><path class="fa" d="M60 9 A22 22 0 0 1 73 49 V57 H47 V49 A22 22 0 0 1 60 9 Z"/><path d="M53 37 L57 43 L60 37 L63 43 L67 37" stroke-width="1.8"/><rect class="fg" x="47" y="57" width="26" height="16" rx="2" stroke-width="2.3"/><path d="M47 62 H73 M47 68 H73" stroke-width="1.6"/><path class="fs" d="M53 73 H67 L64 80 H56 Z" stroke-width="2"/>',
+  plomeria: '<path d="M8 32 H56 A24 24 0 0 1 80 56 V90" stroke-width="20" stroke-linecap="butt"/><path class="sb" d="M8 32 H56 A24 24 0 0 1 80 56 V90" stroke-width="14" stroke-linecap="butt"/><rect class="fa" x="32" y="19" width="9" height="26" rx="2" stroke-width="2.2"/><rect class="fa" x="67" y="66" width="26" height="9" rx="2" stroke-width="2.2"/><path class="fbl" d="M102 14 C102 14 111 25 111 31 A9 9 0 0 1 93 31 C93 25 102 14 102 14 Z" stroke-width="2"/>',
+  bano: '<path d="M22 6 V22 Q22 30 30 30 H62" stroke-width="5"/><path class="fg" d="M58 28 H84 L96 42 H46 Z" stroke-width="2.4"/><path class="sbl" d="M52 50 L46 64 M62 50 L58 68 M71 50 L71 72 M80 50 L84 68 M90 50 L96 64" stroke-width="3"/><path class="fb" d="M16 82 H104" stroke-width="3"/>',
+  manguera: '<ellipse cx="52" cy="46" rx="36" ry="29" stroke-width="9"/><ellipse class="sb" cx="52" cy="46" rx="36" ry="29" stroke-width="4"/><ellipse cx="52" cy="46" rx="22" ry="17" stroke-width="9"/><ellipse class="sb" cx="52" cy="46" rx="22" ry="17" stroke-width="4"/><path d="M86 56 Q98 68 99 80" stroke-width="9"/><path class="sb" d="M86 56 Q98 68 99 80" stroke-width="4"/><rect class="fa" x="92" y="76" width="14" height="11" rx="2" stroke-width="2"/>',
+  riego: '<path class="sbl" d="M60 40 Q40 8 12 26 M60 40 Q80 8 108 26 M60 40 Q50 16 34 14 M60 40 Q70 16 86 14" stroke-width="2.4" stroke-dasharray="4 4"/><circle class="fbl ns" cx="14" cy="30" r="3"/><circle class="fbl ns" cx="106" cy="30" r="3"/><circle class="fbl ns" cx="32" cy="18" r="2.5"/><circle class="fbl ns" cx="88" cy="18" r="2.5"/><rect class="fg" x="54" y="38" width="12" height="9" rx="2" stroke-width="2"/><rect class="fa" x="50" y="47" width="20" height="22" rx="3"/><path class="fg" d="M54 69 L60 88 L66 69 Z" stroke-width="2"/>',
+  herreria: '<path class="fb" d="M16 26 H104 V82 H16 Z" stroke-width="2.6"/><path d="M16 42 H104 M16 68 H104" stroke-width="3"/><path d="M28 82 V24 M42 82 V24 M56 82 V24 M70 82 V24 M84 82 V24 M98 82 V24" stroke-width="3"/><path class="fa" d="M24 26 L28 14 L32 26 Z M38 26 L42 14 L46 26 Z M52 26 L56 14 L60 26 Z M66 26 L70 14 L74 26 Z M80 26 L84 14 L88 26 Z M94 26 L98 14 L102 26 Z" stroke-width="2"/>',
+  hogar: '<path class="fb" d="M22 48 L60 18 L98 48 V84 H22 Z"/><path class="fa" d="M10 52 L60 10 L110 52 L102 58 L60 24 L18 58 Z" stroke-width="2.4"/><rect class="fa2" x="50" y="58" width="20" height="26" rx="1" stroke-width="2.2"/><rect class="fw" x="29" y="58" width="13" height="12" stroke-width="2"/><rect class="fw" x="78" y="58" width="13" height="12" stroke-width="2"/>',
+  seguridad: '<path d="M42 44 V30 A18 18 0 0 1 78 30 V44" stroke-width="7"/><rect class="fa" x="28" y="42" width="64" height="44" rx="7"/><circle class="fs ns" cx="60" cy="58" r="6"/><path class="fs ns" d="M56 61 L54 75 H66 L64 61 Z"/>',
+  hotel: '<path class="sa" d="M60 4 V13 M36 12 L41 19 M84 12 L79 19" stroke-width="3"/><rect class="fs" x="55" y="22" width="10" height="7" rx="2"/><path class="fa" d="M26 66 A34 34 0 0 1 94 66 Z" stroke-width="2.5"/><path class="sl" d="M40 58 Q42 44 54 38" stroke-width="3"/><rect class="fg" x="14" y="66" width="92" height="10" rx="3"/>',
+  generica: '<rect class="fk" x="14" y="44" width="44" height="38" rx="2"/><rect class="fa" x="30" y="44" width="12" height="11" stroke-width="1.6"/><rect class="fk" x="62" y="44" width="44" height="38" rx="2"/><rect class="fa" x="78" y="44" width="12" height="11" stroke-width="1.6"/><rect class="fk" x="38" y="8" width="44" height="36" rx="2"/><rect class="fa" x="54" y="8" width="12" height="11" stroke-width="1.6"/>',
+  todas: '<rect class="fa" x="22" y="10" width="34" height="32" rx="5"/><rect class="fb" x="64" y="10" width="34" height="32" rx="5"/><rect class="fb" x="22" y="48" width="34" height="32" rx="5"/><rect class="fa" x="64" y="48" width="34" height="32" rx="5"/>'
+};
+const ill = (id, standalone) => standalone
+  ? `<svg xmlns="http://www.w3.org/2000/svg" class="ill" viewBox="0 0 120 90" width="240" height="180" stroke-width="2.5"><style>${ILL_CSS}</style>${ILL[id] || ILL.todas}</svg>`
+  : `<svg class="ill" viewBox="0 0 120 90" stroke-width="2.5" aria-hidden="true">${ILL[id] || ILL.todas}</svg>`;
+const pimg = p => FOTOS[p.ref] ? `<div class="pimg photo"><img src="${FOTOS[p.ref]}" alt="" loading="lazy"></div>` : `<div class="pimg">${ill(p.cat)}</div>`;
+const catIco = id => `<span class="ci-ico">${ill(id)}</span>`;
+document.head.insertAdjacentHTML('beforeend', `<style>${ILL_CSS}</style>`);
+
+/* ===================== Estado ===================== */
+const state = { cat:'todas', sub:'', q:'', onlyAvail:true, sort:'rel', view:'grid', shown:CONFIG.porPagina, catPage:0, vista:'guanare',
+  role:'publico', mid:null, ccode:null, cname:'', preview:false, type:'pedido', mPriceMode:'mayor', mClient:'', panelTab:'ver', pnOpen:{}, pnScope:'' };
+let cart = {}, ldisc = {}, quoteNo = null;
+let CFG = store.get('fermil_cfg3', {});
+function cfg(mid){
+  const d = {hiddenCats:[], hiddenProducts:[], noPrice:[], noPriceCats:[], disc:{}, clientDisc:{}, clients:[]};
+  CFG[mid] = Object.assign(d, CFG[mid] || {});
+  return CFG[mid];
+}
+let cfgTimer = null;
+const saveCfg = () => {
+  store.set('fermil_cfg3', CFG);
+  if (!NUBE || state.role !== 'mayorista' || !NUBE_CODE) return;
+  clearTimeout(cfgTimer);
+  cfgTimer = setTimeout(async () => {
+    try { const ok = await rpc('fermil_guardar_cfg', {p_codigo: NUBE_CODE, p_cfg: CFG[state.mid]}); if (!ok) toast('No se pudieron guardar tus cambios. Intenta de nuevo.'); }
+    catch(e){ toast('Sin conexión: no se guardaron tus cambios. Intenta de nuevo.'); }
+  }, 900);
+};
+
+const effRole = () => (state.role === 'mayorista' && state.preview) ? 'cliente' : state.role;
+const isMay = () => effRole() === 'mayorista';
+const isWholesaleView = () => state.role !== 'publico';
+const TODAS = ['unda','quinta','colonia','biscucuy'];
+function stockOf(p){
+  if (isWholesaleView()){ if (p.e.mayorista != null) return p.e.mayorista; let s = 0; for (const id of TODAS) s += p.e[id] || 0; return s; }
+  let s = 0; for (const id of VISTA[state.vista].sucs) s += p.e[id] || 0; return s;
+}
+function visible(p){
+  if (effRole() !== 'cliente') return true;
+  const c = cfg(state.mid);
+  return !c.hiddenCats.includes(p.cat) && !c.hiddenProducts.includes(p.ref);
+}
+const visibleProducts = () => PRODUCTS.filter(visible);
+function discFor(p, mid, code){
+  const c = cfg(mid);
+  if (code && c.clientDisc[code] && c.clientDisc[code][p.ref] != null) return clampPct(c.clientDisc[code][p.ref]);
+  return clampPct(c.disc[p.ref]);
+}
+function clientPrice(p, mid, code){
+  const c = cfg(mid);
+  const d = discFor(p, mid, code);
+  return {v: r2(p.mayor * (1 - d/100)), orig: d ? p.mayor : null, d, hidden: c.noPrice.includes(p.ref) || c.noPriceCats.includes(p.cat)};
+}
+function priceOf(p){
+  const r = effRole();
+  if (r === 'publico') return {v:p.detal};
+  if (r === 'mayorista') return state.mPriceMode === 'cliente' ? Object.assign(clientPrice(p, state.mid, state.mClient), {hidden:false}) : {v:p.mayor};
+  return clientPrice(p, state.mid, state.role === 'cliente' ? state.ccode : (state.pnScope || ''));
+}
+function lineInfo(p, q){
+  const pi = priceOf(p);
+  if (pi.hidden) return {hidden:true, q};
+  const ld = isMay() ? clampPct(ldisc[p.ref]) : 0;
+  const unit = r2(pi.v * (1 - ld/100));
+  const ref = pi.orig || pi.v;
+  const pct = Math.round((1 - (1 - (pi.d || 0)/100) * (1 - ld/100)) * 1000) / 10;
+  return {hidden:false, q, ref, unit, pct, total: r2(unit * q)};
+}
+const status = p => { const s = stockOf(p); return s <= 0 ? 'out' : (s <= CONFIG.pocasUnidades ? 'low' : 'ok'); };
+const cartRefs = () => Object.keys(cart).filter(r => byRef[r]);
+
+function stockPill(p){
+  const s = status(p), M = isMay(), st = stockOf(p);
+  const t = s === 'out' ? 'Agotado' : s === 'low' ? (M ? `Quedan ${fmt0.format(st)}` : 'Pocas unidades') : (M ? `${fmt0.format(st)} disp.` : 'Disponible');
+  return `<span class="pill ${s}">${t}</span>`;
+}
+const showDivisas = p => p.divisas && effRole() === 'publico';
+const DIV_TXT = 'Oferta especial pagando en divisas · pregunta al vendedor';
+const DIV_TXT_CORTO = 'Oferta pagando en divisas';
+function priceBlock(p, big){
+  const pi = priceOf(p);
+  if (pi.hidden) return `<span class="ptag off${big ? ' big' : ''}"><span class="tag-amt">Precio a consultar</span></span><span class="bsref">Agrégalo y te damos el precio por WhatsApp</span>`;
+  let h = `<span class="ptag${big ? ' big' : ''}"><span class="tag-amt">${usd(pi.v)}</span><span class="tag-u">/${esc(p.unidad)}</span></span><span class="bsref">≈ ${bs(pi.v)} <span class="iva">· IVA incluido</span></span>`;
+  if (pi.orig) h += `<span class="tag-sub"><s>${usd(pi.orig)}</s> <b class="dtag">-${pctTxt(pi.d)}%</b></span>`;
+  if (showDivisas(p)) h += `<span class="divisas">${big ? DIV_TXT : DIV_TXT_CORTO}</span>`;
+  return h;
+}
+function controls(p){
+  const q = cart[p.ref] || 0;
+  if (!q && stockOf(p) <= 0) return `<button type="button" class="btn add" disabled>Agotado</button>`;
+  if (!q) return `<button type="button" class="btn add" data-act="add" data-ref="${p.ref}">Agregar</button>`;
+  const li = lineInfo(p, q);
+  return `<div class="stepper"><button type="button" data-act="dec" data-ref="${p.ref}" aria-label="Quitar uno">−</button><input type="number" min="0" inputmode="decimal" data-qty="${p.ref}" value="${q}" aria-label="Cantidad de ${esc(p.nombre)}"><button type="button" data-act="inc" data-ref="${p.ref}" aria-label="Agregar uno">+</button></div><span class="line-sub">${li.hidden ? 'A consultar' : usd(li.total)}</span>`;
+}
+
+/* ===================== Búsqueda inteligente ===================== */
+const GROUPS = SINONIMOS.map(g => g.map(norm));
+const VOCAB = new Set();
+PRODUCTS.forEach(p => p._words.forEach(w => { if (w.length >= 3 && /[a-z]/.test(w)) VOCAB.add(w); }));
+GROUPS.flat().forEach(t => { if (!t.includes(' ')) VOCAB.add(t); });
+const VOCAB_ARR = Array.from(VOCAB);
+function osa(a, b, max){
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const d = [];
+  for (let i = 0; i <= a.length; i++) d[i] = [i];
+  for (let j = 0; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++){
+    let rowMin = Infinity;
+    for (let j = 1; j <= b.length; j++){
+      const c = a[i-1] === b[j-1] ? 0 : 1;
+      d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + c);
+      if (i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) d[i][j] = Math.min(d[i][j], d[i-2][j-2] + 1);
+      rowMin = Math.min(rowMin, d[i][j]);
+    }
+    if (rowMin > max) return max + 1;
+  }
+  return d[a.length][b.length];
+}
+const near = (w, t) => { const m = t.length >= 7 ? 2 : 1; return osa(w, t, m) <= m; };
+const expCache = new Map();
+function expandQuery(q){
+  const nq = norm(q).trim().replace(/\s+/g, ' ');
+  if (expCache.has(nq)) return expCache.get(nq);
+  const toks = nq.split(' ').filter(Boolean);
+  const out = [], syn = new Set(), fixes = new Set();
+  for (const t of toks){
+    const alts = new Map([[t, 1]]);
+    if (t.length > 4 && t.endsWith('es')) alts.set(t.slice(0, -2), 1);
+    if (t.length > 3 && t.endsWith('s')) alts.set(t.slice(0, -1), 1);
+    const real = VOCAB_ARR.some(w => w.startsWith(t));
+    for (const g of GROUPS){
+      const hit = g.some(term => term.includes(' ')
+        ? (nq.includes(term) && term.split(' ').includes(t))
+        : (term === t || (t.length >= 4 && term.startsWith(t)) || (t.length >= 4 && !real && near(term, t)) || (t.length > 3 && t.endsWith('s') && term === t.slice(0, -1))));
+      if (hit) g.forEach(term => { if (!alts.has(term)){ alts.set(term, 0.85); syn.add(term); } });
+    }
+    if (!real && t.length >= 4){ for (const w of VOCAB_ARR) if (!alts.has(w) && near(w, t)){ alts.set(w, 0.7); fixes.add(w); } }
+    out.push(alts);
+  }
+  const r = {toks: out, syn: [...syn], fixes: [...fixes], raw: toks};
+  if (expCache.size > 200) expCache.clear();
+  expCache.set(nq, r);
+  return r;
+}
+function scoreProduct(p, exp){
+  let total = 0;
+  for (const alts of exp.toks){
+    let best = 0;
+    for (const [a, w] of alts){
+      let s = 0;
+      if (p._ref === a) s = 20; else if (a.length >= 3 && p._ref.includes(a)) s = 8;
+      if (p._name.startsWith(a)) s = Math.max(s, 7);
+      else if (p._words.some(x => x.startsWith(a))) s = Math.max(s, 5);
+      else if (a.length >= 3 && p._name.includes(a)) s = Math.max(s, 3);
+      if (a.length >= 4 && p._cat.includes(a)) s = Math.max(s, 1.5);
+      if (s * w > best) best = s * w;
+    }
+    if (!best) return 0;
+    total += best;
+  }
+  return total;
+}
+function search(q, list){
+  const exp = expandQuery(q);
+  const res = [];
+  for (const p of list){ const s = scoreProduct(p, exp); if (s) res.push({p, s}); }
+  res.sort((a, b) => b.s - a.s || (stockOf(b.p) > 0) - (stockOf(a.p) > 0) || a.p.i - b.p.i);
+  return {res, exp};
+}
+function synHtml(exp, found){
+  if (!found) return '';
+  const typed = new Set(exp.raw);
+  const syn = exp.syn.filter(s => !typed.has(s)).slice(0, 5);
+  if (exp.fixes.length && !syn.length) return `Mostrando resultados para <b>${esc(exp.fixes.slice(0,2).join(', '))}</b>`;
+  if (syn.length) return `También buscamos como: <b>${esc(syn.join(', '))}</b>`;
+  return '';
+}
+function filtered(){
+  let list = visibleProducts();
+  if (state.cat !== 'todas') list = list.filter(p => p.cat === state.cat);
+  if (state.cat !== 'todas' && state.sub) list = list.filter(p => (p.sub || 'Otros') === state.sub);
+  let scores = null, exp = null;
+  if (state.q){ const r = search(state.q, list); exp = r.exp; scores = true; list = r.res.map(x => x.p); }
+  if (state.onlyAvail) list = list.filter(p => stockOf(p) > 0);
+  const pv = p => { const pi = priceOf(p); return pi.hidden ? Infinity : pi.v; };
+  if (state.sort === 'pasc') list.sort((a, b) => pv(a) - pv(b));
+  else if (state.sort === 'pdesc') list.sort((a, b) => (pv(b) === Infinity ? -1 : pv(b)) - (pv(a) === Infinity ? -1 : pv(a)));
+  else if (state.sort === 'name') list.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  else if (!scores) list.sort((a, b) => (stockOf(b) > 0) - (stockOf(a) > 0) || (FOTOS[b.ref] ? 1 : 0) - (FOTOS[a.ref] ? 1 : 0) || a.i - b.i);
+  return {list, exp};
+}
+
+/* ===================== Render ===================== */
+const results = $('#results'), more = $('#more');
+function resetPaging(){ state.shown = CONFIG.porPagina; state.catPage = 0; }
+function renderBranch(){
+  const sel = $('#branch');
+  if (!sel.options.length) sel.innerHTML = VISTAS.map(v => `<option value="${v.id}">${esc(v.nombre)}</option>`).join('');
+  sel.value = state.vista;
+  const bar = $('#branchBar');
+  if (isWholesaleView()){
+    sel.hidden = true;
+    $('#branchInfo').innerHTML = `<b>Existencias de las 4 sucursales</b> · el almacén Venta Mayorista no tiene existencias cargadas en PLADE`;
+    bar.querySelector('label').lastChild.textContent = 'Inventario:';
+    return;
+  }
+  sel.hidden = false;
+  bar.querySelector('label').lastChild.textContent = 'Ver inventario de';
+  const v = VISTA[state.vista];
+  if (v.sucs.length === 1){ const s = SUCURSALES[v.sucs[0]]; $('#branchInfo').innerHTML = `<a class="bi-map" href="${mapsSearch(v.sucs[0])}" target="_blank" rel="noopener">${PIN_SVG}<b>${esc(s.dir)}</b></a> · ${esc(s.horario)}`; }
+  else $('#branchInfo').innerHTML = `Mostramos lo que hay en ${v.sucs.length} sucursales. Al hacer tu pedido eliges dónde retirar.`;
+}
+function renderCats(){
+  const base = visibleProducts().filter(p => !state.onlyAvail || stockOf(p) > 0);
+  const counts = {}; for (const p of base) counts[p.cat] = (counts[p.cat] || 0) + 1;
+  const tiles = [{id:'todas', nombre:'Todo', n:base.length}, ...CATS.map(c => ({id:c.id, nombre:c.nombre.replace(': hierro y polvos', ''), n:counts[c.id] || 0})).filter(t => t.n > 0)];
+  $('#cats').innerHTML = tiles.map(t => `<button type="button" class="cat-ic" data-act="cat" data-cat="${t.id}" data-scroll aria-pressed="${state.cat === t.id}"><span class="ci-circ">${lineIll(t.id)}</span><b>${esc(t.nombre)}</b><small>${fmt0.format(t.n)} productos</small></button>`).join('');
+}
+function renderToolbar(list, exp){
+  $('#resTitle').textContent = state.q ? 'Resultados' : (state.cat === 'todas' ? 'Todo el catálogo' : 'Productos');
+  $('#resCount').textContent = `${fmt0.format(list.length)} ${list.length === 1 ? 'producto' : 'productos'}`;
+  $('#qChip').innerHTML = state.q ? `<button type="button" class="qchip" data-act="clearq" aria-label="Quitar búsqueda ${esc(state.q)}">“${esc(state.q)}” <span aria-hidden="true">×</span></button>` : '';
+  const sn = $('#synNote'), h = exp ? synHtml(exp, list.length) : '';
+  sn.innerHTML = h; sn.hidden = !h;
+  $$('[data-act="view"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
+  $('#onlyAvail').checked = state.onlyAvail;
+  $('#sort').value = state.sort;
+}
+function card(p){
+  const sub = [p.marca, p.sub].filter(Boolean).join(' · ');
+  return `<article class="card" data-st="${status(p)}">
+    <button type="button" class="pimg-btn" data-act="open" data-ref="${p.ref}" aria-label="Ver detalle de ${esc(p.nombre)}">${pimg(p)}</button>
+    <div class="card-body">
+      <div class="meta"><span class="ref">${esc(p.ref)}</span>${stockPill(p)}</div>
+      <h3 class="pname"><button type="button" data-act="open" data-ref="${p.ref}">${esc(p.nombre)}</button></h3>
+      <div class="pcat">${esc(sub || CAT[p.cat].nombre)}</div>
+      <div class="price">${priceBlock(p)}</div>
+      <div class="ctrl" data-ctrl="${p.ref}">${controls(p)}</div>
+    </div>
+  </article>`;
+}
+function emptyHtml(){
+  const q = state.q ? `“${esc(state.q)}”` : 'productos con estos filtros';
+  const hint = state.onlyAvail ? ' Prueba quitando “Solo disponibles” o cambiando de sucursal.' : '';
+  return `<div class="empty"><b>No encontramos ${q}</b>Prueba con otra palabra o revisa la categoría.${hint} Si no lo ves, pregúntanos por WhatsApp.</div>`;
+}
+function renderGrid(list){
+  results.className = 'grid' + (state.view === 'list' ? ' list' : '');
+  if (!list.length){ results.className = ''; results.innerHTML = emptyHtml(); more.innerHTML = ''; return; }
+  results.innerHTML = list.slice(0, state.shown).map(card).join('');
+  const left = list.length - state.shown;
+  more.innerHTML = left > 0 ? `<button type="button" class="btn ghost" data-act="more">Mostrar más (${fmt0.format(left)} restantes)</button>` : '';
+}
+function render(){
+  const {list, exp} = filtered();
+  const home = state.cat === 'todas' && !state.q;
+  $('#home').hidden = !home; $('#homeMore').hidden = !home;
+  renderBranch();
+  renderCats();
+  renderNav();
+  renderCatHead();
+  if (home) renderHomeRows();
+  renderToolbar(list, exp);
+  if (state.view === 'catalog') renderCatalog(list); else renderGrid(list);
+}
+
+/* ===================== Catálogo interactivo ===================== */
+let pages = [], lastPer = 0;
+const perPage = () => window.innerWidth < 640 ? 4 : 6;
+function buildPages(list){
+  const per = perPage(); lastPer = per;
+  const out = [{type:'cover', count:list.length}];
+  for (const c of CATS){
+    const items = list.filter(p => p.cat === c.id);
+    const n = Math.ceil(items.length / per);
+    for (let k = 0; k < n; k++) out.push({type:'items', cat:c.id, items:items.slice(k*per, (k+1)*per), part:k+1, parts:n});
+  }
+  return out;
+}
+const sectionStarts = () => pages.reduce((a, p, i) => { if (p.type === 'items' && p.part === 1) a.push({cat:p.cat, i}); return a; }, []);
+function coverSub(){
+  const r = effRole();
+  if (r === 'mayorista') return `Mayorista: ${MAY[state.mid].nombre} · precios al mayor`;
+  if (r === 'cliente') return `Catálogo de ${MAY[state.mid].nombre}${state.cname ? ' para ' + state.cname : ''}`;
+  return `${VISTA[state.vista].nombre} · precios con IVA`;
+}
+function pageHtml(pg, i){
+  if (pg.type === 'cover'){
+    return `<section class="pg cover">
+      <div class="cv-brand"><span class="logo-mark" aria-hidden="true">${LOGO_SVG}</span><div><div class="cv-name">Ferretería Fermil</div><div class="cv-sub">Catálogo de productos</div></div></div>
+      <div class="cv-meta"><span><b>${monthYear()}</b></span><span>${esc(coverSub())}</span><span><b>${fmt0.format(pg.count)}</b> productos</span></div>
+      <div class="cv-index"><h3>Contenido</h3><ol>${sectionStarts().map(s => `<li><button type="button" data-act="goto" data-i="${s.i}"><span class="nm">${esc(CAT[s.cat].nombre)}</span><span class="lead"></span><span class="pn">Pág. ${s.i + 1}</span></button></li>`).join('')}</ol></div>
+    </section>`;
+  }
+  const c = CAT[pg.cat];
+  return `<section class="pg">
+    <header class="pg-head"><div class="ph-l">${catIco(c.id)}<span class="pg-cat">${esc(c.nombre)}</span></div><span class="pg-num">${pg.parts > 1 ? `${pg.part} de ${pg.parts} · ` : ''}Pág. ${i + 1}</span></header>
+    <div class="pg-grid">${pg.items.map(p => `<div class="ki">
+      <button type="button" class="pimg-btn" data-act="open" data-ref="${p.ref}" aria-label="Ver detalle de ${esc(p.nombre)}">${pimg(p)}</button>
+      <div class="meta"><span class="ref">${esc(p.ref)}</span>${stockPill(p)}</div>
+      <h3 class="pname"><button type="button" data-act="open" data-ref="${p.ref}">${esc(p.nombre)}</button></h3>
+      <div class="price">${priceBlock(p)}</div>
+      <div class="ctrl" data-ctrl="${p.ref}">${controls(p)}</div>
+    </div>`).join('')}</div>
+    <footer class="pg-foot"><span>Ferretería Fermil · ${monthYear()}</span><span>Precios con IVA, sujetos a cambio y a disponibilidad</span></footer>
+  </section>`;
+}
+function renderCatalog(list){
+  more.innerHTML = '';
+  if (!list.length){ results.className = ''; results.innerHTML = emptyHtml(); return; }
+  pages = buildPages(list);
+  if (state.catPage >= pages.length) state.catPage = 0;
+  results.className = 'catalog';
+  results.innerHTML = `<div class="cat-ctrls">
+      <button type="button" class="btn ghost" data-act="pg" data-d="-1" id="pgPrev" aria-label="Página anterior">‹<span class="hide-sm"> Anterior</span></button>
+      <div class="pg-ind"><span id="pgInd"></span><input type="range" id="pgRange" min="1" max="${pages.length}" value="${state.catPage + 1}" aria-label="Pasar páginas del catálogo"></div>
+      <button type="button" class="btn ghost" data-act="pg" data-d="1" id="pgNext" aria-label="Página siguiente"><span class="hide-sm">Siguiente </span>›</button>
+      <label class="sr" for="pgJump">Ir a una sección</label>
+      <select id="pgJump"><option value="0">Portada e índice</option>${sectionStarts().map(s => `<option value="${s.i}">${esc(CAT[s.cat].nombre)}</option>`).join('')}</select>
+      <button type="button" class="btn ghost" data-act="full" aria-label="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="hide-sm">Pantalla completa</span></button>
+    </div>
+    <div class="book" id="book"></div>`;
+  paintPage(0);
+  $('#pgRange').addEventListener('input', e => { const n = Number(e.target.value) - 1; const d = n - state.catPage; state.catPage = n; paintPage(d, true); });
+  $('#pgJump').addEventListener('change', e => goPage(Number(e.target.value)));
+  const book = $('#book'); let tx = null;
+  book.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
+  book.addEventListener('touchend', e => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; tx = null; if (Math.abs(dx) > 50) goPage(state.catPage + (dx < 0 ? 1 : -1)); });
+}
+function paintPage(dir, fromRange){
+  const i = state.catPage, book = $('#book');
+  if (!book) return;
+  book.innerHTML = pageHtml(pages[i], i);
+  book.classList.remove('turn-next', 'turn-prev');
+  if (dir && !reduced()){ void book.offsetWidth; book.classList.add(dir > 0 ? 'turn-next' : 'turn-prev'); }
+  $('#pgInd').textContent = `Página ${i + 1} de ${pages.length}`;
+  if (!fromRange) $('#pgRange').value = i + 1;
+  $('#pgPrev').disabled = i === 0;
+  $('#pgNext').disabled = i === pages.length - 1;
+  let cur = 0; for (const s of sectionStarts()) if (s.i <= i) cur = s.i;
+  $('#pgJump').value = String(cur);
+}
+function goPage(n){
+  if (!pages.length) return;
+  n = Math.max(0, Math.min(pages.length - 1, n));
+  if (n === state.catPage) return;
+  const d = n - state.catPage; state.catPage = n; paintPage(d);
+  if (results.getBoundingClientRect().top < 0 && !document.fullscreenElement) results.scrollIntoView({behavior: reduced() ? 'auto' : 'smooth', block:'start'});
+}
+async function toggleFull(){
+  try{ if (document.fullscreenElement) await document.exitFullscreen(); else await results.requestFullscreen(); }
+  catch(e){ toast('Este navegador no permitió la pantalla completa aquí.'); }
+}
+
+/* ===================== Ficha del producto ===================== */
+const dlgProduct = $('#dlgProduct');
+function stockBySuc(p){
+  if (isWholesaleView()) return '';
+  const rows = Object.keys(SUCURSALES).map(id => { const n = p.e[id] || 0; return `<div><dt>${esc(SUCURSALES[id].nombre)}</dt><dd>${n > 0 ? (n <= CONFIG.pocasUnidades ? 'Pocas unidades' : 'Disponible') : 'Agotado'}</dd></div>`; }).join('');
+  return `<dl class="pd-specs">${rows}</dl>`;
+}
+function openProduct(ref){
+  const p = byRef[ref]; if (!p) return;
+  const c = CAT[p.cat], inCart = cart[ref] || 0, out = stockOf(p) <= 0, M = isMay();
+  const rel = visibleProducts().filter(x => x.cat === p.cat && x.ref !== p.ref && stockOf(x) > 0 && (!p.sub || x.sub === p.sub)).slice(0, 4);
+  const exist = out ? 'Agotado' : (M ? `${fmt0.format(stockOf(p))} ${esc(p.unidad)}` : (status(p) === 'low' ? 'Pocas unidades' : 'Disponible'));
+  dlgProduct.innerHTML = `<div class="pd">
+    <button type="button" class="x" data-act="close" aria-label="Cerrar">×</button>
+    <div class="pd-img">${pimg(p)}</div>
+    <div class="pd-info">
+      <div class="pcat"><button type="button" data-act="cat" data-cat="${p.cat}" data-scroll>${esc(c.nombre)}</button></div>
+      <h2>${esc(p.nombre)}</h2>
+      <div class="meta" style="justify-content:flex-start"><span class="ref">Ref. ${esc(p.ref)}</span>${stockPill(p)}</div>
+      <dl class="pd-specs">
+        <div><dt>Unidad de venta</dt><dd>${esc(p.unidad)}</dd></div>
+        <div><dt>${isWholesaleView() ? 'Existencia mayorista' : 'En ' + esc(VISTA[state.vista].nombre)}</dt><dd>${exist}</dd></div>
+        ${p.marca ? `<div><dt>Marca</dt><dd>${esc(p.marca)}</dd></div>` : ''}
+        ${p.sub ? `<div><dt>Tipo</dt><dd>${esc(p.sub)}</dd></div>` : ''}
+      </dl>
+      <div class="price">${priceBlock(p, true)}</div>
+      ${out ? `<p class="warn-txt">Este producto está agotado aquí por ahora.</p>
+        <a class="btn ghost wide" href="${waLink(storeNumber(), `Hola, ${CONFIG.tienda}. ¿Tienen o cuándo les llega este producto?\n${p.nombre} (Ref. ${p.ref})`)}" target="_blank" rel="noopener">Preguntar por WhatsApp</a>`
+      : `<div class="estimate">
+          <label for="pdQty">Elige la cantidad</label>
+          <div class="stepper lg"><button type="button" data-act="pdq" data-d="-1" aria-label="Quitar uno">−</button><input id="pdQty" type="number" min="1" inputmode="decimal" value="${inCart || 1}"><button type="button" data-act="pdq" data-d="1" aria-label="Agregar uno">+</button></div>
+          <div class="est-out" id="pdEst"></div>
+        </div>
+        <p class="warn-txt" id="pdWarn" hidden></p>
+        <button type="button" class="btn accent wide" data-act="pdadd" data-ref="${p.ref}">${inCart ? `Actualizar carrito (tienes ${fmt0.format(inCart)})` : 'Agregar al carrito'}</button>`}
+      ${isWholesaleView() ? '' : `<details><summary class="hint" style="cursor:pointer">Disponibilidad por sucursal</summary>${stockBySuc(p)}</details>`}
+    </div>
+    ${rel.length ? `<div class="pd-rel"><h3>Productos parecidos</h3><div class="rel-row">${rel.map(r => { const pi = priceOf(r); return `<button type="button" class="rel" data-act="open" data-ref="${r.ref}">${pimg(r)}<span>${esc(r.nombre)}</span><b>${pi.hidden ? 'A consultar' : usd(pi.v)}</b></button>`; }).join('')}</div></div>` : ''}
+  </div>`;
+  dlgProduct.dataset.ref = ref;
+  if (!dlgProduct.open) dlgProduct.showModal();
+  dlgProduct.scrollTop = 0;
+  const qi = $('#pdQty');
+  if (qi){ qi.addEventListener('input', () => updateEst(p)); updateEst(p); }
+}
+function updateEst(p){
+  const qi = $('#pdQty'); if (!qi) return;
+  const q = Math.max(0, Number(qi.value) || 0), li = lineInfo(p, q);
+  $('#pdEst').innerHTML = li.hidden ? `${fmt0.format(q)} ${esc(p.unidad)}<b>A consultar</b>` : `${fmt0.format(q)} ${esc(p.unidad)} × ${usd(li.unit)}<b>${usd(li.total)}</b>≈ ${bs(li.total)}`;
+  const w = $('#pdWarn'), st = stockOf(p);
+  if (q > st){ w.hidden = false; w.textContent = isMay() ? `Hay ${fmt0.format(st)} ${p.unidad} en el almacén mayorista. El resto se confirma por WhatsApp.` : 'Esa cantidad supera lo que hay en tienda. Te confirmamos por WhatsApp.'; }
+  else w.hidden = true;
+}
+
+/* ===================== Carrito ===================== */
+const dlgCart = $('#dlgCart');
+const saveCart = () => { store.set('fermil_cart3', cart); store.set('fermil_ldisc3', ldisc); };
+function setQty(ref, q, added){
+  const p = byRef[ref]; if (!p) return;
+  q = Math.max(0, Math.min(99999, Math.round((Number(q) || 0) * 100) / 100));
+  if (q) cart[ref] = q; else { delete cart[ref]; delete ldisc[ref]; }
+  if (!cartRefs().length){ quoteNo = null; sess.set('fermil_qno', null); }
+  saveCart();
+  $$(`[data-ctrl="${CSS.escape(ref)}"]`).forEach(el => { el.innerHTML = controls(p); });
+  renderCartAll();
+  if (added){ toast(`Agregado: ${p.nombre}`); const b = $('#btnCart'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+}
+function refreshControls(){ $$('[data-ctrl]').forEach(el => { const p = byRef[el.dataset.ctrl]; if (p) el.innerHTML = controls(p); }); }
+function totals(){
+  let total = 0, units = 0, hidden = 0, div = 0;
+  for (const r of cartRefs()){ const p = byRef[r], li = lineInfo(p, cart[r]); units += cart[r]; if (li.hidden) hidden++; else total += li.total; if (p.divisas) div++; }
+  return {total: r2(total), units, hidden, div, n: cartRefs().length};
+}
+function sucOptions(){
+  const ids = isWholesaleView() ? Object.keys(SUCURSALES) : VISTA[state.vista].sucs;
+  return ids;
+}
+function renderSucField(){
+  const sel = $('#fSuc'), ids = sucOptions(), cur = sel.value;
+  sel.innerHTML = (ids.length > 1 ? '<option value="">Elige la sucursal…</option>' : '') + ids.map(id => `<option value="${id}">${esc(SUCURSALES[id].nombre)} · ${esc(SUCURSALES[id].ciudad)}</option>`).join('');
+  if (ids.includes(cur)) sel.value = cur;
+  $('#fSucWrap').hidden = isWholesaleView();
+}
+function renderDivBox(t){
+  const box = $('#divBox'), pago = formData().pago;
+  if (effRole() !== 'publico' || !t.div){ box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = DIVISAS.includes(pago)
+    ? `<b>Pagando en divisas</b> puedes optar a una oferta especial en ${t.div} ${t.div === 1 ? 'producto' : 'productos'} de tu pedido. El vendedor te confirma el descuento por WhatsApp al cerrar la venta.`
+    : `${t.div} ${t.div === 1 ? 'producto tiene' : 'productos tienen'} oferta especial si pagas en divisas (cash, Zelle o Binance). Pregunta al vendedor.`;
+}
+function renderCartAll(){
+  const t = totals();
+  $('#cartCount').textContent = t.n;
+  $('#cartTotalTop').textContent = t.n ? usd(t.total) : '';
+  $('#btnCart').setAttribute('aria-label', `Ver carrito: ${t.n} productos`);
+  $('#mbar').classList.toggle('on', t.n > 0);
+  document.body.classList.toggle('has-mbar', t.n > 0);
+  $('#mbarTxt').textContent = `${t.n} ${t.n === 1 ? 'producto' : 'productos'} · ${usd(t.total)}`;
+  const M = isMay(), refs = cartRefs();
+  $('#mPriceBox').hidden = !(M && refs.length);
+  $$('[data-act="mprice"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === state.mPriceMode)));
+  if (M){
+    const cl = cfg(state.mid).clients;
+    $('#mClientWrap').hidden = state.mPriceMode !== 'cliente';
+    $('#mClient').innerHTML = `<option value="">Descuentos generales</option>` + cl.map(c => `<option value="${esc(c.code)}">${esc(c.nombre)} (${esc(c.code)})</option>`).join('');
+    $('#mClient').value = state.mClient;
+  }
+  $('.drawer-foot').hidden = !refs.length;
+  $('#orderForm').hidden = !refs.length;
+  renderSucField();
+  if (!refs.length){
+    $('#cartItems').innerHTML = `<div class="empty-cart"><b>Tu carrito está vacío</b>Busca productos o entra a una categoría y toca “Agregar”.</div>`;
+    $('#cartTotals').innerHTML = '';
+  } else {
+    $('#cartItems').innerHTML = refs.map(r => {
+      const p = byRef[r], q = cart[r], li = lineInfo(p, q), st = stockOf(p);
+      const warn = q <= st ? '' : (st <= 0 ? 'Agotado aquí: se confirma disponibilidad por WhatsApp.' : (M ? `Hay ${fmt0.format(st)} en el almacén mayorista; el resto se confirma.` : 'Supera la existencia; te confirmamos por WhatsApp.'));
+      const unitTxt = li.hidden ? 'Precio a consultar' : `${usd(li.unit)} / ${esc(p.unidad)}${li.pct ? ` <span class="dtag">-${pctTxt(li.pct)}%</span>` : ''}`;
+      return `<div class="ci">${pimg(p)}<div><div class="ci-name">${esc(p.nombre)}</div><div class="ci-meta"><span class="ref">${esc(p.ref)}</span> · ${unitTxt}</div>${warn ? `<div class="ci-warn">${warn}</div>` : ''}
+        <div class="ci-row"><div class="stepper sm"><button type="button" data-act="dec" data-ref="${r}" aria-label="Quitar uno">−</button><input type="number" min="0" inputmode="decimal" data-qty="${r}" value="${q}" aria-label="Cantidad de ${esc(p.nombre)}"><button type="button" data-act="inc" data-ref="${r}" aria-label="Agregar uno">+</button></div>
+        ${M ? `<label class="ldisc">Desc. <input type="number" min="0" max="90" step="0.5" inputmode="decimal" data-ldisc="${r}" value="${ldisc[r] || ''}" placeholder="0" aria-label="Descuento para ${esc(p.nombre)}">%</label>` : ''}
+        <b>${li.hidden ? 'A consultar' : usd(li.total)}</b></div></div>
+        <button type="button" class="x sm" data-act="rm" data-ref="${r}" aria-label="Quitar ${esc(p.nombre)} del carrito">×</button></div>`;
+    }).join('');
+    $('#cartTotals').innerHTML = `<div class="totals">
+      <div class="tot-sub"><span>${t.n} ${t.n === 1 ? 'producto' : 'productos'}</span>${M ? `<span>${state.mPriceMode === 'cliente' ? 'Precios de tu cliente' : 'Precios al mayor'}</span>` : '<span>IVA incluido</span>'}</div>
+      <div class="tot-big"><span>Total</span><b>${usd(t.total)}</b></div>
+      <div class="tot-sub"><span>≈ ${bs(t.total)}</span><span>Tasa Bs ${fmt2.format(CONFIG.tasaBs)}</span></div>
+      ${t.hidden ? `<div class="tot-sub"><span>+ ${t.hidden} ${t.hidden === 1 ? 'producto' : 'productos'} con precio a consultar</span></div>` : ''}
+    </div>`;
+  }
+  renderDivBox(t);
+  updateLinks();
+}
+function renderType(){
+  $$('[data-act="type"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.type === state.type)));
+  $('#cartTitle').textContent = state.type === 'pedido' ? 'Tu carrito' : 'Tu presupuesto';
+}
+function formData(){
+  const v = id => ($(id).value || '').trim();
+  const ent = document.querySelector('input[name="entrega"]:checked');
+  const pago = document.querySelector('input[name="pago"]:checked');
+  const ids = sucOptions();
+  const suc = isWholesaleView() ? '' : (v('#fSuc') || (ids.length === 1 ? ids[0] : ''));
+  return {nombre:v('#fNombre'), tel:v('#fTel'), doc:v('#fDoc'), entrega: ent ? ent.value : 'Retiro en tienda', dir:v('#fDir'), pago: pago ? pago.value : '', nota:v('#fNota'), suc};
+}
+function quoteNumber(){
+  if (!quoteNo){
+    const d = new Date(), pad = n => String(n).padStart(2, '0');
+    quoteNo = `P-${String(d.getFullYear()).slice(2)}${pad(d.getMonth()+1)}${pad(d.getDate())}-${Math.floor(1000 + Math.random()*9000)}`;
+    sess.set('fermil_qno', quoteNo);
+  }
+  return quoteNo;
+}
+function whoLines(){
+  const r = effRole(), L = [];
+  if (r === 'mayorista') L.push(['Mayorista', MAY[state.mid].nombre]);
+  if (r === 'cliente' && state.role === 'cliente') L.push(['Atendido por', `${MAY[state.mid].nombre} (código ${state.ccode})`]);
+  return L;
+}
+function buildText(){
+  const f = formData(), refs = cartRefs(), t = totals();
+  const L = [];
+  L.push(`*${CONFIG.tienda.toUpperCase()}*`);
+  L.push(`*${state.type === 'pedido' ? 'PEDIDO' : 'PRESUPUESTO'}* N° ${quoteNumber()}`);
+  L.push(`Fecha: ${today()}`);
+  whoLines().forEach(([k, v]) => L.push(`${k}: ${v}`));
+  if (f.suc) L.push(`Sucursal: ${SUCURSALES[f.suc].nombre} (${SUCURSALES[f.suc].ciudad})`);
+  L.push(`Cliente: ${f.nombre || '-'}`);
+  if (f.doc) L.push(`C.I./RIF: ${f.doc}`);
+  if (f.tel) L.push(`Teléfono: ${f.tel}`);
+  L.push(`Entrega: ${f.entrega}${f.dir ? ' - ' + f.dir : ''}`);
+  L.push(`Forma de pago: ${f.pago || 'por definir'}`);
+  L.push('');
+  refs.forEach((r, i) => {
+    const p = byRef[r], q = cart[r], li = lineInfo(p, q);
+    L.push(`${i + 1}) ${p.nombre}`);
+    if (li.hidden) L.push(`   Ref. ${p.ref} · ${fmt0.format(q)} ${p.unidad} · precio a consultar`);
+    else L.push(`   Ref. ${p.ref} · ${fmt0.format(q)} ${p.unidad} × ${usd(li.unit)}${li.pct ? ` (-${pctTxt(li.pct)}%)` : ''} = ${usd(li.total)}`);
+  });
+  L.push('');
+  L.push(`*TOTAL: ${usd(t.total)}*${effRole() === 'publico' ? ' (IVA incluido)' : ''}`);
+  if (t.hidden) L.push(`+ ${t.hidden} producto(s) con precio a consultar`);
+  L.push(`Ref. ${bs(t.total)} (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`);
+  if (effRole() === 'publico' && t.div && DIVISAS.includes(f.pago)) L.push(`Pago en divisas: quisiera saber si aplica la oferta especial (${t.div} producto(s)).`);
+  if (f.nota){ L.push(''); L.push(`Nota: ${f.nota}`); }
+  return L.join('\n');
+}
+const storeNumber = () => effRole() === 'cliente' ? MAY[state.mid].whatsapp : CONFIG.whatsapp;
+function waLink(num, text){ return `https://wa.me/${String(num || '').replace(/\D/g, '')}?text=${encodeURIComponent(text)}`; }
+function betterText(){
+  const refs = cartRefs(), r = effRole();
+  const L = [`Hola${r === 'cliente' ? ' ' + MAY[state.mid].corto : ''}, quisiera un mejor precio${refs.length ? ' para estos productos:' : '. ¿Qué ofertas tienen?'}`];
+  refs.forEach((x, i) => { const p = byRef[x]; L.push(`${i + 1}) ${p.nombre} (Ref. ${p.ref}) · ${fmt0.format(cart[x])} ${p.unidad}`); });
+  const f = formData(); if (f.pago) L.push(`Forma de pago: ${f.pago}`);
+  return L.join('\n');
+}
+const WA_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9.5 9.5c.3 1.6 1.5 3.4 3.5 4.5l1.2-1 2 1-.4 1.4c-3.2.2-6.9-3.1-7.1-6.3L10 8.5l1 2z" stroke-width="1.4"/></svg>';
+const TAG_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></svg>';
+function updateLinks(){
+  const has = cartRefs().length > 0;
+  const href = has ? waLink(storeNumber(), buildText()) : '#';
+  const who = effRole() === 'cliente' ? MAY[state.mid].corto : (isMay() ? '' : 'la ferretería');
+  const label = (state.type === 'pedido' ? 'Enviar pedido' : 'Enviar presupuesto') + (who ? ` a ${who}` : '') + ' por WhatsApp';
+  $$('[data-act="wa"]').forEach(a => { a.href = href; a.classList.toggle('is-off', !has); a.innerHTML = WA_ICO + label; });
+  const r = effRole();
+  const whoB = r === 'cliente' ? MAY[state.mid].corto : 'un vendedor';
+  const num = r === 'cliente' ? MAY[state.mid].whatsapp : CONFIG.whatsappVendedor;
+  $$('[data-better]').forEach(a => {
+    a.hidden = r === 'mayorista';
+    a.href = waLink(num, betterText());
+    a.innerHTML = TAG_ICO + (a.closest('.better-card') ? `Pide mejor precio a ${whoB}` : `¿Quieres mejor precio? Escríbele a ${whoB} con esta lista`);
+  });
+  $('#betterCard').hidden = r === 'mayorista';
+}
+function showFormErr(msg){ const e = $('#formErr'); e.textContent = msg || ''; e.hidden = !msg; }
+function validate(){
+  const f = formData();
+  if (!cartRefs().length) return {ok:false};
+  if (!f.nombre) return {ok:false, msg:'Escribe el nombre para enviar.', focus:'#fNombre'};
+  if (!isWholesaleView() && !f.suc) return {ok:false, msg:'Elige la sucursal.', focus:'#fSuc'};
+  if (!f.pago) return {ok:false, msg:'Elige tu forma de pago (paso 3).', focus:'input[name="pago"]'};
+  return {ok:true};
+}
+function openCart(){
+  $('#lblNombre').textContent = isMay() ? 'Cliente (para quién es) *' : 'Tu nombre *';
+  renderCartAll(); renderType();
+  if (!dlgCart.open) dlgCart.showModal();
+}
+
+/* ===================== Presupuesto y PDF ===================== */
+const dlgQuote = $('#dlgQuote');
+function sucHeader(f){
+  const s = f.suc ? SUCURSALES[f.suc] : null;
+  return s ? `${s.razon} · RIF ${s.rif} · ${s.dir} · Tel. ${CONFIG.telefono}` : `Tel. ${CONFIG.telefono} · Guanare y Biscucuy, Portuguesa`;
+}
+function openQuote(){
+  const refs = cartRefs(); if (!refs.length) return;
+  const f = formData(), t = totals(), M = isMay();
+  const anyDisc = refs.some(r => { const li = lineInfo(byRef[r], cart[r]); return !li.hidden && li.pct; });
+  const rows = refs.map(r => { const p = byRef[r], q = cart[r], li = lineInfo(p, q);
+    return `<tr><td class="qi">${pimg(p)}</td><td>${esc(p.nombre)}<span class="qr">${esc(p.ref)}</span></td><td class="num">${fmt0.format(q)} ${esc(p.unidad)}</td><td class="num">${li.hidden ? 'A consultar' : usd(li.ref)}</td>${anyDisc ? `<td class="num">${!li.hidden && li.pct ? '-' + pctTxt(li.pct) + '%' : '—'}</td>` : ''}<td class="num">${li.hidden ? '—' : usd(li.total)}</td></tr>`; }).join('');
+  const cols = anyDisc ? 5 : 4;
+  dlgQuote.innerHTML = `<div class="quote">
+    <button type="button" class="x" data-act="close" aria-label="Cerrar">×</button>
+    <h2 id="qTitle">${state.type === 'pedido' ? 'Resumen del pedido' : 'Presupuesto'}</h2>
+    <div class="paper">
+      <div class="q-head">
+        <div class="q-brand"><span class="logo-mark" aria-hidden="true">${LOGO_SVG}</span><div><b>Ferretería Fermil</b><small>${esc(sucHeader(f))}</small></div></div>
+        <div class="q-no"><span>${state.type === 'pedido' ? 'Pedido' : 'Presupuesto'}</span><b>N° ${quoteNumber()}</b><small>${today()}</small></div>
+      </div>
+      <div class="q-client">
+        <div><span>${M ? 'Para' : 'Cliente'}:</span> ${esc(f.nombre || '—')}</div>
+        <div><span>C.I./RIF:</span> ${esc(f.doc || '—')}</div>
+        <div><span>Teléfono:</span> ${esc(f.tel || '—')}</div>
+        <div><span>Entrega:</span> ${esc(f.entrega)}${f.dir ? ' · ' + esc(f.dir) : ''}</div>
+        <div><span>Forma de pago:</span> ${esc(f.pago || 'Por definir')}</div>
+        ${f.suc ? `<div><span>Sucursal:</span> ${esc(SUCURSALES[f.suc].nombre)}</div>` : ''}
+        ${whoLines().map(([k, v]) => `<div><span>${k}:</span> ${esc(v)}</div>`).join('')}
+      </div>
+      <div class="q-table-wrap"><table class="q-table">
+        <thead><tr><th></th><th>Producto</th><th class="num">Cant.</th><th class="num">P. unit.</th>${anyDisc ? '<th class="num">Desc.</th>' : ''}<th class="num">Total</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr class="q-total"><td></td><td colspan="${cols - 1}">Total en dólares${effRole() === 'publico' ? ' (IVA incluido)' : ''}</td><td class="num">${usd(t.total)}</td></tr>
+          <tr><td></td><td colspan="${cols - 1}">Referencia en bolívares (tasa Bs ${fmt2.format(CONFIG.tasaBs)})</td><td class="num">${bs(t.total)}</td></tr>
+          ${t.hidden ? `<tr><td></td><td colspan="${cols}">+ ${t.hidden} producto(s) con precio a consultar</td></tr>` : ''}
+        </tfoot>
+      </table></div>
+      ${f.nota ? `<p class="q-legal"><b>Nota:</b> ${esc(f.nota)}</p>` : ''}
+      <p class="q-legal">Precios en dólares con IVA incluido, sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.${effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : ''}</p>
+    </div>
+    <div class="q-btns"><a class="btn wa" data-act="wa" href="#" target="_blank" rel="noopener"></a><button type="button" class="btn ghost" data-act="pdf" data-pdf>Descargar PDF</button><button type="button" class="btn ghost" data-act="copy">Copiar texto</button></div>
+    <p class="hint" id="pdfMsg" hidden></p>
+  </div>`;
+  updateLinks(); applyPdfAvailability();
+  if (!dlgQuote.open) dlgQuote.showModal();
+}
+const pngCache = {};
+function catPng(cat){
+  if (pngCache[cat]) return pngCache[cat];
+  return pngCache[cat] = new Promise(res => {
+    const img = new Image();
+    img.onload = () => { try{ const c = document.createElement('canvas'); c.width = 240; c.height = 180; const x = c.getContext('2d'); x.fillStyle = '#f2f4ef'; x.fillRect(0, 0, 240, 180); x.drawImage(img, 0, 0, 240, 180); res(c.toDataURL('image/png')); }catch(e){ res(null); } };
+    img.onerror = () => res(null);
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ill(cat, true));
+  });
+}
+function pdfLogo(doc, x, y, w){
+  const k = w / 340, h = 162 * k;
+  doc.setFillColor(242, 206, 20); doc.setDrawColor(17, 17, 17); doc.setLineWidth(Math.max(0.2, 5 * k));
+  doc.ellipse(x + w / 2, y + h / 2, 166 * k, 77 * k, 'FD');
+  doc.setFillColor(17, 17, 17);
+  const sc = 0.72 * k, ox = x + 66.5 * k, oy = y + 45 * k;
+  FM_POLYS.forEach(p => {
+    const segs = p.slice(1).map((pt, i) => [(pt[0] - p[i][0]) * sc, (pt[1] - p[i][1]) * sc]);
+    doc.lines(segs, ox + p[0][0] * sc, oy + p[0][1] * sc, [1, 1], 'F', true);
+  });
+}
+async function buildPdf(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const W = 210, M = 14;
+  const G = [0,99,0], Y = [242,206,20], INK = [23,36,28], MUT = [90,107,96], LINE = [214,221,214];
+  const f = formData(), refs = cartRefs(), t = totals(), no = quoteNumber(), title = state.type === 'pedido' ? 'PEDIDO' : 'PRESUPUESTO';
+  const anyDisc = refs.some(r => { const li = lineInfo(byRef[r], cart[r]); return !li.hidden && li.pct; });
+  const pdfUsd = n => '$' + fmt2.format(n);
+  function header(first){
+    const h = first ? 34 : 18;
+    doc.setFillColor(...G); doc.rect(0, 0, W, h, 'F');
+    const s = first ? 26 : 16, y0 = first ? 8 : 3, lh = s * 162 / 340;
+    pdfLogo(doc, M, y0 + (first ? 2 : 0.5), s);
+    doc.setTextColor(255, 255, 255); doc.setFontSize(first ? 16 : 10); doc.text('FERRETERÍA FERMIL', M + s + 5, first ? 16 : 10.5);
+    if (first){ doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(196, 216, 202); doc.text(doc.splitTextToSize(sucHeader(f).replace(/—/g, '-'), 110).slice(0, 2), M + s + 5, 21.5); }
+    doc.setTextColor(...Y); doc.setFont('helvetica', 'bold'); doc.setFontSize(first ? 14 : 9); doc.text(title, W - M, first ? 15 : 10.5, {align:'right'});
+    if (first){ doc.setTextColor(255, 255, 255); doc.setFont('courier', 'normal'); doc.setFontSize(9.5); doc.text('N° ' + no, W - M, 21, {align:'right'}); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.text(today(), W - M, 26.5, {align:'right'}); }
+  }
+  header(true);
+  let y = 43;
+  const info = [[isMay() ? 'Para' : 'Cliente', f.nombre || '-'], ['C.I./RIF', f.doc || '-'], ['Teléfono', f.tel || '-'], ['Entrega', f.entrega + (f.dir ? ' · ' + f.dir : '')], ['Forma de pago', f.pago || 'Por definir'], ...(f.suc ? [['Sucursal', SUCURSALES[f.suc].nombre]] : []), ...whoLines()];
+  doc.setFontSize(9);
+  info.forEach((pair, i) => {
+    const x = i % 2 ? 110 : M, yy = y + Math.floor(i / 2) * 6;
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(...MUT); doc.text(pair[0] + ':', x, yy);
+    doc.setTextColor(...INK); doc.setFont('helvetica', 'bold'); doc.text(String(pair[1]).slice(0, 46), x + 26, yy);
+  });
+  y += Math.ceil(info.length / 2) * 6 + 4;
+  const C = {desc: M + 22, qty: 132, pu: 154, dsc: 172, tot: W - M};
+  function thead(){
+    doc.setFillColor(234, 241, 235); doc.rect(M, y, W - 2*M, 8, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...MUT);
+    doc.text('PRODUCTO', C.desc, y + 5.3); doc.text('CANT.', C.qty, y + 5.3, {align:'right'}); doc.text('P. UNIT.', C.pu, y + 5.3, {align:'right'});
+    if (anyDisc) doc.text('DESC.', C.dsc, y + 5.3, {align:'right'});
+    doc.text('TOTAL', C.tot, y + 5.3, {align:'right'});
+    y += 10;
+  }
+  thead();
+  for (const r of refs){
+    const p = byRef[r], q = cart[r], li = lineInfo(p, q), rowH = 17;
+    if (y + rowH > 268){ doc.addPage(); header(false); y = 26; thead(); }
+    try {
+      if (FOTOS[p.ref]) doc.addImage(FOTOS[p.ref], FOTOS[p.ref].startsWith('data:image/png') ? 'PNG' : 'JPEG', M, y - 1, 18, 13.5);
+      else { const png = await catPng(p.cat); if (png) doc.addImage(png, 'PNG', M, y - 1, 18, 13.5); }
+    } catch(e){}
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...INK);
+    const lines = doc.splitTextToSize(p.nombre, anyDisc ? 70 : 80).slice(0, 2);
+    doc.text(lines, C.desc, y + 3.5);
+    doc.setFont('courier', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...MUT); doc.text('Ref. ' + p.ref, C.desc, y + 3.5 + lines.length * 4);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...INK);
+    doc.text(`${fmt0.format(q)} ${p.unidad}`, C.qty, y + 5.5, {align:'right'});
+    doc.text(li.hidden ? 'A consultar' : pdfUsd(li.ref), C.pu, y + 5.5, {align:'right'});
+    if (anyDisc) doc.text(!li.hidden && li.pct ? '-' + pctTxt(li.pct) + '%' : '-', C.dsc, y + 5.5, {align:'right'});
+    doc.setFont('helvetica', 'bold'); doc.text(li.hidden ? '-' : pdfUsd(li.total), C.tot, y + 5.5, {align:'right'});
+    doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(M, y + rowH - 3, W - M, y + rowH - 3);
+    y += rowH;
+  }
+  if (y + 34 > 280){ doc.addPage(); header(false); y = 28; }
+  doc.setDrawColor(...G); doc.setLineWidth(0.6); doc.line(110, y, W - M, y);
+  y += 7;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...INK); doc.text(effRole() === 'publico' ? 'Total (IVA incluido)' : 'Total en dólares', 110, y);
+  doc.setFontSize(16); doc.setTextColor(...G); doc.text(pdfUsd(t.total), W - M, y + 0.5, {align:'right'});
+  y += 7;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...MUT);
+  doc.text(`Ref. en bolívares (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`, 110, y); doc.text('Bs ' + fmt2.format(t.total * CONFIG.tasaBs), W - M, y, {align:'right'});
+  if (t.hidden){ y += 5; doc.text(`+ ${t.hidden} producto(s) con precio a consultar`, 110, y); }
+  y += 10;
+  if (f.nota){ doc.setTextColor(...INK); doc.setFontSize(9); const nl = doc.splitTextToSize('Nota: ' + f.nota, W - 2*M); doc.text(nl, M, y); y += nl.length * 4.5 + 2; }
+  doc.setFontSize(7.5); doc.setTextColor(...MUT);
+  const legal = 'Precios en dólares con IVA incluido, sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.' + (effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : '') + ` Para concretar tu pedido escríbenos por WhatsApp al ${CONFIG.telefono}.`;
+  doc.text(doc.splitTextToSize(legal, W - 2*M), M, y);
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++){
+    doc.setPage(i); doc.setFontSize(7.5); doc.setTextColor(...MUT); doc.setFont('helvetica', 'normal');
+    doc.text(`Ferretería Fermil · ${title.toLowerCase()} N° ${no}`, M, 289); doc.text(`Página ${i} de ${n}`, W - M, 289, {align:'right'});
+  }
+  return doc.output('blob');
+}
+let dlNs, inViewer = !!(window.claude && window.claude.use);
+function applyPdfAvailability(){ $$('[data-pdf]').forEach(b => { b.hidden = inViewer && dlNs === null; }); }
+if (inViewer){ window.claude.use('downloads').then(d => { dlNs = d; applyPdfAvailability(); }).catch(() => { dlNs = null; applyPdfAvailability(); }); }
+async function downloadPdf(btn){
+  const old = btn.textContent;
+  const msg = $('#pdfMsg');
+  const say = s => { if (msg && msg.isConnected && dlgQuote.open){ msg.hidden = false; msg.textContent = s; } else toast(s); };
+  if (!window.jspdf){ say('No se pudo cargar el generador de PDF. Revisa tu conexión e intenta otra vez.'); return; }
+  btn.disabled = true; btn.textContent = 'Preparando PDF…';
+  try{
+    const blob = await buildPdf();
+    const filename = `${state.type === 'pedido' ? 'Pedido' : 'Presupuesto'}-Fermil-${quoteNumber()}.pdf`;
+    if (inViewer){
+      const d = dlNs || await window.claude.use('downloads');
+      if (!d){ say('La descarga no está disponible en esta vista.'); return; }
+      try{ await d.save({filename, data: blob}); btn.textContent = 'PDF listo ✓'; setTimeout(() => { btn.textContent = old; }, 2000); }
+      catch(err){ if (err && err.code === 'declined') say('Descarga cancelada.'); else if (err && err.code === 'rate_limited') say('Espera un momento e intenta de nuevo.'); else say('No se pudo descargar el PDF aquí.'); }
+    } else {
+      const url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      btn.textContent = 'PDF listo ✓'; setTimeout(() => { btn.textContent = old; }, 2000);
+    }
+  } catch(e){ say('No se pudo generar el PDF.'); }
+  finally { btn.disabled = false; if (btn.textContent === 'Preparando PDF…') btn.textContent = old; }
+}
+async function copyText(btn){
+  const text = buildText(); let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch(e){
+    try { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; (btn.closest('dialog') || document.body).appendChild(ta); ta.select(); ok = document.execCommand('copy'); ta.remove(); } catch(e2){}
+  }
+  const old = btn.textContent; btn.textContent = ok ? '¡Copiado!' : 'No se pudo copiar';
+  setTimeout(() => { btn.textContent = old; }, 1800);
+}
+
+/* ===================== Mayoristas y sus clientes ===================== */
+function saveSession(){ sess.set('fermil_sess', {role:state.role, mid:state.mid, ccode:state.ccode, cname:state.cname}); }
+function login(code){
+  code = String(code || '').trim().toUpperCase();
+  if (!code) return false;
+  const m = MAYORISTAS.find(x => x.codigo === code);
+  if (m){ Object.assign(state, {role:'mayorista', mid:m.id, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); return true; }
+  for (const mm of MAYORISTAS){
+    const cl = cfg(mm.id).clients.find(c => c.code === code);
+    if (cl){ Object.assign(state, {role:'cliente', mid:mm.id, ccode:cl.code, cname:cl.nombre, preview:false}); if (!$('#fNombre').value) $('#fNombre').value = cl.nombre; return true; }
+  }
+  return false;
+}
+function aplicarPrecios(lista){
+  const m = new Map(lista.map(x => [String(x[0]), x]));
+  for (const p of PRODUCTS){ const x = m.get(p.ref); if (!x) continue; const v = Number(x[1]); if (v > 0) p.mayor = v; if (x[2] != null && Number(x[2]) > 0) p.e.mayorista = Number(x[2]); }
+}
+async function loginNube(code){
+  code = String(code || '').trim().toUpperCase();
+  if (!code) return false;
+  const r = await rpc('fermil_entrar', {p_codigo: code});
+  if (!r || !MAY[r.mid]) return false;
+  aplicarPrecios(Array.isArray(r.precios) ? r.precios : []);
+  CFG[r.mid] = (r.cfg && typeof r.cfg === 'object') ? r.cfg : {};
+  if (r.rol === 'mayorista'){ NUBE_CODE = code; Object.assign(state, {role:'mayorista', mid:r.mid, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); }
+  else { NUBE_CODE = ''; Object.assign(state, {role:'cliente', mid:r.mid, ccode:r.ccode, cname:r.cname || '', preview:false}); if (!$('#fNombre').value) $('#fNombre').value = r.cname || ''; }
+  sess.set('fermil_code', code);
+  return true;
+}
+function logout(){ NUBE_CODE = ''; sess.set('fermil_code', null); Object.assign(state, {role:'publico', mid:null, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); ldisc = {}; saveCart(); applyRole(); toast('Volviste al catálogo general'); }
+function applyRole(){
+  saveSession();
+  const band = $('#roleBand'), r = state.role;
+  $('#btnLogin').hidden = r !== 'publico';
+  band.hidden = r === 'publico';
+  if (r === 'mayorista' && state.preview){
+    const who = state.pnScope ? (cfg(state.mid).clients.find(c => c.code === state.pnScope) || {}).nombre : '';
+    $('#rbTxt').innerHTML = `Vista previa: así ve tu catálogo ${who ? esc(who) : 'un cliente tuyo'} <span>· productos, precios y descuentos que elegiste</span>`;
+    $('#rbActs').innerHTML = `<button type="button" class="solid" data-act="backpanel">Volver al panel</button><button type="button" data-act="endpreview">Terminar vista previa</button>`;
+  } else if (r === 'mayorista'){
+    $('#rbTxt').innerHTML = `Mayorista: ${esc(MAY[state.mid].nombre)} <span>· precios al mayor</span>`;
+    $('#rbActs').innerHTML = `<button type="button" class="solid" data-act="panel">Mi panel</button><button type="button" data-act="logout">Salir</button>`;
+  } else if (r === 'cliente'){
+    $('#rbTxt').innerHTML = `Catálogo de ${esc(MAY[state.mid].nombre)} <span>· cliente: ${esc(state.cname)}</span>`;
+    $('#rbActs').innerHTML = `<button type="button" data-act="logout">Salir</button>`;
+  }
+  if (state.cat !== 'todas' && !visibleProducts().some(p => p.cat === state.cat)) state.cat = 'todas';
+  resetPaging(); render(); refreshControls(); renderCartAll(); renderFooter(); renderHero();
+}
+
+/* Panel del mayorista */
+const dlgPanel = $('#dlgPanel');
+const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+function openPanel(){ state.preview = false; applyRole(); renderPanel(); if (!dlgPanel.open) dlgPanel.showModal(); }
+function scopeDisc(p){
+  const c = cfg(state.mid);
+  if (state.pnScope){ const m = c.clientDisc[state.pnScope] || {}; return m[p.ref] != null ? m[p.ref] : ''; }
+  return c.disc[p.ref] || '';
+}
+function pnPriceHtml(p){
+  const cp = clientPrice(p, state.mid, state.pnScope);
+  if (cp.hidden) return 'Oculto';
+  return `${usd(cp.v)}${cp.orig ? `<small><s>${usd(cp.orig)}</s></small>` : ''}`;
+}
+function pnRow(p, c){
+  const off = c.hiddenCats.includes(p.cat) || c.hiddenProducts.includes(p.ref);
+  return `<div class="pn-row${off ? ' off' : ''}" id="pnr-${CSS.escape(p.ref)}">
+    <div class="pn-p"><b>${esc(p.nombre)}</b><span class="ref">${esc(p.ref)} · mayor ${usd(p.mayor)}</span></div>
+    <label class="sw"><input type="checkbox" data-pcfg="prod" data-ref="${esc(p.ref)}" ${!c.hiddenProducts.includes(p.ref) ? 'checked' : ''}>Visible</label>
+    <label class="sw"><input type="checkbox" data-pcfg="price" data-ref="${esc(p.ref)}" ${!c.noPrice.includes(p.ref) ? 'checked' : ''}>Precio</label>
+    <label class="pdisc">Desc. <input type="number" min="0" max="90" step="0.5" inputmode="decimal" data-pcfg="disc" data-ref="${esc(p.ref)}" value="${scopeDisc(p)}" placeholder="0" aria-label="Descuento para ${esc(p.nombre)}">%</label>
+    <span class="pn-price" data-pp="${esc(p.ref)}">${pnPriceHtml(p)}</span>
+  </div>`;
+}
+const PN_MAX = 150;
+function pnRowsFor(list, c){
+  return list.slice(0, PN_MAX).map(p => pnRow(p, c)).join('') + (list.length > PN_MAX ? `<div class="pn-more">Se muestran ${PN_MAX} de ${fmt0.format(list.length)}. Usa el buscador del panel para encontrar un producto.</div>` : '');
+}
+function pnCounts(){
+  const c = cfg(state.mid);
+  const vis = PRODUCTS.filter(p => !c.hiddenCats.includes(p.cat) && !c.hiddenProducts.includes(p.ref)).length;
+  const dmap = state.pnScope ? (c.clientDisc[state.pnScope] || {}) : c.disc;
+  const disc = Object.keys(dmap).filter(k => clampPct(dmap[k]) > 0).length;
+  const sum = $('#pnSum'); if (sum) sum.innerHTML = `Tus clientes ven <b>${fmt0.format(vis)}</b> de ${fmt0.format(PRODUCTS.length)} productos · <b>${disc}</b> con descuento ${state.pnScope ? 'para este cliente' : 'general'}`;
+  CATS.forEach(cat => {
+    const el = $(`#pnc-${cat.id}`); if (!el) return;
+    const all = PRODUCTS.filter(p => p.cat === cat.id);
+    const v = c.hiddenCats.includes(cat.id) ? 0 : all.filter(p => !c.hiddenProducts.includes(p.ref)).length;
+    el.textContent = c.hiddenCats.includes(cat.id) ? 'Categoría oculta' : `${fmt0.format(v)} de ${fmt0.format(all.length)} visibles`;
+  });
+  $$('#dlgPanel .pn-row').forEach(row => {
+    const ref = row.querySelector('[data-pcfg="prod"]').dataset.ref, p = byRef[ref];
+    row.classList.toggle('off', c.hiddenCats.includes(p.cat) || c.hiddenProducts.includes(p.ref));
+    row.querySelector('[data-pp]').innerHTML = pnPriceHtml(p);
+  });
+}
+function renderPanel(){
+  const m = MAY[state.mid], c = cfg(state.mid), tab = state.panelTab;
+  let body = '';
+  if (tab === 'ver'){
+    body = `<section class="pn-card">
+        <h3>Tus clientes ven tu precio al mayor</h3>
+        <p>Aquí eliges qué productos y precios ven, y los descuentos que les das. Los descuentos pueden ser para todos tus clientes o solo para uno.</p>
+        <div class="pn-scope"><label for="pnScope"><b>Descuentos para:</b></label><select id="pnScope"><option value="">Todos mis clientes</option>${c.clients.map(cl => `<option value="${esc(cl.code)}">${esc(cl.nombre)} (${esc(cl.code)})</option>`).join('')}</select></div>
+      </section>
+      <section class="pn-card">
+        <h3>Qué productos y precios ven tus clientes</h3>
+        <div class="pn-tools"><input id="pnSearch" type="search" placeholder="Buscar un producto en el panel" aria-label="Buscar un producto en el panel"><span class="pn-sum" id="pnSum"></span></div>
+        <div id="pnSearchRes" hidden></div>
+        <div id="pnCats">${CATS.map(cat => {
+          const open = !!state.pnOpen[cat.id];
+          return `<div class="pn-cat" data-pcat="${cat.id}">
+            <div class="pn-ch">
+              <button type="button" class="pn-tg" data-act="pnexp" data-cat="${cat.id}" aria-expanded="${open}">${CHEV}${catIco(cat.id)}<span class="pn-cname"><b>${esc(cat.nombre)}</b><small id="pnc-${cat.id}"></small></span></button>
+              <label class="sw"><input type="checkbox" data-pcfg="cat" data-cat="${cat.id}" ${!c.hiddenCats.includes(cat.id) ? 'checked' : ''}>Visible</label>
+              <label class="sw"><input type="checkbox" data-pcfg="catprice" data-cat="${cat.id}" ${!c.noPriceCats.includes(cat.id) ? 'checked' : ''}>Precios</label>
+              <label class="pdisc">Desc. a todo <input type="number" min="0" max="90" step="0.5" inputmode="decimal" data-pcfg="catdisc" data-cat="${cat.id}" placeholder="0" aria-label="Descuento para toda la categoría ${esc(cat.nombre)}">%</label>
+            </div>
+            <div class="pn-rows" id="pnrows-${cat.id}" ${open ? '' : 'hidden'}>${open ? pnRowsFor(PRODUCTS.filter(p => p.cat === cat.id), c) : ''}</div>
+          </div>`;
+        }).join('')}</div>
+      </section>`;
+  } else {
+    body = `<section class="pn-card">
+        <h3>Crear código para un cliente</h3>
+        <form id="newClient" class="pn-new"><label class="sr" for="ncName">Nombre del cliente</label><input id="ncName" placeholder="Nombre del cliente o de su negocio" autocomplete="off"><button class="btn accent" type="submit">Crear código</button></form>
+        <p class="err" id="ncErr" hidden>Escribe el nombre del cliente.</p>
+        <p>Tu cliente entra con ese código y ve solo lo que elegiste, con tus descuentos. Sus pedidos y presupuestos te llegan a tu WhatsApp (${esc(m.whatsapp.replace(/^58/, '0'))}).</p>
+      </section>
+      <section class="pn-card">
+        <h3>Tus códigos (${c.clients.length})</h3>
+        ${c.clients.length ? c.clients.map(cl => `<div class="code-row"><span class="code">${esc(cl.code)}</span><div><b>${esc(cl.nombre)}</b><small>Creado el ${esc(cl.fecha)}${c.clientDisc[cl.code] && Object.keys(c.clientDisc[cl.code]).length ? ` · ${Object.keys(c.clientDisc[cl.code]).length} descuentos propios` : ''}</small></div>
+          <div class="code-acts"><button type="button" class="btn ghost" data-act="ccopy" data-code="${esc(cl.code)}">Copiar</button><a class="btn ghost" target="_blank" rel="noopener" href="${waLink('', `Hola ${cl.nombre}, este es tu código para ver mi catálogo de Ferretería Fermil: ${cl.code}\nEntra a la página, toca "Tengo un código" y escríbelo. Ahí puedes sacar presupuestos y hacer pedidos.`)}">Enviar por WhatsApp</a><button type="button" class="btn ghost" data-act="cdisc" data-code="${esc(cl.code)}">Sus descuentos</button><button type="button" class="btn link" data-act="cdel" data-code="${esc(cl.code)}">Eliminar</button></div></div>`).join('')
+        : '<p>Todavía no has creado códigos.</p>'}
+      </section>`;
+  }
+  dlgPanel.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Panel del mayorista</span><h2 id="pnTitle">${esc(m.nombre)}</h2></div><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+    <div class="seg pn-tabs" role="group" aria-label="Secciones del panel"><button type="button" data-act="ptab" data-tab="ver" aria-pressed="${tab === 'ver'}">Qué ven mis clientes</button><button type="button" data-act="ptab" data-tab="codigos" aria-pressed="${tab === 'codigos'}">Códigos de clientes (${c.clients.length})</button></div>
+    <div class="pn-body">${body}</div>
+    <div class="pn-foot"><span class="hint">Los cambios se guardan al instante. En este prototipo quedan guardados solo en este navegador.</span><button type="button" class="btn accent" data-act="preview">Ver como mi cliente</button></div>`;
+  if (tab === 'ver'){
+    $('#pnScope').value = state.pnScope;
+    $('#pnScope').addEventListener('change', e => { state.pnScope = e.target.value; renderPanel(); });
+    pnCounts();
+    $('#pnSearch').addEventListener('input', e => {
+      const v = e.target.value.trim(), box = $('#pnSearchRes');
+      if (!v){ box.hidden = true; box.innerHTML = ''; $('#pnCats').hidden = false; return; }
+      const {res} = search(v, PRODUCTS);
+      box.hidden = false; $('#pnCats').hidden = true;
+      box.innerHTML = res.length ? `<div class="pn-cat">${pnRowsFor(res.map(x => x.p), cfg(state.mid))}</div>` : '<p class="hint">No encontramos ese producto.</p>';
+    });
+  }
+}
+function pnChange(e){
+  const el = e.target, k = el.dataset.pcfg;
+  const c = cfg(state.mid);
+  const tog = (arr, val, on) => { const i = arr.indexOf(val); if (on && i < 0) arr.push(val); if (!on && i >= 0) arr.splice(i, 1); };
+  const dmap = () => { if (!state.pnScope) return c.disc; return c.clientDisc[state.pnScope] || (c.clientDisc[state.pnScope] = {}); };
+  if (k === 'cat') tog(c.hiddenCats, el.dataset.cat, !el.checked);
+  else if (k === 'catprice') tog(c.noPriceCats, el.dataset.cat, !el.checked);
+  else if (k === 'prod') tog(c.hiddenProducts, el.dataset.ref, !el.checked);
+  else if (k === 'price') tog(c.noPrice, el.dataset.ref, !el.checked);
+  else if (k === 'disc'){
+    const m = dmap(), raw = el.value.trim(), v = clampPct(raw);
+    if (raw === '') delete m[el.dataset.ref]; else m[el.dataset.ref] = v;
+    if (raw !== '' && String(v) !== raw && e.type === 'change') el.value = v;
+  }
+  else if (k === 'catdisc'){
+    if (e.type !== 'change') return;
+    const m = dmap(), v = clampPct(el.value);
+    PRODUCTS.filter(p => p.cat === el.dataset.cat).forEach(p => { if (v) m[p.ref] = v; else delete m[p.ref]; });
+    $$(`#dlgPanel [data-pcfg="disc"]`).forEach(inp => { const p = byRef[inp.dataset.ref]; if (p && p.cat === el.dataset.cat) inp.value = v || ''; });
+    el.value = '';
+    toast(v ? `Descuento de ${pctTxt(v)}% aplicado a ${CAT[el.dataset.cat].nombre}` : `Descuentos quitados en ${CAT[el.dataset.cat].nombre}`);
+  } else return;
+  saveCfg(); pnCounts();
+}
+dlgPanel.addEventListener('change', pnChange);
+dlgPanel.addEventListener('input', e => { if (e.target.dataset.pcfg === 'disc') pnChange(e); });
+dlgPanel.addEventListener('submit', e => {
+  if (e.target.id !== 'newClient') return;
+  e.preventDefault();
+  const name = $('#ncName').value.trim();
+  if (!name){ $('#ncErr').hidden = false; $('#ncName').focus(); return; }
+  const m = MAY[state.mid], c = cfg(state.mid);
+  const all = new Set(MAYORISTAS.flatMap(x => cfg(x.id).clients.map(cl => cl.code)));
+  let code; do { code = `${m.prefijo}-${rnd(4)}-${rnd(4)}`; } while (all.has(code) || MAYORISTAS.some(x => x.codigo === code));
+  c.clients.unshift({code, nombre:name, fecha:today()});
+  saveCfg(); renderPanel();
+  toast(`Código creado: ${code}`);
+});
+dlgPanel.addEventListener('close', () => { if (state.role === 'mayorista'){ render(); refreshControls(); renderCartAll(); } });
+
+/* ===================== Sugerencias ===================== */
+const qInput = $('#q'), sugg = $('#sugg');
+let activeIdx = -1, sgTimer;
+function renderSugg(){
+  const v = qInput.value.trim();
+  let html = '';
+  const vis = visibleProducts();
+  if (!v){
+    const cats = CATS.filter(c => vis.some(p => p.cat === c.id));
+    html += `<div class="sg-sec">Categorías</div><div class="sg-chips">${cats.map(c => `<button type="button" class="chip" data-act="cat" data-cat="${c.id}" data-scroll>${esc(c.nombre)}</button>`).join('')}</div>`;
+    html += `<div class="sg-sec">Lo más buscado</div><div class="sg-chips">${POPULARES.map(t => `<button type="button" class="chip" data-act="q" data-q="${esc(t)}">${esc(t)}</button>`).join('')}</div>`;
+  } else {
+    const {res, exp} = search(v, vis);
+    const nv = norm(v);
+    const note = synHtml(exp, res.length);
+    if (note) html += `<div class="sg-syn">${note}</div>`;
+    const cats = CATS.map(c => ({c, n: res.filter(f => f.p.cat === c.id).length, hit: nv.length >= 3 && norm(c.nombre).includes(nv)})).filter(x => (x.n || x.hit) && vis.some(p => p.cat === x.c.id)).sort((a, b) => b.hit - a.hit || b.n - a.n).slice(0, 3);
+    if (cats.length) html += `<div class="sg-sec">Categorías</div>` + cats.map(x => `<button type="button" class="sg-row" data-act="cat" data-cat="${x.c.id}" ${x.hit && !x.n ? '' : `data-q="${esc(v)}"`} data-scroll>${catIco(x.c.id)}<span><span class="sg-name">${esc(x.c.nombre)}</span><span class="sg-sub">${x.hit && !x.n ? 'Ver toda la categoría' : `${x.n} ${x.n === 1 ? 'resultado' : 'resultados'} de “${esc(v)}”`}</span></span><span></span></button>`).join('');
+    if (res.length){
+      html += `<div class="sg-sec">Productos</div>` + res.slice(0, 6).map(({p}) => { const pi = priceOf(p); const st = stockOf(p); return `<button type="button" class="sg-row" data-act="open" data-ref="${esc(p.ref)}">${pimg(p)}<span><span class="sg-name">${esc(p.nombre)}</span><span class="sg-sub"><span class="ref">${esc(p.ref)}</span> · ${st > 0 ? (st <= CONFIG.pocasUnidades ? 'Pocas unidades' : 'Disponible') : 'Agotado aquí'}</span></span><span class="sg-price">${pi.hidden ? 'A consultar' : usd(pi.v)}</span></button>`; }).join('');
+      html += `<button type="button" class="sg-all" data-act="q" data-q="${esc(v)}">Ver los ${fmt0.format(res.length)} resultados de “${esc(v)}”</button>`;
+    } else if (!cats.length){
+      html += `<div class="sg-none">No encontramos “${esc(v)}”. Prueba con otra palabra o con la referencia, o pregúntanos por WhatsApp.</div>`;
+    }
+  }
+  sugg.innerHTML = html;
+  $$('#sugg [data-act]').forEach((o, i) => { o.id = 'sg-' + i; o.setAttribute('role', 'option'); });
+  sugg.hidden = false; activeIdx = -1;
+  qInput.setAttribute('aria-expanded', 'true'); qInput.removeAttribute('aria-activedescendant');
+}
+function hideSugg(){ sugg.hidden = true; activeIdx = -1; qInput.setAttribute('aria-expanded', 'false'); qInput.removeAttribute('aria-activedescendant'); }
+function syncQ(){ qInput.value = state.q; }
+function scrollToResults(){ const t = state.cat !== 'todas' && !$('#catHead').hidden ? $('#catHead') : $('#toolbar'); t.scrollIntoView({behavior: reduced() ? 'auto' : 'smooth', block:'start'}); }
+
+/* ===================== Navegación ===================== */
+function setHash(id){ try{ if (location.hash.slice(1) !== id) location.hash = id; }catch(e){} }
+function setCat(id, scroll){
+  state.cat = (id === 'todas' || CAT[id]) ? id : 'todas'; state.sub = '';
+  resetPaging(); setHash(state.cat); render();
+  if (scroll) scrollToResults();
+}
+window.addEventListener('hashchange', () => {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if ((h === 'todas' || CAT[h]) && h !== state.cat){ state.cat = h; state.sub = ''; resetPaging(); render(); }
+});
+
+/* ===================== Eventos ===================== */
+let armed = null, armTimer;
+function twoStep(el, label, confirmLabel, fn){
+  if (armed !== el){ if (armed) armed.textContent = armed.dataset.label; armed = el; el.dataset.label = label; el.textContent = confirmLabel; clearTimeout(armTimer); armTimer = setTimeout(() => { if (armed === el){ el.textContent = label; armed = null; } }, 3000); }
+  else { clearTimeout(armTimer); armed = null; el.textContent = label; fn(); }
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act, ref = el.dataset.ref;
+  switch (a){
+    case 'add': flyToCart(el); setQty(ref, (cart[ref] || 0) + 1, true); break;
+    case 'inc': setQty(ref, (cart[ref] || 0) + 1); break;
+    case 'dec': setQty(ref, (cart[ref] || 0) - 1); break;
+    case 'rm': setQty(ref, 0); break;
+    case 'open': hideSugg(); openProduct(ref); break;
+    case 'cat': {
+      const d = el.closest('dialog'); if (d) d.close();
+      hideSugg(); toggleMega(false);
+      state.q = el.dataset.q != null ? el.dataset.q : ''; syncQ();
+      setCat(el.dataset.cat, el.hasAttribute('data-scroll') || !!el.closest('.cat-grid'));
+      break;
+    }
+    case 'q': hideSugg(); state.q = el.dataset.q; syncQ(); qInput.blur(); setCat('todas', true); break;
+    case 'clearq': state.q = ''; syncQ(); resetPaging(); render(); break;
+    case 'home': e.preventDefault(); state.q = ''; syncQ(); setCat('todas'); window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); break;
+    case 'view': state.view = el.dataset.view; store.set('fermil_view', state.view); state.catPage = 0; render(); break;
+    case 'more': state.shown += CONFIG.porPagina; render(); break;
+    case 'pg': goPage(state.catPage + Number(el.dataset.d)); break;
+    case 'goto': goPage(Number(el.dataset.i)); break;
+    case 'full': toggleFull(); break;
+    case 'close': { const d = el.closest('dialog'); if (d) d.close(); break; }
+    case 'cart': openCart(); break;
+    case 'type': state.type = el.dataset.type; renderType(); updateLinks(); break;
+    case 'mprice': state.mPriceMode = el.dataset.m; render(); refreshControls(); renderCartAll(); break;
+    case 'pdq': { const qi = $('#pdQty'); qi.value = Math.max(1, (Number(qi.value) || 0) + Number(el.dataset.d)); updateEst(byRef[dlgProduct.dataset.ref]); break; }
+    case 'pdadd': {
+      const q = Math.max(0.01, Number($('#pdQty').value) || 1), had = cart[ref] || 0;
+      dlgProduct.close(); setQty(ref, q);
+      toast(had ? `Carrito actualizado: ${byRef[ref].nombre}` : `Agregado: ${byRef[ref].nombre}`);
+      break;
+    }
+    case 'login': $('#cErr').hidden = true; $('#cCode').value = ''; $('#dlgCode').showModal(); break;
+    case 'logout': logout(); break;
+    case 'panel': case 'backpanel': openPanel(); break;
+    case 'endpreview': state.preview = false; applyRole(); break;
+    case 'preview': state.preview = true; dlgPanel.close(); state.cat = 'todas'; applyRole(); window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); toast('Así ven tu catálogo tus clientes'); break;
+    case 'ptab': state.panelTab = el.dataset.tab; renderPanel(); break;
+    case 'pnexp': {
+      const id = el.dataset.cat, open = el.getAttribute('aria-expanded') !== 'true', box = $(`#pnrows-${id}`);
+      state.pnOpen[id] = open; el.setAttribute('aria-expanded', String(open));
+      if (open && !box.innerHTML) box.innerHTML = pnRowsFor(PRODUCTS.filter(p => p.cat === id), cfg(state.mid));
+      box.hidden = !open;
+      break;
+    }
+    case 'cdisc': state.panelTab = 'ver'; state.pnScope = el.dataset.code; renderPanel(); break;
+    case 'ccopy': {
+      const code = el.dataset.code, old = el.textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(() => { el.textContent = '¡Copiado!'; }).catch(() => { el.textContent = code; }).finally(() => setTimeout(() => { el.textContent = old; }, 1800));
+      break;
+    }
+    case 'cdel': twoStep(el, 'Eliminar', '¿Seguro? Toca otra vez', () => { const c = cfg(state.mid); c.clients = c.clients.filter(x => x.code !== el.dataset.code); delete c.clientDisc[el.dataset.code]; saveCfg(); renderPanel(); toast('Código eliminado'); }); break;
+    case 'quote': openQuote(); break;
+    case 'mega': toggleMega(); break;
+    case 'megacat': toggleMega(false); state.q = ''; syncQ(); setCat(el.dataset.cat, true); break;
+    case 'sub': {
+      toggleMega(false); state.q = ''; syncQ();
+      const fromMega = !!el.closest('.mega');
+      if (state.cat !== el.dataset.cat){ state.cat = el.dataset.cat; setHash(state.cat); }
+      state.sub = el.dataset.sub || ''; resetPaging(); render();
+      if (fromMega || !el.closest('.subrow')) scrollToResults();
+      break;
+    }
+    case 'hero': showSlide(heroIdx + Number(el.dataset.d)); startHero(); break;
+    case 'herogo': showSlide(Number(el.dataset.i)); startHero(); break;
+    case 'hs': scrollRow(el.dataset.t, Number(el.dataset.d)); break;
+    case 'branchfocus': window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); setTimeout(() => $('#branch').focus(), 350); break;
+    case 'tosuc': { const tg = !$('#homeMore').hidden ? $('#sucSec') : $('#sucursales'); tg.scrollIntoView({behavior: reduced() ? 'auto' : 'smooth', block:'start'}); break; }
+    case 'tocatalogo': $('#toolbar').scrollIntoView({behavior: reduced() ? 'auto' : 'smooth', block:'start'}); break;
+    case 'sucview': { const sel = $('#branch'); sel.value = el.dataset.v; sel.dispatchEvent(new Event('change', {bubbles:true})); setTimeout(() => $('#toolbar').scrollIntoView({behavior: reduced() ? 'auto' : 'smooth', block:'start'}), 60); break; }
+    case 'igplay': igToggle(el); break;
+    case 'startsearch': window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); setTimeout(() => $('#q').focus(), 350); break;
+    case 'tocomo': if ($('#homeMore').hidden){ state.q = ''; syncQ(); setCat('todas'); } setTimeout(() => $('#comoComprar').scrollIntoView({behavior: reduced() ? 'auto' : 'smooth', block:'start'}), 50); break;
+    case 'totop': window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); break;
+    case 'admin': renderAdmin(); if (!dlgAdmin.open) dlgAdmin.showModal(); break;
+    case 'adm': adminOp(el); break;
+    case 'pdf': downloadPdf(el); break;
+    case 'copy': copyText(el); break;
+    case 'clear': twoStep(el, 'Vaciar', '¿Vaciar? Toca otra vez', () => { cart = {}; ldisc = {}; saveCart(); quoteNo = null; sess.set('fermil_qno', null); refreshControls(); renderCartAll(); }); break;
+    case 'wa': {
+      const v = validate();
+      if (!v.ok){
+        e.preventDefault();
+        if (v.msg){
+          if (dlgQuote.open) dlgQuote.close();
+          if (!dlgCart.open) openCart();
+          showFormErr(v.msg); const f = document.querySelector(v.focus); if (f){ f.focus(); f.scrollIntoView({block:'center'}); }
+        }
+        return;
+      }
+      showFormErr('');
+      el.href = waLink(storeNumber(), buildText());
+      toast('Abriendo WhatsApp…');
+      break;
+    }
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.matches('[data-qty]')) setQty(t.dataset.qty, t.value);
+  if (t.matches('[data-ldisc]')){ const v = clampPct(t.value); if (v) ldisc[t.dataset.ldisc] = v; else delete ldisc[t.dataset.ldisc]; saveCart(); $$(`[data-ctrl="${CSS.escape(t.dataset.ldisc)}"]`).forEach(x => { x.innerHTML = controls(byRef[t.dataset.ldisc]); }); renderCartAll(); }
+  if (t.id === 'mClient'){ state.mClient = t.value; render(); refreshControls(); renderCartAll(); }
+  if (t.id === 'branch'){ state.vista = t.value; store.set('fermil_vista', state.vista); resetPaging(); render(); renderCartAll(); toast(`Viendo inventario de ${VISTA[state.vista].nombre}`); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('[data-qty],[data-ldisc]')) e.target.blur();
+  if (state.view !== 'catalog' || document.querySelector('dialog[open]') || e.target.closest('input,textarea,select')) return;
+  if (e.key === 'ArrowRight') goPage(state.catPage + 1);
+  if (e.key === 'ArrowLeft') goPage(state.catPage - 1);
+});
+$$('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
+$('#onlyAvail').addEventListener('change', e => { state.onlyAvail = e.target.checked; resetPaging(); render(); });
+$('#sort').addEventListener('change', e => { state.sort = e.target.value; resetPaging(); render(); });
+
+qInput.addEventListener('focus', renderSugg);
+qInput.addEventListener('input', () => { clearTimeout(sgTimer); sgTimer = setTimeout(renderSugg, 120); });
+qInput.addEventListener('search', () => { if (!qInput.value && state.q){ state.q = ''; resetPaging(); render(); } });
+qInput.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+    if (sugg.hidden) renderSugg();
+    const opts = $$('#sugg [data-act]'); if (!opts.length) return;
+    e.preventDefault();
+    activeIdx = (activeIdx + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
+    if (activeIdx < 0) activeIdx = opts.length - 1;
+    opts.forEach((o, i) => o.classList.toggle('active', i === activeIdx));
+    qInput.setAttribute('aria-activedescendant', opts[activeIdx].id);
+    opts[activeIdx].scrollIntoView({block:'nearest'});
+  } else if (e.key === 'Enter' && !sugg.hidden && activeIdx >= 0){
+    e.preventDefault(); const opts = $$('#sugg [data-act]'); if (opts[activeIdx]) opts[activeIdx].click();
+  } else if (e.key === 'Escape'){ hideSugg(); }
+});
+document.addEventListener('pointerdown', e => { if (!e.target.closest('.search')) hideSugg(); });
+$('#searchForm').addEventListener('submit', e => { e.preventDefault(); hideSugg(); state.q = qInput.value.trim(); qInput.blur(); setCat('todas', true); });
+
+const CERR_TXT = $('#cErr').textContent;
+$('#codeForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const sb = e.target.querySelector('[type="submit"]'), lbl = sb ? sb.textContent : '';
+  let ok = false;
+  $('#cErr').textContent = CERR_TXT;
+  if (NUBE){
+    if (sb){ sb.disabled = true; sb.textContent = 'Entrando…'; }
+    try { ok = await loginNube($('#cCode').value); }
+    catch(err){ $('#cErr').textContent = err.message; $('#cErr').hidden = false; return; }
+    finally { if (sb){ sb.disabled = false; sb.textContent = lbl; } }
+  } else ok = login($('#cCode').value);
+  if (ok){
+    $('#dlgCode').close(); state.cat = 'todas'; applyRole();
+    toast(state.role === 'mayorista' ? `Hola, ${MAY[state.mid].corto}. Ya ves precios al mayor.` : `Bienvenido al catálogo de ${MAY[state.mid].corto}`);
+  } else { $('#cErr').hidden = false; $('#cCode').select(); }
+});
+
+$('#payOpts').innerHTML = PAGOS.map(p => `<label><input type="radio" name="pago" value="${esc(p)}"> ${esc(p)}</label>`).join('');
+$('#orderForm').addEventListener('input', e => {
+  if (e.target.name === 'entrega') $('#fDirWrap').hidden = e.target.value === 'Retiro en tienda';
+  showFormErr(''); renderDivBox(totals()); updateLinks();
+});
+$('#orderForm').addEventListener('change', () => { renderDivBox(totals()); updateLinks(); });
+$('#orderForm').addEventListener('submit', e => e.preventDefault());
+
+let rz;
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (state.view === 'catalog' && perPage() !== lastPer){ state.catPage = 0; render(); } }, 200); });
+let tt;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2400); }
+
+/* ===================== v4: portada, banners, menú y animaciones ===================== */
+const lineIll = id => ill(id).replace('class="ill"', 'class="ill line"');
+const waStore = txt => waLink(CONFIG.whatsapp, txt || `Hola, ${CONFIG.tienda}. Quisiera información.`);
+const DIV_MSG = 'Hola, quiero pagar en divisas. ¿Qué oferta especial me pueden dar?';
+function withPhotos(list){ return list.filter(p => FOTOS[p.ref] && stockOf(p) > 0); }
+function pickVaried(list, n, key){
+  key = key || (p => p.cat);
+  const by = {}; list.forEach(p => { const k = key(p); (by[k] = by[k] || []).push(p); });
+  const keys = Object.keys(by); keys.forEach(k => by[k].sort((a, b) => stockOf(b) - stockOf(a)));
+  const out = [];
+  for (let k = 0; out.length < n && keys.some(c => by[c].length > k); k++) for (const c of keys){ if (by[c][k]) out.push(by[c][k]); if (out.length >= n) break; }
+  return out;
+}
+const SLIDES = [
+  {id:'feria', nombre:'7ª Feria del Color', kind:'feria', theme:'t-feria', cat:'pintura'},
+  {id:'marca', nombre:'¡La que vende más barato!', kind:'marca', theme:'t-photo', bg:'media/unda-fachada.jpg'},
+  {id:'obra', nombre:'Todo para tu obra', theme:'t-green', eyebrow:'Construcción', title:'Todo para <em>tu obra</em>', text:'Cabillas, tubos, láminas, tanques, cemento y bloques al mejor precio.', cta:'Ver construcción', act:'cat', cat:'construccion',
+    photos:[{src:'media/unda-patio.jpg', cap:'Nuestro patio', cls:'ph-wide'}, {src:'media/unda-tanques.jpg', cap:'Tanques y estructuras', cls:'ph-tall'}]},
+  {id:'herramientas', nombre:'Herramientas', theme:'t-dark', eyebrow:'Herramientas', title:'Listos para el <em>trabajo pesado</em>', text:'Taladros, esmeriles, sierras y todas las herramientas manuales para tu obra o tu taller.', cta:'Ver herramientas', act:'cat', cat:'herramienta',
+    photos:[{src:'media/unda-herramientas.jpg', cap:'Fermil La Unda', cls:'ph-tall'}], match:p => p.cat === 'herramienta' && /^(taladro|esmeril|pulidora|rotomartillo|sierra circular|atornillador|soldadora|caladora)/.test(p._name)},
+  {id:'divisas', nombre:'Oferta pagando en divisas', theme:'t-yellow', eyebrow:'Paga en divisas', title:'Pregunta por tu <em>oferta especial</em>', text:'Pagando con cash, Zelle o Binance puedes optar a un descuento. Tu vendedor te lo confirma por WhatsApp.', cta:'Escribir al vendedor', act:'better', chips:['Cash','Zelle','Binance'], onlyPublic:true, match:p => p.divisas && /taladro|esmeril|pulidora|sierra|rotomartillo|soldadora|pintura|cemento/.test(p._name)},
+  {id:'sucursales', nombre:'4 ferreterías cerca de ti', theme:'t-green', eyebrow:'Guanare y Biscucuy', title:'4 ferreterías <em>cerca de ti</em>', text:'Mira la dirección de cada una, ábrela en Google Maps y revisa qué hay disponible antes de salir de casa.', cta:'Ver direcciones', act:'tosuc', chips:['La Unda','La Quinta','La Colonia','Biscucuy'],
+    photos:[{src:'media/unda-fachada.jpg', cap:'La Unda', cls:'ph-w1'}, {src:'media/quinta-fachada2.jpg', cap:'La Quinta', cls:'ph-t2'}, {src:'media/biscucuy-fachada.jpg', cap:'Biscucuy', cls:'ph-w3'}]},
+  {id:'mayoristas', nombre:'¿Vendes al mayor?', theme:'t-dark', eyebrow:'Mayoristas', title:'¿Vendes <em>al mayor?</em>', text:'Con tu código ves precios al mayor, armas presupuestos con tus descuentos y compartes tu catálogo con tus clientes.', cta:'Tengo un código', act:'login', onlyPublic:true,
+    photos:[{src:'media/quinta-mostrador.jpg', cap:'Atención personalizada', cls:'ph-tall'}]}
+];
+let BANNERS = {items:[], off:[]};
+const ADMIN = {db:null, assets:null, can:false, ref:null};
+let heroIdx = 0, heroTimer = null, heroPaused = false, heroSlides = [];
+const bannerSrc = id => NUBE ? `${NUBE.url}/storage/v1/object/public/banners/${encodeURIComponent(id)}` : `/_blob/${id}`;
+function cleanBanners(d){
+  const items = Array.isArray(d && d.items) ? d.items.filter(b => b && typeof b.id === 'string' && /^[A-Za-z0-9_.:~@+-]{1,200}$/.test(b.id)).map(b => ({id:b.id, titulo:String(b.titulo || '').slice(0, 120), link:String(b.link || ''), activo:b.activo !== false})) : [];
+  const off = Array.isArray(d && d.off) ? d.off.filter(x => typeof x === 'string') : [];
+  return {items, off};
+}
+function bannerLink(link){
+  if (link.startsWith('cat:') && CAT[link.slice(4)]) return {tag:'button', attrs:`type="button" data-act="cat" data-cat="${link.slice(4)}" data-scroll`};
+  if (link === 'wa') return {tag:'a', attrs:`href="${waStore('Hola, vi una promoción en la página de Ferretería Fermil y quisiera más información.')}" target="_blank" rel="noopener"`};
+  if (link === 'login') return {tag:'button', attrs:'type="button" data-act="login"'};
+  return null;
+}
+function heroItems(){
+  const out = [];
+  BANNERS.items.filter(b => b.activo).forEach(b => out.push({type:'img', b}));
+  SLIDES.filter(s => !BANNERS.off.includes(s.id) && (!s.onlyPublic || effRole() === 'publico')).forEach(s => out.push({type:'built', s}));
+  return out;
+}
+function slideHtml(it, i){
+  if (it.type === 'img'){
+    const b = it.b, l = bannerLink(b.link), img = `<img class="bn-bg" src="${esc(bannerSrc(b.id))}" alt=""><img class="bn-fg" src="${esc(bannerSrc(b.id))}" alt="${esc(b.titulo || 'Promoción de Ferretería Fermil')}">`;
+    return `<div class="slide s-img" role="group" aria-roledescription="banner" aria-label="Banner ${i + 1}">${l ? `<${l.tag} ${l.attrs}>${img}</${l.tag}>` : img}</div>`;
+  }
+  const s = it.s;
+  if (s.kind === 'feria') return feriaSlide(s, i);
+  if (s.kind === 'marca') return marcaSlide(s, i);
+  const picks = s.match ? pickVaried(withPhotos(visibleProducts().filter(s.match)), s.photos ? 1 : 3, p => p._words[0]) : [];
+  const cta = s.act === 'better' ? `<a class="btn s-cta" href="${waLink(CONFIG.whatsappVendedor, DIV_MSG)}" target="_blank" rel="noopener">${esc(s.cta)} →</a>`
+    : `<button type="button" class="btn s-cta" data-act="${s.act}" ${s.cat ? `data-cat="${s.cat}" data-scroll` : ''}>${esc(s.cta)} →</button>`;
+  const pickHtml = (p, k) => { const pi = priceOf(p); return `<figure class="s-pic s-pic${k}"><img src="${FOTOS[p.ref]}" alt="${esc(p.nombre)}">${pi.hidden ? '' : `<figcaption>${usd(pi.v)}</figcaption>`}</figure>`; };
+  let art;
+  if (s.photos) art = s.photos.map((ph, k) => `<figure class="s-ph ${ph.cls} s-ph${k}"><img src="${ph.src}" alt="${esc(ph.cap)}" loading="lazy"><figcaption>${esc(ph.cap)}</figcaption></figure>`).join('') + picks.map(p => pickHtml(p, 'x')).join('');
+  else art = picks.length ? picks.map(pickHtml).join('') : `<div class="s-bigart">${ill(s.art || s.cat || 'todas')}</div>`;
+  return `<div class="slide ${s.theme} sl-${s.id}${s.photos ? ' has-ph' : ''}" role="group" aria-roledescription="banner" aria-label="Banner ${i + 1}">
+    <div class="s-text"><span class="s-eyebrow">${esc(s.eyebrow)}</span><h2>${s.title}</h2><p>${esc(s.text)}</p>${s.chips ? `<div class="s-chips">${s.chips.map(c => `<span>${esc(c)}</span>`).join('')}</div>` : ''}${cta}</div>
+    <div class="s-art">${art}</div>
+  </div>`;
+}
+function feriaSlide(s, i){
+  return `<div class="slide t-feria" role="group" aria-roledescription="banner" aria-label="Banner ${i + 1}: 7ª Feria del Color">
+    <div class="s-text">
+      <h2 class="vh">7ª Feria del Color</h2>
+      <img class="fe-logo" src="media/feria-logo.png" alt="7ª Feria del Color de Ferretería Fermil">
+      <p class="fe-from">Pinturas a partir de:</p>
+      <div class="fe-price"><span>5,99$</span></div>
+      <p class="fe-off">¡Hasta <b>30% de descuento</b> en pinturas!</p>
+      <p class="fe-valid">Válido en <b>todas nuestras sucursales</b></p>
+      <button type="button" class="btn s-cta" data-act="cat" data-cat="pintura" data-scroll>Ver pinturas →</button>
+    </div>
+    <div class="s-art"><span class="fe-glow" aria-hidden="true"></span><img class="fe-cans" src="media/feria-pinturas.jpg" alt="Pinturas Sham, Pinn Plus, Colonial, Pintumac, Super A y Sant en promoción"></div>
+  </div>`;
+}
+function marcaSlide(s, i){
+  return `<div class="slide t-photo" role="group" aria-roledescription="banner" aria-label="Banner ${i + 1}: Ferretería Fermil, la que vende más barato">
+    <img class="s-bgimg" src="${s.bg}" alt="">
+    <div class="s-text">
+      <span class="mk-logo">${LOGO_SVG}</span>
+      <h2><span class="mk-name">Ferretería Fermil</span><em>¡La que vende más barato!</em></h2>
+      <p>Todo para construir, reparar y equipar tu casa y tu obra. 4 ferreterías en Guanare y Biscucuy.</p>
+      <div class="mk-btns"><button type="button" class="btn s-cta" data-act="tocatalogo">Ver el catálogo →</button><button type="button" class="btn s-cta2" data-act="tosuc">Nuestras sucursales</button></div>
+    </div>
+    <div class="s-art"></div>
+  </div>`;
+}
+function renderHero(){
+  const hero = $('#hero'); if (!hero) return;
+  const items = heroItems();
+  hero.innerHTML = `<div class="h-track">${items.map(slideHtml).join('')}</div>${items.length > 1 ? `<button type="button" class="h-arw prev" data-act="hero" data-d="-1" aria-label="Banner anterior">‹</button><button type="button" class="h-arw next" data-act="hero" data-d="1" aria-label="Banner siguiente">›</button><div class="h-dots">${items.map((_, i) => `<button type="button" data-act="herogo" data-i="${i}" aria-label="Ver banner ${i + 1}"></button>`).join('')}</div>` : ''}`;
+  heroSlides = $$('#hero .slide');
+  if (heroIdx >= heroSlides.length) heroIdx = 0;
+  showSlide(heroIdx); startHero();
+}
+function showSlide(i){
+  if (!heroSlides.length) return;
+  heroIdx = (i + heroSlides.length) % heroSlides.length;
+  heroSlides.forEach((s, k) => { const on = k === heroIdx; s.classList.toggle('on', on); s.setAttribute('aria-hidden', String(!on)); s.inert = !on; });
+  $$('#hero .h-dots button').forEach((d, k) => d.setAttribute('aria-current', String(k === heroIdx)));
+}
+function startHero(){ clearInterval(heroTimer); if (heroSlides.length > 1 && !reduced()) heroTimer = setInterval(() => { if (!heroPaused && !document.hidden) showSlide(heroIdx + 1); }, 6000); }
+(function heroEvents(){
+  const hero = $('#hero');
+  hero.addEventListener('mouseenter', () => { heroPaused = true; });
+  hero.addEventListener('mouseleave', () => { heroPaused = false; });
+  hero.addEventListener('focusin', () => { heroPaused = true; });
+  hero.addEventListener('focusout', () => { heroPaused = false; });
+  let tx = null;
+  hero.addEventListener('touchstart', e => { tx = e.touches[0].clientX; heroPaused = true; }, {passive:true});
+  hero.addEventListener('touchend', e => { if (tx != null){ const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 45){ showSlide(heroIdx + (dx < 0 ? 1 : -1)); startHero(); } } tx = null; heroPaused = false; });
+})();
+
+function renderNav(){
+  const quick = ['construccion','ferreteria','herramienta','pintura','electricidad','plomeria','bano'];
+  $('#mnLinks').innerHTML = quick.filter(id => CAT[id] && visibleProducts().some(p => p.cat === id)).map(id => `<button type="button" data-act="cat" data-cat="${id}" data-scroll aria-current="${state.cat === id}">${esc(CAT[id].nombre.replace(': hierro y polvos', ''))}</button>`).join('')
+    + (effRole() === 'publico' ? `<a class="mn-hot" href="${waLink(CONFIG.whatsappVendedor, DIV_MSG)}" target="_blank" rel="noopener">Ofertas en divisas</a>` : '')
+    + `<button type="button" data-act="tosuc">Sucursales</button>`;
+  $('#mnLinks').insertAdjacentHTML('afterbegin', `<button type="button" class="mn-how" data-act="tocomo">Cómo comprar</button>`);
+}
+function subsOf(catId){
+  const base = visibleProducts().filter(p => p.cat === catId && (!state.onlyAvail || stockOf(p) > 0));
+  const subs = new Map();
+  for (const p of base){ const k = p.sub || 'Otros'; let s = subs.get(k); if (!s){ s = {n:0, pic:null}; subs.set(k, s); } s.n++; if (!s.pic && FOTOS[p.ref]) s.pic = p; }
+  return {base, subs:[...subs.entries()].sort((a, b) => (b[1].pic ? 1 : 0) - (a[1].pic ? 1 : 0) || b[1].n - a[1].n)};
+}
+const subTile = (catId, name, v, pressed) => `<button type="button" class="subtile" data-act="sub" data-cat="${catId}" data-sub="${esc(name)}" aria-pressed="${pressed}"><span class="st-img">${v.pic ? `<img src="${FOTOS[v.pic.ref]}" alt="" loading="lazy">` : lineIll(catId)}</span><b>${esc(name || 'Ver todo')}</b><small>${fmt0.format(v.n)} productos</small></button>`;
+function renderMega(active){
+  const avail = CATS.filter(c => visibleProducts().some(p => p.cat === c.id));
+  active = active || (avail[0] && avail[0].id);
+  $('#megaL').innerHTML = avail.map(c => `<li><button type="button" data-act="megacat" data-cat="${c.id}" class="${c.id === active ? 'on' : ''}">${catIco(c.id)}<span>${esc(c.nombre)}</span></button></li>`).join('');
+  if (!active) return;
+  const {base, subs} = subsOf(active);
+  $('#megaR').innerHTML = `<h3>${esc(CAT[active].nombre)}</h3><div class="mega-subs">${subTile(active, '', {n:base.length, pic:null}, false)}${subs.slice(0, 15).map(([k, v]) => subTile(active, k, v, false)).join('')}</div>`;
+}
+function toggleMega(open){
+  const m = $('#mega'), b = $('.mn-cats');
+  open = open == null ? m.hidden : open;
+  m.hidden = !open; b.setAttribute('aria-expanded', String(open));
+  if (open) renderMega(state.cat !== 'todas' ? state.cat : null);
+}
+$('#megaL').addEventListener('mouseover', e => { const b = e.target.closest('[data-act="megacat"]'); if (b && !b.classList.contains('on') && window.innerWidth > 820) renderMega(b.dataset.cat); });
+document.addEventListener('pointerdown', e => { if (!$('#mega').hidden && !e.target.closest('.mainnav')) toggleMega(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#mega').hidden) toggleMega(false); });
+
+function renderCatHead(){
+  const box = $('#catHead');
+  if (state.cat === 'todas'){ box.hidden = true; box.innerHTML = ''; return; }
+  const c = CAT[state.cat], {base, subs} = subsOf(state.cat);
+  const where = isWholesaleView() ? 'en las 4 sucursales' : `en ${VISTA[state.vista].nombre}`;
+  box.hidden = false;
+  box.innerHTML = `<nav class="crumbs" aria-label="Ruta"><button type="button" data-act="home">Inicio</button><span aria-hidden="true">›</span>${state.sub ? `<button type="button" data-act="sub" data-cat="${c.id}" data-sub="">${esc(c.nombre)}</button><span aria-hidden="true">›</span><span>${esc(state.sub)}</span>` : `<span>${esc(c.nombre)}</span>`}</nav>
+    <div class="ch-top"><span class="ch-ico">${lineIll(c.id)}</span><div><h2>${esc(state.sub || c.nombre)}</h2><p>${fmt0.format(base.length)} productos ${state.onlyAvail ? 'disponibles ' : ''}${where}</p></div></div>
+    ${subs.length > 1 ? `<div class="subrow" aria-label="Subcategorías">${subTile(c.id, '', {n:base.length, pic:null}, !state.sub)}${subs.map(([k, v]) => subTile(c.id, k, v, state.sub === k)).join('')}</div>` : ''}`;
+}
+function renderHomeRows(){
+  const vis = visibleProducts();
+  $('#recRow').innerHTML = pickVaried(withPhotos(vis), 16).map(card).join('');
+  $('#row2').innerHTML = pickVaried(withPhotos(vis.filter(p => p.cat === 'construccion' || p.cat === 'herramienta')), 16, p => p.cat + '|' + (p.sub || p._words[0])).map(card).join('');
+  const pint = pickVaried(withPhotos(vis.filter(p => p.cat === 'pintura')), 16, p => p.sub || p._words[0]);
+  $('#row3Sec').hidden = pint.length < 4; $('#row3').innerHTML = pint.map(card).join('');
+  renderSucSec();
+  const pub = effRole() === 'publico', may = state.role === 'mayorista';
+  $('#promo2').innerHTML = `<div class="pr-card pr-yellow"><h3>${pub ? '¿Vendes al mayor?' : 'Tu catálogo mayorista'}</h3><p>${pub ? 'Pide tu código a Ferretería Fermil: precios al mayor, presupuestos con tus descuentos y un catálogo para tus clientes.' : 'Precios al mayor, presupuestos y descuentos para tus clientes.'}</p><button type="button" class="btn" data-act="${pub ? 'login' : (may ? 'panel' : 'cart')}">${pub ? 'Tengo un código' : (may ? 'Abrir mi panel' : 'Ver mi carrito')}</button><span class="pr-art">${ill('generica')}</span></div>
+    <div class="pr-card pr-green"><h3>4 ferreterías en Portuguesa</h3><ul>${Object.values(SUCURSALES).map(s => `<li>${esc(s.nombre)} · ${esc(s.ciudad)}</li>`).join('')}</ul><button type="button" class="btn" data-act="tosuc">Ver direcciones y horarios</button><span class="pr-art">${ill('hogar')}</span></div>`;
+}
+function scrollRow(id, d){ const el = $('#' + id); if (el) el.scrollBy({left: d * el.clientWidth * 0.85, behavior: reduced() ? 'auto' : 'smooth'}); }
+
+/* aparición suave al hacer scroll (el contenido siempre está visible) */
+const revealObs = 'IntersectionObserver' in window ? new IntersectionObserver(ents => ents.forEach(en => { if (en.isIntersecting){ en.target.classList.add('in'); revealObs.unobserve(en.target); } }), {rootMargin:'0px 0px -6% 0px'}) : null;
+$$('.reveal').forEach(el => revealObs ? revealObs.observe(el) : el.classList.add('in'));
+window.addEventListener('scroll', () => { const y = window.scrollY; $('#top').classList.toggle('scrolled', y > 8); $('#fabTop').classList.toggle('show', y > 700); }, {passive:true});
+
+function flyToCart(from){
+  if (reduced()) return;
+  try {
+    const holder = from.closest('.card,.ki'), img = holder && holder.querySelector('.pimg');
+    const src = (img || from).getBoundingClientRect();
+    const target = (window.innerWidth <= 820 && $('#mbar').classList.contains('on')) ? $('#mbar button') : $('#btnCart');
+    const dst = target.getBoundingClientRect();
+    const fly = document.createElement('div'); fly.className = 'fly';
+    if (img) fly.innerHTML = img.outerHTML;
+    Object.assign(fly.style, {left: src.left + 'px', top: src.top + 'px', width: src.width + 'px', height: src.height + 'px'});
+    document.body.appendChild(fly);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fly.style.transform = `translate(${dst.left + dst.width/2 - src.left - src.width/2}px, ${dst.top + dst.height/2 - src.top - src.height/2}px) scale(.12)`;
+      fly.style.opacity = '.3';
+    }));
+    setTimeout(() => fly.remove(), 780);
+  } catch(e){}
+}
+
+/* ===================== Administrador de la página ===================== */
+const dlgAdmin = $('#dlgAdmin');
+const LINK_OPTS = () => [['', 'Sin enlace'], ['wa', 'Abrir el WhatsApp de la tienda'], ['login', 'Abrir el acceso de mayoristas'], ...CATS.map(c => ['cat:' + c.id, 'Categoría: ' + c.nombre])];
+const linkLabel = l => (LINK_OPTS().find(o => o[0] === l) || ['', 'Sin enlace'])[1];
+async function initNube(){
+  try {
+    const r = await fetch(`${NUBE.url}/rest/v1/config?clave=eq.banners&select=valor`, {headers:{apikey: NUBE.key}});
+    if (r.ok){ const j = await r.json(); BANNERS = cleanBanners(j && j[0] ? j[0].valor : null); renderHero(); }
+  } catch(e){}
+  const t0 = sess.get('fermil_admin', null);
+  if (t0 && t0.token && t0.exp > Date.now()) nubeAdmin(t0.token);
+}
+function nubeAdmin(token){
+  ADMIN.can = true;
+  ADMIN.ref = {set: async v => {
+    const r = await fetch(`${NUBE.url}/rest/v1/config?on_conflict=clave`, {method:'POST', headers:Object.assign(nubeH(token), {Prefer:'resolution=merge-duplicates,return=minimal'}), body:JSON.stringify({clave:'banners', valor:v, actualizado:new Date().toISOString()})});
+    if (!r.ok) throw Object.assign(new Error('save'), {code: (r.status === 401 || r.status === 403) ? 'auth' : 'save'});
+  }};
+  ADMIN.assets = {
+    upload: async blob => {
+      const id = `b-${Date.now().toString(36)}-${rnd(6).toLowerCase()}.jpg`;
+      const r = await fetch(`${NUBE.url}/storage/v1/object/banners/${id}`, {method:'POST', headers:{apikey: NUBE.key, Authorization: 'Bearer ' + token, 'Content-Type': 'image/jpeg', 'x-upsert': 'true'}, body: blob});
+      if (!r.ok) throw Object.assign(new Error('upload'), {code: (r.status === 401 || r.status === 403) ? 'auth' : 'upload'});
+      return {id};
+    },
+    delete: async id => { await fetch(`${NUBE.url}/storage/v1/object/banners`, {method:'DELETE', headers:nubeH(token), body:JSON.stringify({prefixes:[id]})}); }
+  };
+  $('#btnAdmin').hidden = false;
+}
+function nubeAdminSalir(){ sess.set('fermil_admin', null); ADMIN.can = false; ADMIN.ref = null; ADMIN.assets = null; $('#btnAdmin').hidden = true; }
+async function initCaps(){
+  if (NUBE) return initNube();
+  if (!inViewer) return;
+  try {
+    const [user, db, assets] = await Promise.all([window.claude.use('user'), window.claude.use('db'), window.claude.use('assets')]);
+    ADMIN.db = db; ADMIN.assets = assets;
+    if (db){
+      ADMIN.ref = db.doc('config/banners');
+      ADMIN.ref.onSnapshot(s => { BANNERS = cleanBanners(s.exists ? s.data() : null); renderHero(); if (dlgAdmin.open) renderAdmin(); }, () => {});
+    }
+    let can = false;
+    try { can = user ? !!(await user.canEdit()) : false; } catch(e){}
+    ADMIN.can = can && !!db && !!assets;
+    $('#btnAdmin').hidden = !ADMIN.can;
+  } catch(e){}
+}
+async function saveBanners(next){
+  if (!ADMIN.ref) return false;
+  try { await ADMIN.ref.set({items: next.items, off: next.off, actualizado: new Date().toISOString()}); BANNERS = next; renderHero(); return true; }
+  catch(e){
+    if (e && e.code === 'auth'){ nubeAdminSalir(); toast('Tu sesión de administradora venció. Vuelve a entrar.'); renderAdmin(); return false; }
+    toast(e && e.code === 'quota_exceeded' ? 'Se llenó el espacio de la página. Borra algún banner.' : 'No se pudo guardar. Intenta de nuevo.'); return false;
+  }
+}
+function renderAdminLogin(){
+  dlgAdmin.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Administrar página</span><h2 id="adTitle">Entrar como administradora</h2></div><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+    <div class="pn-body"><section class="pn-card">
+      <form id="adLogin" class="ad-form" novalidate>
+        <div class="field"><label for="adEmail">Correo</label><input id="adEmail" type="email" autocomplete="username" required></div>
+        <div class="field"><label for="adPass">Contraseña</label><input id="adPass" type="password" autocomplete="current-password" required></div>
+        <p class="err" id="adErr" hidden></p>
+        <button type="submit" class="btn accent" id="adBtn">Entrar</button>
+      </form>
+      <p class="hint">Es el correo y la contraseña de tu acceso en Supabase (Authentication → Users).</p>
+    </section></div>`;
+}
+dlgAdmin.addEventListener('submit', async e => {
+  if (e.target.id !== 'adLogin') return;
+  e.preventDefault();
+  const err = $('#adErr'), btn = $('#adBtn'), email = $('#adEmail').value.trim(), password = $('#adPass').value;
+  err.hidden = true;
+  if (!email || !password){ err.hidden = false; err.textContent = 'Escribe tu correo y tu contraseña.'; return; }
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  try {
+    const r = await fetch(`${NUBE.url}/auth/v1/token?grant_type=password`, {method:'POST', headers:{apikey: NUBE.key, 'Content-Type': 'application/json'}, body:JSON.stringify({email, password})});
+    if (!r.ok){ err.hidden = false; err.textContent = 'Correo o contraseña incorrectos.'; return; }
+    const j = await r.json();
+    sess.set('fermil_admin', {token: j.access_token, exp: Date.now() + (Number(j.expires_in) || 3600) * 1000 - 60000});
+    nubeAdmin(j.access_token); renderAdmin(); toast('Entraste como administradora');
+  } catch(ex){ err.hidden = false; err.textContent = 'No se pudo conectar. Revisa tu internet.'; }
+  finally { if (btn.isConnected){ btn.disabled = false; btn.textContent = 'Entrar'; } }
+});
+function renderAdmin(){
+  if (NUBE && !ADMIN.can){ renderAdminLogin(); return; }
+  const items = BANNERS.items;
+  dlgAdmin.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Administrar página</span><h2 id="adTitle">Banners de la portada</h2></div><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+    <div class="pn-body">
+      <section class="pn-card">
+        <h3>Subir un banner nuevo</h3>
+        <p>Medida recomendada: <b>1600 × 500 píxeles</b> (horizontal), en JPG o PNG. En el teléfono se ve completo pero más pequeño: usa letras grandes.</p>
+        <form id="bnForm" class="ad-form" novalidate>
+          <div class="ad-drop"><label for="bnFile"><b>Elige la imagen</b></label><input type="file" id="bnFile" accept="image/jpeg,image/png,image/webp"><div class="ad-prev" id="bnPrev" hidden></div></div>
+          <div class="field"><label for="bnTitle">Texto del banner (para quien no puede ver la imagen)</label><input type="text" id="bnTitle" maxlength="120" placeholder="Ej.: Oferta de cemento gris esta semana"></div>
+          <div class="field"><label for="bnLink">Al tocar el banner</label><select id="bnLink">${LINK_OPTS().map(o => `<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}</select></div>
+          <p class="err" id="bnErr" hidden></p>
+          <button type="submit" class="btn accent" id="bnBtn">Subir banner</button>
+        </form>
+      </section>
+      <section class="pn-card">
+        <h3>Tus banners (${items.length})</h3>
+        ${items.length ? items.map((b, i) => `<div class="ad-row"><span class="ad-thumb"><img src="${esc(bannerSrc(b.id))}" alt=""></span><div><b>${esc(b.titulo || 'Banner sin título')}</b><small>${esc(linkLabel(b.link))} · ${b.activo ? 'Visible' : 'Oculto'}</small></div>
+          <div class="ad-acts"><label class="sw"><input type="checkbox" data-adm="toggle" data-i="${i}" ${b.activo ? 'checked' : ''}>Visible</label><button type="button" class="btn ghost" data-act="adm" data-op="up" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Mover antes">↑</button><button type="button" class="btn ghost" data-act="adm" data-op="down" data-i="${i}" ${i === items.length - 1 ? 'disabled' : ''} aria-label="Mover después">↓</button><button type="button" class="btn link" data-act="adm" data-op="del" data-i="${i}">Eliminar</button></div></div>`).join('') : '<p>Todavía no has subido banners. Los tuyos salen primero, antes de los banners diseñados.</p>'}
+      </section>
+      <section class="pn-card">
+        <h3>Banners diseñados</h3>
+        <p>Vienen con la página y usan las fotos reales de tus productos. Puedes ocultar los que no quieras.</p>
+        ${SLIDES.map(s => `<div class="ad-row"><span class="ad-thumb ${s.theme}" style="position:relative;overflow:hidden"><span style="position:relative">${esc(s.nombre)}</span></span><div><b>${esc(s.nombre)}</b><small>${s.onlyPublic ? 'Solo lo ven los clientes' : 'Lo ven todos'}</small></div><div class="ad-acts"><label class="sw"><input type="checkbox" data-adm="builtin" data-id="${s.id}" ${BANNERS.off.includes(s.id) ? '' : 'checked'}>Visible</label></div></div>`).join('')}
+      </section>
+    </div>
+    <div class="pn-foot"><span class="hint">Los cambios se ven al instante en la portada.</span><button type="button" class="btn accent" data-act="close">Listo</button></div>`;
+  const f = $('#bnFile');
+  f.addEventListener('change', () => { const file = f.files[0], prev = $('#bnPrev'); if (!file){ prev.hidden = true; return; } prev.hidden = false; prev.innerHTML = `<img alt="" src="${URL.createObjectURL(file)}">`; });
+}
+async function prepImage(file){
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 1920 / bmp.width);
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return await new Promise(r => c.toBlob(r, 'image/jpeg', 0.86));
+}
+dlgAdmin.addEventListener('submit', async e => {
+  if (e.target.id !== 'bnForm') return;
+  e.preventDefault();
+  const err = $('#bnErr'), btn = $('#bnBtn'), file = $('#bnFile').files[0];
+  err.hidden = true;
+  if (!file){ err.hidden = false; err.textContent = 'Elige una imagen primero.'; return; }
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)){ err.hidden = false; err.textContent = 'La imagen debe ser JPG, PNG o WebP.'; return; }
+  btn.disabled = true; btn.textContent = 'Subiendo…';
+  try {
+    const blob = await prepImage(file);
+    const res = await ADMIN.assets.upload(blob);
+    const next = {items:[{id:res.id, titulo:$('#bnTitle').value.trim(), link:$('#bnLink').value, activo:true}, ...BANNERS.items], off:BANNERS.off};
+    if (await saveBanners(next)){ toast('Banner subido. Ya está en la portada.'); heroIdx = 0; renderHero(); renderAdmin(); }
+  } catch(ex){ err.hidden = false; err.textContent = 'No se pudo subir la imagen. Revisa tu conexión e intenta de nuevo.'; }
+  finally { if (btn.isConnected){ btn.disabled = false; btn.textContent = 'Subir banner'; } }
+});
+dlgAdmin.addEventListener('change', async e => {
+  const t = e.target;
+  if (t.dataset.adm === 'toggle'){ const items = BANNERS.items.map((b, i) => i === Number(t.dataset.i) ? {...b, activo:t.checked} : b); await saveBanners({items, off:BANNERS.off}); renderAdmin(); }
+  if (t.dataset.adm === 'builtin'){ const off = BANNERS.off.filter(x => x !== t.dataset.id); if (!t.checked) off.push(t.dataset.id); await saveBanners({items:BANNERS.items, off}); renderAdmin(); }
+});
+async function adminOp(el){
+  const i = Number(el.dataset.i), items = BANNERS.items.slice();
+  if (el.dataset.op === 'del'){
+    twoStep(el, 'Eliminar', '¿Seguro? Toca otra vez', async () => {
+      const b = items[i]; items.splice(i, 1);
+      if (await saveBanners({items, off:BANNERS.off})){ try { await ADMIN.assets.delete(b.id); } catch(e){} toast('Banner eliminado'); renderAdmin(); }
+    });
+    return;
+  }
+  if (el.dataset.op === 'up' && i > 0) [items[i-1], items[i]] = [items[i], items[i-1]];
+  else if (el.dataset.op === 'down' && i < items.length - 1) [items[i+1], items[i]] = [items[i], items[i+1]];
+  else return;
+  await saveBanners({items, off:BANNERS.off}); renderAdmin();
+}
+
+function renderFooter(){
+  $('#footer').innerHTML = `<div class="f-brand"><a class="brand" href="#todas" data-act="home"><span class="logo-mark" aria-hidden="true">${LOGO_SVG}</span><span class="brand-txt"><strong>Ferretería Fermil</strong></span></a>
+      <p>Todo para construir, reparar y equipar tu casa y tu obra, en Guanare y Biscucuy.</p>
+      <a class="f-wa" href="${waStore()}" target="_blank" rel="noopener">WhatsApp ${CONFIG.telefono}</a><br><a class="f-ig" href="${IG.url}" target="_blank" rel="noopener">${IG_SVG}@${IG.user}</a><br>
+      <span class="f-tasa">Tasa del día <b>Bs ${fmt2.format(CONFIG.tasaBs)}</b></span></div>
+    <div><h3>Categorías</h3><ul>${CATS.slice(0, 9).map(c => `<li><button type="button" data-act="cat" data-cat="${c.id}" data-scroll>${esc(c.nombre)}</button></li>`).join('')}</ul></div>
+    <div><h3>Información</h3><ul><li><button type="button" data-act="tocomo">Cómo comprar</button></li><li><button type="button" data-act="login">Acceso mayoristas</button></li><li><a href="${waLink(CONFIG.whatsappVendedor, DIV_MSG)}" target="_blank" rel="noopener">Ofertas pagando en divisas</a></li><li><span>Pagos: cash, pago móvil, punto, Zelle, Binance</span></li><li><span>Envíos: consúltalos por WhatsApp</span></li><li><a href="${IG.url}" target="_blank" rel="noopener">Instagram @${IG.user}</a></li>${NUBE ? '<li><button type="button" data-act="admin">Administrar página</button></li>' : ''}</ul></div>
+    <div id="sucursales"><h3>Sucursales</h3><div class="f-suc">${TODAS.map(id => { const s = SUCURSALES[id]; return `<div><b>${esc(s.nombre)}</b><a class="f-addr" href="${mapsSearch(id)}" target="_blank" rel="noopener">${PIN_SVG}${esc(s.dir)}</a><span>${esc(s.horario)}</span><a href="${mapsDir(id)}" target="_blank" rel="noopener">Cómo llegar →</a></div>`; }).join('')}</div></div>`;
+  $('#footBottom').textContent = `© ${new Date().getFullYear()} Ferretería Fermil · Precios en dólares con IVA incluido, sujetos a cambio y a disponibilidad · Tasa usada: Bs ${fmt2.format(CONFIG.tasaBs)}`;
+}
+
+/* ===================== v5: sucursales con Google Maps e Instagram ===================== */
+const SUC_MEDIA = {
+  unda:     {foto:'media/unda-fachada.jpg',      q:'Ferreteria Fermil Av. Unda, Guanare, Portuguesa'},
+  quinta:   {foto:'media/quinta-fachada2.jpg',   q:'Ferretería Fermil, Carrera 5 con calle 10, Barrio La Arenosa, Guanare, Portuguesa'},
+  colonia:  {foto:'',                            q:'Ferretería Fermil, La Colonia, Troncal 5, Guanare, Portuguesa'},
+  biscucuy: {foto:'media/biscucuy-fachada.jpg',  q:'Ferreteria Fermil Biscucuy, Av. Bolívar, Biscucuy, Portuguesa'}
+};
+const mapsSearch = id => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(SUC_MEDIA[id].q);
+const mapsDir = id => 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(SUC_MEDIA[id].q);
+const PIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8C8 1.8 4.8 5 4.8 9c0 5.4 7.2 13.2 7.2 13.2S19.2 14.4 19.2 9c0-4-3.2-7.2-7.2-7.2z" fill="#ea4335"/><circle cx="12" cy="9" r="2.7" fill="#a50e0e"/></svg>';
+const CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+const IG_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>';
+const MAP_ART = `<svg class="suc-map" viewBox="0 0 320 200" aria-hidden="true"><rect width="320" height="200" fill="#e7efe3"/><g fill="#d5e3cf"><rect x="16" y="16" width="70" height="52" rx="6"/><rect x="104" y="16" width="92" height="52" rx="6"/><rect x="214" y="16" width="90" height="52" rx="6"/><rect x="16" y="132" width="110" height="52" rx="6"/><rect x="144" y="132" width="70" height="52" rx="6"/><rect x="232" y="132" width="72" height="52" rx="6"/></g><path d="M0 100H320" stroke="#fff" stroke-width="26"/><path d="M0 100H320" stroke="#f6d34a" stroke-width="3" stroke-dasharray="14 10"/><path d="M95 0V200M223 0V200" stroke="#fff" stroke-width="12"/><text x="18" y="94" font-family="sans-serif" font-size="11" font-weight="700" fill="#5d6f5a">Troncal 5</text><g transform="translate(138 34) scale(1.9)">${PIN_SVG.replace('<svg viewBox="0 0 24 24" aria-hidden="true">','<svg width="24" height="24" viewBox="0 0 24 24">')}</g></svg>`;
+function addressParts(dir){ const k = dir.indexOf(', '); return k > 0 ? [dir.slice(0, k), dir.slice(k + 2)] : [dir, '']; }
+function renderSucSec(){
+  const box = $('#sucSec'); if (!box) return;
+  const canView = !isWholesaleView();
+  box.innerHTML = `<div class="sec-head"><h2 id="sucTitle">Nuestras sucursales</h2><p class="sec-sub">Toca la dirección para abrirla en Google Maps</p></div>
+    <div class="suc-grid">${TODAS.map(id => { const s = SUCURSALES[id], m = SUC_MEDIA[id], [l1, l2] = addressParts(s.dir); return `<article class="suc-card">
+      <div class="suc-ph">${m.foto ? `<img src="${m.foto}" alt="Fachada de ${esc(s.nombre)}" loading="lazy">` : MAP_ART}<span class="suc-city">${esc(s.ciudad)}</span></div>
+      <div class="suc-body">
+        <h3>${esc(s.nombre)}</h3>
+        <a class="maps-pill" href="${mapsSearch(id)}" target="_blank" rel="noopener" aria-label="Abrir en Google Maps: ${esc(s.dir)}">
+          <span class="mp-pin">${PIN_SVG}</span><span class="mp-txt"><b>${esc(l1)}</b><small>${esc(l2)}</small><i>Abrir en Google Maps ↗</i></span>
+        </a>
+        <p class="suc-hours">${CLOCK_SVG}<span>${esc(s.horario)}</span></p>
+        <div class="suc-acts"><a class="btn accent" href="${mapsDir(id)}" target="_blank" rel="noopener">Cómo llegar</a>${canView ? `<button type="button" class="btn ghost" data-act="sucview" data-v="${id}">Ver lo que hay aquí</button>` : ''}</div>
+      </div></article>`; }).join('')}</div>`;
+}
+
+/* Instagram: por ahora los videos que mandó la tienda; en la versión final el robot trae los últimos de @ferreteriafermil */
+const IG = {user:'ferreteriafermil', url:'https://www.instagram.com/ferreteriafermil/', posts:[
+  {type:'video', src:'media/reel-oferta-pinturas.mp4', poster:'media/reel-oferta-pinturas.jpg', cap:'¡Oferta en pinturas! La Feria del Color llegó a Guanare'},
+  {type:'image', src:'media/flyer-feria.jpg', cap:'7ª Feria del Color: pinturas desde 5,99$'},
+  {type:'video', src:'media/reel-temporada-descuentos.mp4', poster:'media/reel-temporada-descuentos.jpg', cap:'¡Llegó la temporada de descuentos!'},
+  {type:'image', src:'media/flyer-seguimos.jpg', cap:'¡Seguimos! 30% de descuento en pinturas'}
+]};
+function renderIG(){
+  const box = $('#igSec'); if (!box) return;
+  box.innerHTML = `<div class="ig-head">
+      <a class="ig-avatar" href="${IG.url}" target="_blank" rel="noopener" aria-label="Instagram de Ferretería Fermil"><span>${LOGO_SVG}</span></a>
+      <div class="ig-who"><h2 id="igTitle">Síguenos en Instagram</h2><a href="${IG.url}" target="_blank" rel="noopener">@${IG.user}</a><p>Ofertas, novedades y la Feria del Color, primero en nuestras redes.</p></div>
+      <a class="btn ig-follow" href="${IG.url}" target="_blank" rel="noopener">${IG_SVG}<span>Seguir en Instagram</span></a>
+    </div>
+    <div class="hscroll ig-row" id="igRow">${IG.posts.map((p, i) => p.type === 'video'
+      ? `<figure class="ig-tile is-video"><video src="${p.src}" poster="${p.poster}" muted loop playsinline preload="none" aria-label="${esc(p.cap)}"></video>
+          <button type="button" class="ig-play" data-act="igplay" data-i="${i}" aria-label="Activar sonido: ${esc(p.cap)}"><span class="ig-snd" aria-hidden="true">🔇</span></button>
+          <span class="ig-badge">Reel</span><figcaption>${esc(p.cap)}</figcaption></figure>`
+      : `<figure class="ig-tile"><a href="${IG.url}" target="_blank" rel="noopener"><img src="${p.src}" alt="${esc(p.cap)}" loading="lazy"></a><figcaption>${esc(p.cap)}</figcaption></figure>`).join('')}</div>`;
+  const vids = $$('#igRow video');
+  if ('IntersectionObserver' in window && !reduced()){
+    const io = new IntersectionObserver(ents => ents.forEach(en => { const v = en.target; if (en.isIntersecting && en.intersectionRatio > .55){ if (v.preload === 'none') v.preload = 'auto'; const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); } else v.pause(); }), {threshold:[0, .6]});
+    vids.forEach(v => io.observe(v));
+  }
+}
+function igToggle(btn){
+  const fig = btn.closest('.ig-tile'), v = fig.querySelector('video');
+  const turnOn = v.muted || v.paused;
+  $$('#igRow video').forEach(o => { if (o !== v){ o.muted = true; const b = o.closest('.ig-tile').querySelector('.ig-snd'); if (b) b.textContent = '🔇'; } });
+  if (turnOn){ v.muted = false; const pr = v.play(); if (pr && pr.catch) pr.catch(() => { v.muted = true; v.play().catch(() => {}); }); }
+  else v.muted = true;
+  fig.querySelector('.ig-snd').textContent = v.muted ? '🔇' : '🔊';
+  btn.setAttribute('aria-label', (v.muted ? 'Activar sonido: ' : 'Silenciar: ') + v.getAttribute('aria-label'));
+}
+
+/* ===================== Inicio ===================== */
+$('#demoBar').textContent = NUBE ? `Precios y existencias actualizados el ${DATA.generado || ''} · se actualizan cada 2 horas` : `Versión de prueba · inventario real de PLADE del ${DATA.generado || ''} · Todavía no se actualiza sola`;
+$('#popular').innerHTML = `<span>Lo más buscado:</span>${POPULARES.map(t => `<button type="button" class="chip" data-act="q" data-q="${esc(t)}">${esc(t)}</button>`).join('')}<span class="tasa">Precios en dólares con IVA · ref. en bolívares a Bs ${fmt2.format(CONFIG.tasaBs)} por dólar</span>`;
+const savedCart = store.get('fermil_cart3', {});
+for (const r in savedCart) if (byRef[r] && savedCart[r] > 0) cart[r] = savedCart[r];
+ldisc = store.get('fermil_ldisc3', {}) || {};
+quoteNo = sess.get('fermil_qno', null);
+const v0 = store.get('fermil_view', 'grid'); state.view = ['grid','list','catalog'].includes(v0) ? v0 : 'grid';
+const vs0 = store.get('fermil_vista', 'guanare'); state.vista = VISTA[vs0] ? vs0 : 'guanare';
+const s0 = NUBE ? null : sess.get('fermil_sess', null);
+if (s0 && s0.role === 'mayorista' && MAY[s0.mid]) Object.assign(state, {role:'mayorista', mid:s0.mid});
+else if (s0 && s0.role === 'cliente' && MAY[s0.mid] && cfg(s0.mid).clients.some(c => c.code === s0.ccode)) Object.assign(state, {role:'cliente', mid:s0.mid, ccode:s0.ccode, cname:s0.cname});
+const h0 = decodeURIComponent(location.hash.slice(1));
+if (CAT[h0]) state.cat = h0;
+$('#tasaTop').textContent = 'Bs ' + fmt2.format(CONFIG.tasaBs);
+$('#tbWa').textContent = 'WhatsApp ' + CONFIG.telefono; $('#tbWa').href = waStore();
+$('#fabWa').href = waStore();
+renderType();
+applyRole();
+initCaps();
+renderIG();
+if (NUBE){ const c0 = sess.get('fermil_code', null); if (c0) loginNube(c0).then(ok => { if (ok) applyRole(); }).catch(() => {}); }
+})();
+</script>
+</body>
+</html>
