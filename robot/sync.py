@@ -9,7 +9,7 @@ En cada corrida:
        - salida/catalogo.json (público): nombre, precio de venta con IVA, existencias por
          sucursal y si aplica oferta en divisas (sin decir cuánto).
        - precios al mayor (privado): se suben a Supabase, que solo los entrega con un código válido.
-  5. Busca la foto de los productos nuevos, la achica y la guarda en fotos/.
+  5. (python robot/sync.py fotos) Busca la foto de los productos nuevos, la achica y la guarda en fotos/.
 
 Secretos (variables de entorno):
   PLADE_URL, PLADE_USUARIO, PLADE_CLAVE, SUPABASE_URL, SUPABASE_SECRET
@@ -30,7 +30,18 @@ sys.path.insert(0, str(Path(__file__).parent))
 from parse_plade import construir  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parent.parent
-BASE = os.environ.get('PLADE_URL', 'https://fermil.pladesoftware.com').strip().rstrip('/')
+from urllib.parse import urlsplit
+
+
+def solo_sitio(url, defecto):
+    """Deja solo https://servidor, aunque el secreto traiga /panel, /rest/v1 u otra ruta pegada."""
+    u = urlsplit((url or '').strip() or defecto)
+    if not u.scheme:
+        u = urlsplit('https://' + (url or '').strip())
+    return f'{u.scheme}://{u.netloc}'
+
+
+BASE = solo_sitio(os.environ.get('PLADE_URL'), 'https://fermil.pladesoftware.com')
 USUARIO = os.environ.get('PLADE_USUARIO', '').strip()
 CLAVE = os.environ.get('PLADE_CLAVE', '')
 SALIDA = RAIZ / os.environ.get('SALIDA', 'salida')
@@ -176,7 +187,7 @@ def actualizar_fotos(s, productos):
 
 
 def subir_supabase(filas):
-    url = os.environ.get('SUPABASE_URL', '').strip().rstrip('/')
+    url = solo_sitio(os.environ.get('SUPABASE_URL'), '') if os.environ.get('SUPABASE_URL', '').strip() else ''
     key = os.environ.get('SUPABASE_SECRET', '').strip()
     if not url or not key:
         log('Supabase no configurado: no se suben los precios al mayor')
@@ -187,7 +198,9 @@ def subir_supabase(filas):
     for i in range(0, len(filas), 1000):
         r = requests.post(f'{url}/rest/v1/precios_mayor?on_conflict=cod', headers=h, data=json.dumps(filas[i:i+1000]), timeout=120)
         if r.status_code >= 300:
-            sys.exit(f'Supabase respondió {r.status_code}: {r.text[:300]}')
+            # La página pública se publica igual; solo los mayoristas se quedan sin precio nuevo
+            print(f'::error title=Supabase::No se pudieron subir los precios al mayor ({r.status_code}): {r.text[:300]}', flush=True)
+            return
     log(f'Supabase: {len(filas)} precios al mayor actualizados')
 
 
@@ -215,8 +228,18 @@ def main():
     (SALIDA / 'catalogo.json').write_text(json.dumps({**data, 'productos': publico}, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     log(f'Catálogo público: {len(publico)} productos · actualizado {data["generado"]}')
     subir_supabase(privados)
-    actualizar_fotos(s, productos)
+
+
+def solo_fotos():
+    """Segunda parte de la corrida: busca fotos nuevas con el catálogo que ya se publicó."""
+    productos = json.loads((SALIDA / 'catalogo.json').read_text(encoding='utf-8'))['productos']
+    antes = json.loads(CACHE_FOTOS.read_text()) if CACHE_FOTOS.exists() else {}
+    s, _ = entrar()
+    cache = actualizar_fotos(s, productos)
+    nuevas = sum(1 for k, v in cache.items() if v and not antes.get(k))
+    if nuevas:
+        (SALIDA / 'fotos_nuevas').write_text(str(nuevas))
 
 
 if __name__ == '__main__':
-    main()
+    solo_fotos() if 'fotos' in sys.argv[1:] else main()

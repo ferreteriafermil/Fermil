@@ -32,7 +32,7 @@ jobs:
       - name: Instalar lo que usa el robot
         run: pip install requests openpyxl pillow
 
-      - name: Traer precios, existencias, tasa y fotos de PLADE
+      - name: Traer precios, existencias y tasa de PLADE
         env:
           PLADE_URL: ${{ secrets.PLADE_URL }}
           PLADE_USUARIO: ${{ secrets.PLADE_USUARIO }}
@@ -50,6 +50,23 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           npx --yes wrangler@4 pages project create "$PROYECTO" --production-branch=main || true
+          npx --yes wrangler@4 pages deploy _site --project-name="$PROYECTO" --branch=main --commit-dirty=true
+
+      - name: Buscar fotos nuevas en PLADE
+        continue-on-error: true
+        env:
+          PLADE_URL: ${{ secrets.PLADE_URL }}
+          PLADE_USUARIO: ${{ secrets.PLADE_USUARIO }}
+          PLADE_CLAVE: ${{ secrets.PLADE_CLAVE }}
+        run: python robot/sync.py fotos
+
+      - name: Publicar otra vez con las fotos nuevas
+        if: hashFiles('salida/fotos_nuevas') != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          python web/build.py --nube nube.json --catalogo salida/catalogo.json --fotos-cache fotos_cache.json --fotos-dir fotos --salida _site
           npx --yes wrangler@4 pages deploy _site --project-name="$PROYECTO" --branch=main --commit-dirty=true
 
       - name: Guardar las fotos nuevas en el repositorio
