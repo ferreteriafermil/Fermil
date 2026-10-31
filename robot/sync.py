@@ -101,16 +101,60 @@ def entrar():
     return s, r.text
 
 
-def leer_tasa(html):
-    m = re.search(r'1\$\s*=\s*(?:<[^>]+>\s*)*([\d.]+,\d+|[\d,]+\.\d+|\d+)', html)
-    if not m:
-        return None
-    t = m.group(1)
-    t = t.replace('.', '').replace(',', '.') if ',' in t else t
+NUM = r'(\d{1,3}(?:\.\d{3})+,\d+|\d+,\d+|\d+\.\d+|\d+)'
+PATRONES_TASA = [
+    r'1\s*(?:\$|US\$|USD|&#36;|&dollar;)\s*(?:<[^>]+>\s*)*=\s*(?:<[^>]+>\s*)*(?:Bs\.?S?\.?\s*)?' + NUM,
+    r'(?:\$|USD)\s*1\s*=\s*(?:Bs\.?\s*)?' + NUM,
+    r'tasa[\w\s.:]{0,40}?(?:<[^>]+>\s*)*(?:Bs\.?\s*)?' + NUM,
+    r'(?:tasa|cambio|dolar|d[oó]lar)\w*["\']?\s*[:=]\s*["\']?' + NUM,
+]
+
+
+def a_numero(t):
+    if ',' in t:
+        t = t.replace('.', '').replace(',', '.')
     try:
         return float(t)
     except ValueError:
         return None
+
+
+def leer_tasa(html):
+    for pat in PATRONES_TASA:
+        for m in re.finditer(pat, html, re.I):
+            v = a_numero(m.group(1))
+            if v and 50 < v < 1_000_000:
+                return v
+    return None
+
+
+def pistas_tasa(html):
+    """Fragmentos cortos alrededor de 'tasa' o '$ =' para ver cómo la muestra PLADE."""
+    trozos = []
+    for m in re.finditer(r'tasa|\$\s*=|=\s*bs', html, re.I):
+        t = re.sub(r'\s+', ' ', html[max(0, m.start() - 70): m.end() + 90])
+        t = re.sub(r'[\w.+-]+@[\w-]+\.[\w.]+', '[correo]', t)
+        trozos.append(t)
+        if len(trozos) >= 6:
+            break
+    return ' ¦ '.join(trozos) or 'no aparece la palabra tasa'
+
+
+def buscar_tasa(s, inicio):
+    tasa = leer_tasa(inicio)
+    if tasa:
+        return tasa
+    for ruta in ('/panel/index.php', '/panel/index.php?op=tasa_cambio', '/panel/index.php?op=monedas'):
+        try:
+            r = s.get(BASE + ruta, timeout=60)
+            tasa = leer_tasa(r.text)
+            if tasa:
+                aviso('notice', f'Tasa encontrada en {ruta}')
+                return tasa
+        except requests.RequestException:
+            pass
+    aviso('warning', 'Tasa: ' + pistas_tasa(inicio)[:900])
+    return None
 
 
 def url_excel(almacen, categoria):
@@ -239,8 +283,10 @@ def subir_supabase(filas):
 
 def main():
     s, inicio = entrar()
-    tasa = leer_tasa(inicio)
+    tasa = buscar_tasa(s, inicio)
     log(f'Tasa del día: {tasa}')
+    if not tasa:
+        falla('No se encontró la tasa del día en PLADE: no se publica.')
     archivos = descargar_reportes(s, RAIZ / 'reportes')
     if not archivos:
         falla('No se descargó ningún reporte de PLADE.')
@@ -248,8 +294,6 @@ def main():
     productos = data['productos']
     if len(productos) < MINIMO_PRODUCTOS:
         falla(f'Solo llegaron {len(productos)} productos: no se publica para no dañar la página.')
-    if not tasa:
-        falla('No se encontró la tasa del día en la página de inicio de PLADE: no se publica.')
     privados = [{'cod': p['c'], 'mayor': p['y'], 'stock_mayorista': p['e'].get('mayorista')}
                 for p in productos if p.get('y')]
     publico = []
