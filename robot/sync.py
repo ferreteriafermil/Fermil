@@ -201,14 +201,70 @@ def descargar_reportes(s, carpeta):
     return archivos
 
 
+def url_reporte(almacen, cate):
+    return (f'{BASE}/panel/index.php?op=reporte_inventario&id_almacen%5B%5D={almacen}&cate={cate}&orden=V.cod_inv'
+            f'&precio_utilidad%5B%5D=venta&estatus=1&mostrar_exi=on&solo_exi=on&bt_filtrar=1')
+
+
+def leer_ids(html):
+    """Cada producto del reporte tiene una etiqueta con la clase bt_resumen_producto, su id interno
+    y el código como texto. Se aceptan los atributos en cualquier orden y con o sin comillas."""
+    ids = {}
+    for m in re.finditer(r'<(?:a|span|button|td|div)\b([^>]*bt_resumen_producto[^>]*)>\s*(?:<[^>]+>\s*)*([^<]+?)\s*<', html, re.I):
+        attrs, texto = m.group(1), m.group(2)
+        num = re.search(r'''(?:\bid|data-id|data-idc|idc)\s*=\s*['"]?(\d+)''', attrs, re.I)
+        if num and texto.strip():
+            ids.setdefault(texto.strip(), num.group(1))
+    return ids
+
+
 def ids_por_codigo(s, almacen, cate):
     """El reporte en pantalla trae el id interno de cada producto (hace falta para pedir su foto).
     Se pide por categoría, igual que los Excel, porque el reporte completo tarda demasiado."""
-    url = (f'{BASE}/panel/index.php?op=reporte_inventario&id_almacen%5B%5D={almacen}&cate={cate}&orden=V.cod_inv'
-           f'&precio_utilidad%5B%5D=venta&estatus=1&mostrar_exi=on&solo_exi=on&bt_filtrar=1')
-    html = s.get(url, timeout=300).text
-    return {m.group(2).strip(): m.group(1)
-            for m in re.finditer(r"id=['\"](\d+)['\"][^>]*class=['\"]bt_resumen_producto['\"][^>]*>([^<]+)<", html)}
+    return leer_ids(s.get(url_reporte(almacen, cate), timeout=300).text)
+
+
+def tapar(t):
+    """Quita montos (números con coma o punto decimal) antes de mostrar un pedazo de HTML en GitHub."""
+    return re.sub(r'\d+(?:[.,]\d+)+', '#', re.sub(r'\s+', ' ', t))
+
+
+def diagnostico_fotos():
+    """Prueba corta (1-3 minutos) de cómo trae PLADE los ids y las fotos, para no esperar una corrida completa."""
+    s, _ = entrar()
+    for alm, cate in ((1, 6), (1, 1)):
+        t0 = time.time()
+        try:
+            r = s.get(url_reporte(alm, cate), timeout=300)
+        except requests.RequestException as e:
+            aviso('warning', f'Reporte almacén {alm} categoría {cate}: {type(e).__name__} a los {time.time() - t0:.0f}s')
+            continue
+        h = r.text
+        ids = leer_ids(h)
+        i = h.find('bt_resumen_producto')
+        etiqueta = tapar(h[max(0, h.rfind('<', 0, i)):h.find('<', h.find('>', i) + 1) + 1]) if i >= 0 else '-'
+        m = re.search(r'>\s*([A-Z]{3,5}\d{3,5})\s*<', h)
+        cerca = tapar(h[max(0, m.start() - 260):m.end() + 20]) if m else '-'
+        aviso('notice', f'Reporte almacén {alm} categoría {cate}: {pistas(r)} · {time.time() - t0:.0f}s · '
+                        f'bt_resumen_producto: {h.count("bt_resumen_producto")} · ids leídos: {len(ids)} · '
+                        f'ejemplo: {list(ids.items())[:3]} · etiqueta: {etiqueta[:300]}')
+        aviso('notice', f'Junto al primer código: {cerca[:400]}')
+        scripts = sorted(set(re.findall(r'''(?:url|load|ajax|post|get)\s*[:(]\s*['"]([^'"]{4,80}\.php[^'"]{0,60})''', h, re.I)))[:12]
+        aviso('notice', f'Direcciones que usa la página del reporte: {scripts}')
+        if ids:
+            cod, idc = next(iter(ids.items()))
+            try:
+                rr = s.post(f'{BASE}/panel/ajax_php.php', data={'modulo': 'productos', 'tipo': 'buscarProducto', 'por_id': 1,
+                                                               'idc': idc, 'solo_modal_resumen': 1}, timeout=60)
+                try:
+                    j = rr.json()
+                    prod = j.get('producto') or {}
+                    aviso('notice', f'Foto de {cod}: claves {sorted(j)[:15]} · producto {sorted(prod)[:25]} · img_inv: {"sí" if prod.get("img_inv") else "no"}')
+                except ValueError:
+                    aviso('warning', f'Foto de {cod}: no llegó JSON · {pistas(rr)} · {tapar(rr.text[:200])}')
+            except requests.RequestException as e:
+                aviso('warning', f'Foto de {cod}: {type(e).__name__}')
+            break
 
 
 def actualizar_fotos(s, productos):
@@ -332,4 +388,15 @@ def solo_fotos():
 
 
 if __name__ == '__main__':
-    solo_fotos() if 'fotos' in sys.argv[1:] else main()
+    if 'diagnostico' in sys.argv[1:]:
+        diagnostico_fotos()
+    elif 'fotos' in sys.argv[1:]:
+        try:
+            solo_fotos()
+        except SystemExit:
+            raise
+        except Exception as e:  # que se vea en GitHub qué pasó, sin abrir el registro
+            aviso('warning', f'Fotos: se detuvo por {type(e).__name__}: {tapar(str(e))[:300]}')
+            raise
+    else:
+        main()

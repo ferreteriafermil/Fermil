@@ -1,0 +1,27 @@
+name: Probar fotos de PLADE
+
+# Prueba corta (1-3 minutos) de cómo entrega PLADE los ids y las fotos de los productos.
+# No publica nada ni cambia la página.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: sincronizar
+  cancel-in-progress: false
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Revisar ids y fotos
+        env:
+          PLADE_URL: ${{ secrets.PLADE_URL }}
+          PLADE_USUARIO: ${{ secrets.PLADE_USUARIO }}
+          PLADE_CLAVE: ${{ secrets.PLADE_CLAVE }}
+        run: python robot/sync.py diagnostico
