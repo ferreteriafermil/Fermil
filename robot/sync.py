@@ -57,11 +57,14 @@ ALMACENES = [
     (1, 'unda'),        # Inversiones Fermil Centro, C.A. (Fermil La Unda)
     (7, 'quinta'),      # Inversiones La Esquina del Constructor, C.A. (Fermil La Quinta)
     (5, 'colonia'),     # Inversiones Fermil, C.A. (Fermil La Colonia)
-    (6, 'biscucuy'),    # Ferreagro Fermil Biscucuy, C.A. (no INGCO Biscucuy)
-    # Lo que ven los mayoristas y sus clientes: la suma de estos dos almacenes (no el 15, Venta Mayorista)
-    (9, 'mayorista'),   # Almacén Principal
-    (17, 'mayorista'),  # Almacén Unda
+    (6, 'biscucuy'),    # Ferreagro Fermil Biscucuy, C.A.
+    (11, 'ingco'),      # Ingco Biscucuy
+    # Lo que ven los mayoristas: Almacén Principal y Almacén Unda por separado; sus clientes ven la suma.
+    # El 15 (Venta Mayorista) no tiene existencias y no se usa.
+    (9, 'principal'),   # Almacén Principal
+    (17, 'almunda'),    # Almacén Unda
 ]
+ALM_MAYOR = ('principal', 'almunda')
 # Categorías de PLADE: se piden por separado para que cada reporte sea rápido
 CATEGORIAS_PLADE = [1, 2, 6, 11, 14, 15, 17, 18, 19, 20, 21, 22, 23, 27, 40]
 
@@ -408,15 +411,53 @@ def actualizar_fotos(s, productos):
     return cache
 
 
+def _sb_headers(key, extra=None):
+    h = {'apikey': key, 'Content-Type': 'application/json'}
+    if not key.startswith('sb_'):
+        h['Authorization'] = f'Bearer {key}'  # clave antigua (service_role)
+    h.update(extra or {})
+    return h
+
+
+def precios_guardados(url, key):
+    """Lo que tiene Supabase ahora (para saber qué precios cambiaron). None si falta la actualización SQL."""
+    out, desde = {}, 0
+    while True:
+        r = requests.get(f'{url}/rest/v1/precios_mayor?select=cod,mayor,mayor_anterior,cambio&order=cod&limit=1000&offset={desde}',
+                         headers=_sb_headers(key), timeout=120)
+        if r.status_code >= 300:
+            return None
+        lote = r.json()
+        out.update({x['cod']: x for x in lote})
+        if len(lote) < 1000:
+            return out
+        desde += 1000
+
+
 def subir_supabase(filas):
     url = solo_sitio(os.environ.get('SUPABASE_URL'), '') if os.environ.get('SUPABASE_URL', '').strip() else ''
     key = os.environ.get('SUPABASE_SECRET', '').strip()
     if not url or not key:
         log('Supabase no configurado: no se suben los precios al mayor')
         return
-    h = {'apikey': key, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal'}
-    if not key.startswith('sb_'):
-        h['Authorization'] = f'Bearer {key}'  # clave antigua (service_role)
+    antes = precios_guardados(url, key)
+    if antes is None:
+        aviso('warning', 'Supabase todavía no tiene las columnas nuevas (falta correr supabase-actualizacion-1.sql): '
+                         'se suben precios y existencia total, sin desglose por almacén ni aviso de cambios.')
+        filas = [{k: f[k] for k in ('cod', 'mayor', 'stock_mayorista')} for f in filas]
+    else:
+        ahora = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        suben = bajan = 0
+        for f in filas:
+            v = antes.get(f['cod'])
+            if v and v.get('mayor') is not None and abs(float(v['mayor']) - f['mayor']) >= 0.005:
+                f['mayor_anterior'], f['cambio'] = float(v['mayor']), ahora
+                if f['mayor'] > float(v['mayor']): suben += 1
+                else: bajan += 1
+            else:
+                f['mayor_anterior'], f['cambio'] = (v or {}).get('mayor_anterior'), (v or {}).get('cambio')
+        aviso('notice', f'Precios al mayor: {suben} subieron y {bajan} bajaron desde la corrida anterior')
+    h = _sb_headers(key, {'Prefer': 'resolution=merge-duplicates,return=minimal'})
     for i in range(0, len(filas), 1000):
         r = requests.post(f'{url}/rest/v1/precios_mayor?on_conflict=cod', headers=h, data=json.dumps(filas[i:i+1000]), timeout=120)
         if r.status_code >= 300:
@@ -439,12 +480,17 @@ def main():
     productos = data['productos']
     if len(productos) < MINIMO_PRODUCTOS:
         falla(f'Solo llegaron {len(productos)} productos: no se publica para no dañar la página.')
-    privados = [{'cod': p['c'], 'mayor': p['y'], 'stock_mayorista': p['e'].get('mayorista')}
-                for p in productos if p.get('y')]
+    privados = []
+    for p in productos:
+        if not p.get('y'):
+            continue
+        pr, un = p['e'].get('principal', 0), p['e'].get('almunda', 0)
+        privados.append({'cod': p['c'], 'mayor': p['y'], 'stock_mayorista': round(pr + un, 2),
+                         'stock_principal': pr, 'stock_unda': un})
     publico = []
     for p in productos:
         q = {k: v for k, v in p.items() if k != 'y'}
-        q['e'] = {k: v for k, v in p['e'].items() if k != 'mayorista'}
+        q['e'] = {k: v for k, v in p['e'].items() if k not in ALM_MAYOR}  # lo de los mayoristas no va en la página pública
         publico.append(q)
     SALIDA.mkdir(parents=True, exist_ok=True)
     (SALIDA / 'catalogo.json').write_text(json.dumps({**data, 'productos': publico}, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')

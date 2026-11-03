@@ -160,7 +160,7 @@ def construir(archivos, tasa=None):
                 p['v'] = con_iva(f['venta'], f['iva'])
             if not p['y'] and f['mayor']:
                 p['y'] = round(f['mayor'], 2)
-            if f['disp'] > 0:  # dos almacenes pueden sumar a la misma existencia (mayoristas: Almacén Principal + Almacén Unda)
+            if f['disp'] > 0:  # dos almacenes pueden sumar a la misma existencia (por si un mismo código aparece dos veces)
                 p['e'][suc] = round(p['e'].get(suc, 0) + f['disp'], 2)
     lista = [p for p in productos.values() if p['v'] > 0]
     lista.sort(key=lambda p: (p['k'], p['n']))

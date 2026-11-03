@@ -55,6 +55,7 @@
     <div class="mega" id="mega" hidden><div class="wrap mega-in"><ul class="mega-l" id="megaL"></ul><div class="mega-r" id="megaR"></div></div></div>
   </nav>
   <div id="roleBand" class="role-band" hidden><div class="wrap"><span class="rb-txt" id="rbTxt"></span><span class="rb-acts" id="rbActs"></span></div></div>
+  <div id="priceAlert" class="price-alert" role="status" hidden></div>
 </header>
 <h1 class="sr">Ferretería Fermil: catálogo en línea, presupuestos y pedidos por WhatsApp</h1>
 
@@ -73,7 +74,7 @@
       <div class="intro-top">
         <div><span class="intro-eyebrow">Cómo comprar en 5 pasos</span><h2 class="intro-h">Arma tu pedido y <em>termínalo por WhatsApp</em></h2></div>
         <div class="better-card" id="betterCard">
-          <p><b>¿Compras en cantidad o pagas en divisas?</b> Un vendedor de la ferretería te puede mejorar el precio.</p>
+          <p><b>¿Quieres un mejor precio?</b> Nuestros vendedores te pueden ofrecer ofertas especiales y precios por cantidad.</p>
           <a class="btn yellow" data-better href="#" target="_blank" rel="noopener"></a>
         </div>
       </div>
@@ -81,7 +82,7 @@
         <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></span><b>Busca</b>escribe el producto o entra a una categoría</li>
         <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span><b>Selecciónalo</b>elige la cantidad y toca “Agregar”</li>
         <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L20.5 8H6.2"/><circle cx="10" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/></svg></span><b>Ve al carrito</b>revisa todo lo que agregaste</li>
-        <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg></span><b>Elige tu forma de pago</b>cash, pago móvil, punto, Zelle, Binance…</li>
+        <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg></span><b>Elige tu forma de pago</b>Cashea, pago móvil, punto, Zelle, Binance…</li>
         <li><span class="fl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a8.4 8.4 0 0 1-12.3 7.4L3.5 20.5l1.5-4.6A8.4 8.4 0 1 1 20.5 11.6z"/><path d="M9 9.2c.3 2.4 2.4 4.5 4.8 4.9l1-1.1 1.8.8"/></svg></span><b>Envía</b>se abre WhatsApp con tu pedido listo para terminarlo</li>
       </ol>
       <div class="flow-cta"><button type="button" class="btn yellow" data-act="startsearch">Empezar a buscar →</button><span>No pagas en la página: el vendedor te confirma todo por WhatsApp.</span></div>
@@ -90,8 +91,8 @@
   </section>
   <section class="wrap perks reveal" aria-label="Por qué comprar en Fermil">
     <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l1.5-5h15L21 10"/><path d="M4 10v10h16V10"/><path d="M3 10h18"/><path d="M9 20v-5h6v5"/></svg></span><div><b>4 ferreterías</b><span>Retira en Guanare o Biscucuy</span></div></div>
-    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M16 15h2"/></svg></span><div><b>Paga como quieras</b><span>Cash, pago móvil, punto, Zelle, Binance</span></div></div>
-    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></svg></span><div><b>Ofertas en divisas</b><span>Pregunta a tu vendedor</span></div></div>
+    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M16 15h2"/></svg></span><div><b>Paga como quieras</b><span>Cashea, pago móvil, punto, Zelle, Binance</span></div></div>
+    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></svg></span><div><b>Mejores precios</b><span>Pregunta a nuestros vendedores</span></div></div>
     <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/></svg></span><div><b>Pedido por WhatsApp</b><span>Arma tu carrito y envíalo</span></div></div>
   </section>
   <section class="wrap rec-sec reveal" aria-labelledby="row3Title" id="row3Sec">
@@ -150,6 +151,8 @@
 
 <dialog id="dlgProduct" aria-label="Detalle del producto"></dialog>
 
+<dialog id="dlgCambios" aria-labelledby="cmbTitle"></dialog>
+
 <dialog id="dlgCart" class="drawer" aria-labelledby="cartTitle">
   <div class="drawer-head"><h2 id="cartTitle">Tu carrito</h2><div class="dh-acts"><button type="button" class="btn ghost sm cart-big" data-act="cartbig" aria-pressed="false"></button><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
   <div class="drawer-body">
@@ -192,8 +195,8 @@
       </fieldset>
       <div class="field" id="fSucWrap"><label for="fSuc">Sucursal *</label><select id="fSuc"></select></div>
       <div class="field" id="fDirWrap" hidden><label for="fDir">¿A dónde lo necesitas?</label><input id="fDir" autocomplete="street-address" placeholder="Sector, calle, referencia"></div>
-      <h3 class="sec-h"><span>3</span>Forma de pago</h3>
-      <fieldset class="field"><legend class="sr">Forma de pago</legend><div class="radios" id="payOpts"></div></fieldset>
+      <div id="payWrap"><h3 class="sec-h"><span>3</span>Forma de pago</h3>
+      <fieldset class="field"><legend class="sr">Forma de pago</legend><div class="radios" id="payOpts"></div></fieldset></div>
       <div class="field"><label for="fNota">Nota (opcional)</label><textarea id="fNota" rows="2" placeholder="Ej.: necesito el material para el sábado"></textarea></div>
       <p id="formErr" class="err" role="alert" hidden></p>
     </form>
@@ -261,8 +264,7 @@ const CONFIG = {
   pocasUnidades: 5,
   porPagina: 24
 };
-const PAGOS = ['Cash (dólares en efectivo)', 'Pago móvil', 'Bolívares por punto de venta', 'Zelle', 'Binance (USDT)', 'Transferencia bancaria', 'Otro (lo acordamos por WhatsApp)'];
-const DIVISAS = ['Cash (dólares en efectivo)', 'Zelle', 'Binance (USDT)'];
+const PAGOS = ['Cashea', 'Pago móvil', 'Bolívares por punto de venta', 'Zelle', 'Binance (USDT)', 'Transferencia bancaria', 'Otro (lo acordamos por WhatsApp)'];
 const MAYORISTAS = [
   {id:'manuel',   nombre:'Manuel Pérez',          corto:'Manuel',   codigo:'MANUEL-01',   prefijo:'MANUEL', whatsapp:'584145446979'},
   {id:'leonardo', nombre:'Leonardo Rojas',        corto:'Leonardo', codigo:'LEONARDO-02', prefijo:'LEO',    whatsapp:'584245318722'},
@@ -273,15 +275,18 @@ const SUCURSALES = {
   unda:     {nombre:'Fermil La Unda',            ciudad:'Guanare',  dir:'Av. Unda entre calles 10 y 11, Guanare 3350, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 7:00 p. m. · Dom 8:00 a. m. – 1:00 p. m.', razon:'Inversiones Fermil Centro, C.A.', rif:'J-40816397-7'},
   quinta:   {nombre:'Fermil La Quinta',          ciudad:'Guanare',  dir:'Carrera 5 con calle 10, barrio La Arenosa, Guanare 3350, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Inversiones La Esquina del Constructor, C.A.', rif:'J-40239921-9'},
   colonia:  {nombre:'Fermil La Colonia',         ciudad:'Guanare',  dir:'La Colonia parte baja, frente a la Ruta 1, Troncal 5, Guanare 3350, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Inversiones Fermil, C.A.', rif:'J-40025035-8'},
-  biscucuy: {nombre:'Ferreagro Fermil Biscucuy', ciudad:'Biscucuy', dir:'Av. Bolívar entre calles Páez y Negro Primero, Biscucuy 3351, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Ferreagro Fermil Biscucuy, C.A.', rif:'J-50096035-2'}
+  biscucuy: {nombre:'Ferreagro Fermil Biscucuy', ciudad:'Biscucuy', dir:'Av. Bolívar entre calles Páez y Negro Primero, Biscucuy 3351, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Ferreagro Fermil Biscucuy, C.A.', rif:'J-50096035-2'},
+  ingco:    {nombre:'Ingco Biscucuy',            ciudad:'Biscucuy', dir:'Biscucuy, Portuguesa', horario:'', razon:'', rif:''}
 };
 const VISTAS = [
   {id:'guanare',  nombre:'Todas las de Guanare',          sucs:['unda','quinta','colonia']},
   {id:'unda',     nombre:'Fermil La Unda (Guanare)',      sucs:['unda']},
   {id:'quinta',   nombre:'Fermil La Quinta (Guanare)',    sucs:['quinta']},
   {id:'colonia',  nombre:'Fermil La Colonia (Guanare)',   sucs:['colonia']},
+  {id:'bisctodas', nombre:'Todas las de Biscucuy',        sucs:['biscucuy','ingco']},
   {id:'biscucuy', nombre:'Ferreagro Fermil (Biscucuy)',   sucs:['biscucuy']},
-  {id:'todas',    nombre:'Todas las ferreterías',         sucs:['unda','quinta','colonia','biscucuy']}
+  {id:'ingco',    nombre:'Ingco Biscucuy',                sucs:['ingco']},
+  {id:'todas',    nombre:'Todas las tiendas',             sucs:['unda','quinta','colonia','biscucuy','ingco']}
 ];
 const VISTA = Object.fromEntries(VISTAS.map(v => [v.id, v]));
 const CATS = [
@@ -557,7 +562,7 @@ function lineInfo(p, q){
 }
 /* Existencia mínima para mostrar un producto como disponible:
    público: grandes/costosos desde 1, pequeños/de bajo costo más de 5, el resto desde 2.
-   mayoristas y sus clientes: desde 20. */
+   mayoristas y sus clientes: desde 10 (suma de Almacén Principal y Almacén Unda). */
 const KW_GRANDE = /\b(planta|generador|soldador|taladro|rotomartillo|martillo demoledor|demoledor|esmeril|pulidora|compresor|hidrolavadora|motobomba|bomba|motor|tanque|calentador|cortadora|tronzadora|sierra|caladora|ingleteadora|lijadora|atornillador|mezcladora|carretilla|escalera|desmalezadora|motosierra|aire acondicionado|nevera|ventilador|poceta|lavamanos|fregadero|puerta|kit)\b/;
 const KW_PEQ = /\b(tornillo|tornillos|clavo|clavos|tuerca|arandela|o-?ring|oring|empacadura|grapa|tirro|teipe|cemento|cal|yeso|pego|bloque|cabilla|arena|polvo|abrazadera|codo|tee|union|niple|adaptador|tapon|conector|terminal|fusible|bombillo|tubo|anillo|remache|perno|chazo|ramplug|alambre|lija|disco|broca|mecha)\b/;
 function tamano(p){
@@ -566,7 +571,7 @@ function tamano(p){
   if (v < 5 || (v < 25 && KW_PEQ.test(p._name))) return 'pequeno';
   return 'medio';
 }
-const minStock = p => isWholesaleView() ? 20 : ({grande:1, medio:2, pequeno:6})[p._t || (p._t = tamano(p))];
+const minStock = p => isWholesaleView() ? 10 : ({grande:1, medio:2, pequeno:6})[p._t || (p._t = tamano(p))];
 const disp = p => stockOf(p) >= minStock(p);
 const status = p => { const s = stockOf(p); return !disp(p) ? 'out' : (s <= CONFIG.pocasUnidades && !isWholesaleView() ? 'low' : 'ok'); };
 const allRefs = () => Object.keys(cart).filter(r => byRef[r]);
@@ -576,18 +581,19 @@ const cartRefs = () => allRefs().filter(r => !unsel.has(r));
 
 function stockPill(p){
   const s = status(p), M = isMay(), st = stockOf(p);
-  const t = s === 'out' ? 'Agotado' : s === 'low' ? (M ? `Quedan ${fmt0.format(st)}` : 'Pocas unidades') : (M ? `${fmt0.format(st)} disp.` : 'Disponible');
+  const t = s === 'out' ? 'Agotado' : s === 'low' ? `Quedan ${fmt0.format(st)}` : `${fmt0.format(st)} disp.`;
   return `<span class="pill ${s}">${t}</span>`;
 }
-const showDivisas = p => p.divisas && effRole() === 'publico';
-const DIV_TXT = 'Oferta especial pagando en divisas · pregunta al vendedor';
-const DIV_TXT_CORTO = 'Oferta pagando en divisas';
+/* Solo el mayorista ve cuánto hay en cada almacén; sus clientes ven la suma */
+const hasAlm = p => isMay() && (p.e.alm9 != null || p.e.alm17 != null);
+const almTxt = p => hasAlm(p) ? `<div class="alm-x"><span>Principal <b>${fmt0.format(p.e.alm9 || 0)}</b></span><span>Unda <b>${fmt0.format(p.e.alm17 || 0)}</b></span></div>` : '';
+/* Detal: lo más que se puede llevar es lo que hay en la tienda elegida */
+const maxQty = p => isWholesaleView() ? Infinity : Math.max(0, Math.floor(stockOf(p)));
 function priceBlock(p, big){
   const pi = priceOf(p);
   if (pi.hidden) return `<span class="ptag off${big ? ' big' : ''}"><span class="tag-amt">Precio a consultar</span></span><span class="bsref">Agrégalo y te damos el precio por WhatsApp</span>`;
   let h = `<span class="ptag${big ? ' big' : ''}"><span class="tag-amt">${usd(pi.v)}</span><span class="tag-u">/${esc(p.unidad)}</span></span><span class="bsref">≈ ${bs(pi.v)} <span class="iva">· ${effRole() === 'publico' ? 'IVA incluido' : 'sin IVA'}</span></span>`;
   if (pi.orig) h += `<span class="tag-sub"><s>${usd(pi.orig)}</s> <b class="dtag">${pi.ch && pi.ch.length > 1 ? esc(chainTxt(pi.ch)) : '-' + pctTxt(pi.d) + '%'}</b></span>`;
-  if (showDivisas(p)) h += `<span class="divisas">${big ? DIV_TXT : DIV_TXT_CORTO}</span>`;
   return h;
 }
 function controls(p){
@@ -705,7 +711,7 @@ function renderBranch(){
   const bar = $('#branchBar');
   if (isWholesaleView()){
     sel.hidden = true;
-    $('#branchInfo').innerHTML = `<b>${ALM_MAYOR}</b> · solo se muestran productos con 20 o más`;
+    $('#branchInfo').innerHTML = `<b>${ALM_MAYOR}</b> · solo se muestran productos con 10 o más`;
     bar.querySelector('label').lastChild.textContent = 'Inventario:';
     return;
   }
@@ -736,7 +742,7 @@ function card(p){
   return `<article class="card" data-st="${status(p)}">
     <button type="button" class="pimg-btn" data-act="open" data-ref="${p.ref}" aria-label="Ver detalle de ${esc(p.nombre)}">${pimg(p)}</button>
     <div class="card-body">
-      <div class="meta"><span class="ref">${esc(p.ref)}</span>${stockPill(p)}</div>
+      <div class="meta"><span class="ref">${esc(p.ref)}</span>${stockPill(p)}</div>${almTxt(p)}
       <h3 class="pname"><button type="button" data-act="open" data-ref="${p.ref}">${esc(p.nombre)}</button></h3>
       <div class="pcat">${esc(sub || CAT[p.cat].nombre)}</div>
       <div class="price">${priceBlock(p)}</div>
@@ -802,12 +808,12 @@ function pageHtml(pg, i){
     <header class="pg-head"><div class="ph-l">${catIco(c.id)}<span class="pg-cat">${esc(c.nombre)}</span></div><span class="pg-num">${pg.parts > 1 ? `${pg.part} de ${pg.parts} · ` : ''}Pág. ${i + 1}</span></header>
     <div class="pg-grid">${pg.items.map(p => `<div class="ki">
       <button type="button" class="pimg-btn" data-act="open" data-ref="${p.ref}" aria-label="Ver detalle de ${esc(p.nombre)}">${pimg(p)}</button>
-      <div class="meta"><span class="ref">${esc(p.ref)}</span>${stockPill(p)}</div>
+      <div class="meta"><span class="ref">${esc(p.ref)}</span>${stockPill(p)}</div>${almTxt(p)}
       <h3 class="pname"><button type="button" data-act="open" data-ref="${p.ref}">${esc(p.nombre)}</button></h3>
       <div class="price">${priceBlock(p)}</div>
       <div class="ctrl" data-ctrl="${p.ref}">${controls(p)}</div>
     </div>`).join('')}</div>
-    <footer class="pg-foot"><span>Ferretería Fermil · ${monthYear()}</span><span>Precios con IVA, sujetos a cambio y a disponibilidad</span></footer>
+    <footer class="pg-foot"><span>Ferretería Fermil · ${monthYear()}</span><span>${effRole() === 'publico' ? 'Precios con IVA' : 'Precios sin IVA'}, sujetos a cambio y a disponibilidad</span></footer>
   </section>`;
 }
 function renderCatalog(list){
@@ -861,14 +867,14 @@ async function toggleFull(){
 const dlgProduct = $('#dlgProduct');
 function stockBySuc(p){
   if (isWholesaleView()) return '';
-  const rows = Object.keys(SUCURSALES).map(id => { const n = p.e[id] || 0; return `<div><dt>${esc(SUCURSALES[id].nombre)}</dt><dd>${n > 0 ? (n <= CONFIG.pocasUnidades ? 'Pocas unidades' : 'Disponible') : 'Agotado'}</dd></div>`; }).join('');
+  const rows = Object.keys(SUCURSALES).map(id => { const n = p.e[id] || 0; return `<div><dt>${esc(SUCURSALES[id].nombre)}</dt><dd>${n > 0 ? `${fmt0.format(n)} ${esc(p.unidad)}` : 'Agotado'}</dd></div>`; }).join('');
   return `<dl class="pd-specs">${rows}</dl>`;
 }
 function openProduct(ref){
   const p = byRef[ref]; if (!p) return;
   const c = CAT[p.cat], inCart = cart[ref] || 0, out = !disp(p), M = isMay();
   const rel = visibleProducts().filter(x => x.cat === p.cat && x.ref !== p.ref && disp(x) && (!p.sub || x.sub === p.sub)).slice(0, 4);
-  const exist = out ? 'Agotado' : (M ? `${fmt0.format(stockOf(p))} ${esc(p.unidad)}` : (status(p) === 'low' ? 'Pocas unidades' : 'Disponible'));
+  const exist = out ? 'Agotado' : (isWholesaleView() ? `${fmt0.format(stockOf(p))} ${esc(p.unidad)}` : `${fmt0.format(maxQty(p))} ${esc(p.unidad)} · puedes llevar hasta ${fmt0.format(maxQty(p))}`);
   dlgProduct.innerHTML = `<div class="pd">
     <button type="button" class="x" data-act="close" aria-label="Cerrar">×</button>
     <div class="pd-img">${pimg(p)}</div>
@@ -878,7 +884,8 @@ function openProduct(ref){
       <div class="meta" style="justify-content:flex-start"><span class="ref">Ref. ${esc(p.ref)}</span>${stockPill(p)}</div>
       <dl class="pd-specs">
         <div><dt>Unidad de venta</dt><dd>${esc(p.unidad)}</dd></div>
-        <div><dt>${isWholesaleView() ? 'Existencia mayorista' : 'En ' + esc(VISTA[state.vista].nombre)}</dt><dd>${exist}</dd></div>
+        <div><dt>${isWholesaleView() ? (hasAlm(p) ? 'Total para mayoristas' : 'Disponible') : 'En ' + esc(VISTA[state.vista].nombre)}</dt><dd>${exist}</dd></div>
+        ${hasAlm(p) ? `<div><dt>Almacén Principal</dt><dd>${fmt0.format(p.e.alm9 || 0)} ${esc(p.unidad)}</dd></div><div><dt>Almacén Unda</dt><dd>${fmt0.format(p.e.alm17 || 0)} ${esc(p.unidad)}</dd></div>` : ''}
         ${p.marca ? `<div><dt>Marca</dt><dd>${esc(p.marca)}</dd></div>` : ''}
         ${p.sub ? `<div><dt>Tipo</dt><dd>${esc(p.sub)}</dd></div>` : ''}
       </dl>
@@ -887,7 +894,7 @@ function openProduct(ref){
         <a class="btn ghost wide" href="${waLink(storeNumber(), `Hola, ${CONFIG.tienda}. ¿Tienen o cuándo les llega este producto?\n${p.nombre} (Ref. ${p.ref})`)}" target="_blank" rel="noopener">Preguntar por WhatsApp</a>`
       : `<div class="estimate">
           <label for="pdQty">Elige la cantidad</label>
-          <div class="stepper lg"><button type="button" data-act="pdq" data-d="-1" aria-label="Quitar uno">−</button><input id="pdQty" type="number" min="1" inputmode="decimal" value="${inCart || 1}"><button type="button" data-act="pdq" data-d="1" aria-label="Agregar uno">+</button></div>
+          <div class="stepper lg"><button type="button" data-act="pdq" data-d="-1" aria-label="Quitar uno">−</button><input id="pdQty" type="number" min="1" ${isFinite(maxQty(p)) ? `max="${maxQty(p)}"` : ''} inputmode="decimal" value="${Math.min(inCart || 1, maxQty(p)) || 1}"><button type="button" data-act="pdq" data-d="1" aria-label="Agregar uno">+</button></div>
           <div class="est-out" id="pdEst"></div>
         </div>
         <p class="warn-txt" id="pdWarn" hidden></p>
@@ -907,7 +914,7 @@ function updateEst(p){
   const q = Math.max(0, Number(qi.value) || 0), li = lineInfo(p, q);
   $('#pdEst').innerHTML = li.hidden ? `${fmt0.format(q)} ${esc(p.unidad)}<b>A consultar</b>` : `${fmt0.format(q)} ${esc(p.unidad)} × ${usd(li.unit)}<b>${usd(li.total)}</b>≈ ${bs(li.total)}`;
   const w = $('#pdWarn'), st = stockOf(p);
-  if (q > st){ w.hidden = false; w.textContent = isWholesaleView() ? `Hay ${fmt0.format(st)} ${p.unidad} entre Almacén Principal y Almacén Unda. El resto se confirma por WhatsApp.` : 'Esa cantidad supera lo que hay en tienda. Te confirmamos por WhatsApp.'; }
+  if (q > st){ w.hidden = false; w.textContent = isWholesaleView() ? `Hay ${fmt0.format(st)} ${p.unidad} disponibles. El resto se confirma por WhatsApp.` : `Puedes llevar hasta ${fmt0.format(maxQty(p))} ${p.unidad}.`; }
   else w.hidden = true;
 }
 
@@ -918,6 +925,8 @@ const cartBig = () => dlgCart.classList.contains('full');
 function setQty(ref, q, added){
   const p = byRef[ref]; if (!p) return;
   q = Math.max(0, Math.min(99999, Math.round((Number(q) || 0) * 100) / 100));
+  const mx = maxQty(p);
+  if (q > mx && mx > 0){ q = mx; added = false; toast(`Hay ${fmt0.format(mx)} en ${VISTA[state.vista].nombre}: es lo más que puedes llevar`); }
   if (q) cart[ref] = q; else { delete cart[ref]; delete ldisc[ref]; unsel.delete(ref); }
   if (!allRefs().length){ quoteNo = null; sess.set('fermil_qno', null); }
   saveCart();
@@ -943,14 +952,17 @@ function renderSucField(){
   sel.innerHTML = (ids.length > 1 ? '<option value="">Elige la sucursal…</option>' : '') + ids.map(id => `<option value="${id}">${esc(SUCURSALES[id].nombre)} · ${esc(SUCURSALES[id].ciudad)}</option>`).join('');
   if (ids.includes(cur)) sel.value = cur;
   $('#fSucWrap').hidden = isWholesaleView();
+  $('#payWrap').hidden = isWholesaleView();  // del lado mayor el pago lo acuerdan cliente y mayorista
 }
+/* Mejores precios: siempre con un vendedor (nunca por forma de pago) */
+const BETTER_MSG = 'Hola, quisiera saber si me pueden dar un mejor precio u oferta especial.';
+const betterNum = () => mayNow() ? mayNow().whatsapp : CONFIG.whatsappVendedor;
+const betterWho = () => mayNow() ? mayNow().corto : 'nuestros vendedores';
 function renderDivBox(t){
-  const box = $('#divBox'), pago = formData().pago;
-  if (effRole() !== 'publico' || !t.div){ box.hidden = true; return; }
+  const box = $('#divBox');
+  if (isMay() || !t.all){ box.hidden = true; return; }
   box.hidden = false;
-  box.innerHTML = DIVISAS.includes(pago)
-    ? `<b>Pagando en divisas</b> puedes optar a una oferta especial en ${t.div} ${t.div === 1 ? 'producto' : 'productos'} de tu pedido. El vendedor te confirma el descuento por WhatsApp al cerrar la venta.`
-    : `${t.div} ${t.div === 1 ? 'producto tiene' : 'productos tienen'} oferta especial si pagas en divisas (cash, Zelle o Binance). Pregunta al vendedor.`;
+  box.innerHTML = `<b>¿Quieres un mejor precio?</b> ${mayNow() ? `${esc(mayNow().corto)} te puede` : 'Nuestros vendedores te pueden'} ofrecer ofertas especiales y precios por cantidad. Escríbele${mayNow() ? '' : 's'} con esta lista.`;
 }
 const ICO_BIG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
 const ICO_SMALL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>';
@@ -991,7 +1003,7 @@ function renderCartAll(){
   } else {
     $('#cartItems').innerHTML = all.map(r => {
       const p = byRef[r], q = cart[r], li = lineInfo(p, q), st = stockOf(p), off = unsel.has(r), chk = big || off;
-      const warn = q <= st ? '' : (st <= 0 ? 'Agotado aquí: se confirma disponibilidad por WhatsApp.' : (isWholesaleView() ? `Hay ${fmt0.format(st)} entre Almacén Principal y Almacén Unda; el resto se confirma.` : 'Supera la existencia; te confirmamos por WhatsApp.'));
+      const warn = q <= st ? '' : (st <= 0 ? 'Agotado aquí: se confirma disponibilidad por WhatsApp.' : (isWholesaleView() ? `Hay ${fmt0.format(st)} disponibles; el resto se confirma.` : `En ${esc(VISTA[state.vista].nombre)} hay ${fmt0.format(st)}: cambia la cantidad o la tienda.`));
       const unitTxt = li.hidden ? 'Precio a consultar' : `${usd(li.unit)} / ${esc(p.unidad)}${li.pct ? ` <span class="dtag">${li.pct > 0 ? '-' : '+'}${pctTxt(Math.abs(li.pct))}%</span>` : ''}`;
       const pi = M && state.mPriceMode === 'cliente' && !li.hidden ? priceOf(p) : null;
       const cuenta = pi && pi.parts && pi.parts.length ? `<div class="ci-cuenta cuenta">${cuentaHtml(p.mayor, pi.parts)}</div>` : '';
@@ -1022,7 +1034,7 @@ function formData(){
   const pago = document.querySelector('input[name="pago"]:checked');
   const ids = sucOptions();
   const suc = isWholesaleView() ? '' : (v('#fSuc') || (ids.length === 1 ? ids[0] : ''));
-  return {nombre:v('#fNombre'), tel:v('#fTel'), doc:v('#fDoc'), entrega: ent ? ent.value : 'Retiro en tienda', dir:v('#fDir'), pago: pago ? pago.value : '', nota:v('#fNota'), suc};
+  return {nombre:v('#fNombre'), tel:v('#fTel'), doc:v('#fDoc'), entrega: ent ? ent.value : 'Retiro en tienda', dir:v('#fDir'), pago: pago && !isWholesaleView() ? pago.value : '', nota:v('#fNota'), suc};
 }
 function quoteNumber(){
   if (!quoteNo){
@@ -1050,7 +1062,7 @@ function buildText(){
   if (f.doc) L.push(`C.I./RIF: ${f.doc}`);
   if (f.tel) L.push(`Teléfono: ${f.tel}`);
   L.push(`Entrega: ${f.entrega}${f.dir ? ' - ' + f.dir : ''}`);
-  L.push(`Forma de pago: ${f.pago || 'por definir'}`);
+  if (!isWholesaleView()) L.push(`Forma de pago: ${f.pago || 'por definir'}`);
   L.push('');
   refs.forEach((r, i) => {
     const p = byRef[r], q = cart[r], li = lineInfo(p, q);
@@ -1063,7 +1075,6 @@ function buildText(){
   else L.push(`*TOTAL: ${usd(t.total)}*${effRole() === 'publico' ? ' (IVA incluido)' : ' (sin IVA)'}`);
   if (t.hidden) L.push(`+ ${t.hidden} producto(s) con precio a consultar`);
   L.push(`Ref. ${bs(t.grand)} (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`);
-  if (effRole() === 'publico' && t.div && DIVISAS.includes(f.pago)) L.push(`Pago en divisas: quisiera saber si aplica la oferta especial (${t.div} producto(s)).`);
   if (f.nota){ L.push(''); L.push(`Nota: ${f.nota}`); }
   return L.join('\n');
 }
@@ -1090,7 +1101,7 @@ function updateLinks(){
   $$('[data-act="wa"]').forEach(a => { a.href = href; a.classList.toggle('is-off', !has); a.innerHTML = WA_ICO + label; });
   const r = effRole();
   const whoB = mayNow() ? mayNow().corto : 'un vendedor';
-  const num = mayNow() ? mayNow().whatsapp : CONFIG.whatsappVendedor;
+  const num = betterNum();
   $$('[data-better]').forEach(a => {
     a.hidden = r === 'mayorista';
     a.href = waLink(num, betterText());
@@ -1104,7 +1115,7 @@ function validate(){
   if (!cartRefs().length) return {ok:false};
   if (!f.nombre) return {ok:false, msg:'Escribe el nombre para enviar.', focus:'#fNombre'};
   if (!isWholesaleView() && !f.suc) return {ok:false, msg:'Elige la sucursal.', focus:'#fSuc'};
-  if (!f.pago) return {ok:false, msg:'Elige tu forma de pago (paso 3).', focus:'input[name="pago"]'};
+  if (!isWholesaleView() && !f.pago) return {ok:false, msg:'Elige tu forma de pago (paso 3).', focus:'input[name="pago"]'};
   return {ok:true};
 }
 function openCart(){
@@ -1118,7 +1129,7 @@ function openCart(){
 const dlgQuote = $('#dlgQuote');
 function sucHeader(f){
   const s = f.suc ? SUCURSALES[f.suc] : null;
-  return s ? `${s.razon} · RIF ${s.rif} · ${s.dir} · Tel. ${CONFIG.telefono}` : `Tel. ${CONFIG.telefono} · Guanare y Biscucuy, Portuguesa`;
+  return s ? `${s.razon ? `${s.razon} · RIF ${s.rif}` : s.nombre} · ${s.dir} · Tel. ${CONFIG.telefono}` : `Tel. ${CONFIG.telefono} · Guanare y Biscucuy, Portuguesa`;
 }
 function openQuote(){
   const refs = cartRefs(); if (!refs.length) return;
@@ -1140,7 +1151,7 @@ function openQuote(){
         <div><span>C.I./RIF:</span> ${esc(f.doc || '—')}</div>
         <div><span>Teléfono:</span> ${esc(f.tel || '—')}</div>
         <div><span>Entrega:</span> ${esc(f.entrega)}${f.dir ? ' · ' + esc(f.dir) : ''}</div>
-        <div><span>Forma de pago:</span> ${esc(f.pago || 'Por definir')}</div>
+        ${isWholesaleView() ? '' : `<div><span>Forma de pago:</span> ${esc(f.pago || 'Por definir')}</div>`}
         ${f.suc ? `<div><span>Sucursal:</span> ${esc(SUCURSALES[f.suc].nombre)}</div>` : ''}
         ${whoLines().map(([k, v]) => `<div><span>${k}:</span> ${esc(v)}</div>`).join('')}
       </div>
@@ -1155,7 +1166,8 @@ function openQuote(){
         </tfoot>
       </table></div>
       ${f.nota ? `<p class="q-legal"><b>Nota:</b> ${esc(f.nota)}</p>` : ''}
-      <p class="q-legal">Precios en dólares ${effRole() === 'publico' ? 'con IVA incluido' : (t.ivaOn ? 'sin IVA; el IVA se suma al final' : 'sin IVA')}, sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.${effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : ''}</p>
+      <p class="q-legal">Precios en dólares ${effRole() === 'publico' ? 'con IVA incluido' : (t.ivaOn ? 'sin IVA; el IVA se suma al final' : 'sin IVA')}, sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.</p>
+      ${isMay() ? '' : `<p class="q-better"><b>¿Quieres un mejor precio?</b> Pregunta por ofertas especiales a ${mayNow() ? esc(mayNow().corto) : 'nuestros vendedores'} por WhatsApp: ${esc(contactPhone())}.</p>`}
     </div>
     <div class="q-btns"><a class="btn wa" data-act="wa" href="#" target="_blank" rel="noopener"></a><button type="button" class="btn ghost" data-act="pdf" data-pdf>Descargar PDF</button><button type="button" class="btn ghost" data-act="copy">Copiar texto</button></div>
     <p class="hint" id="pdfMsg" hidden></p>
@@ -1204,7 +1216,7 @@ async function buildPdf(){
   }
   header(true);
   let y = 43;
-  const info = [[isMay() ? 'Para' : 'Cliente', f.nombre || '-'], ['C.I./RIF', f.doc || '-'], ['Teléfono', f.tel || '-'], ['Entrega', f.entrega + (f.dir ? ' · ' + f.dir : '')], ['Forma de pago', f.pago || 'Por definir'], ...(f.suc ? [['Sucursal', SUCURSALES[f.suc].nombre]] : []), ...whoLines()];
+  const info = [[isMay() ? 'Para' : 'Cliente', f.nombre || '-'], ['C.I./RIF', f.doc || '-'], ['Teléfono', f.tel || '-'], ['Entrega', f.entrega + (f.dir ? ' · ' + f.dir : '')], ...(isWholesaleView() ? [] : [['Forma de pago', f.pago || 'Por definir']]), ...(f.suc ? [['Sucursal', SUCURSALES[f.suc].nombre]] : []), ...whoLines()];
   doc.setFontSize(9);
   info.forEach((pair, i) => {
     const x = i % 2 ? 110 : M, yy = y + Math.floor(i / 2) * 6;
@@ -1258,7 +1270,14 @@ async function buildPdf(){
   y += 10;
   if (f.nota){ doc.setTextColor(...INK); doc.setFontSize(9); const nl = doc.splitTextToSize('Nota: ' + f.nota, W - 2*M); doc.text(nl, M, y); y += nl.length * 4.5 + 2; }
   doc.setFontSize(7.5); doc.setTextColor(...MUT);
-  const legal = 'Precios en dólares ' + (effRole() === 'publico' ? 'con IVA incluido' : (t.ivaOn ? 'sin IVA; el IVA se suma al final' : 'sin IVA')) + ', sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.' + (effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : '') + ` Para concretar tu pedido escríbenos por WhatsApp al ${contactPhone()}.`;
+  const legal = 'Precios en dólares ' + (effRole() === 'publico' ? 'con IVA incluido' : (t.ivaOn ? 'sin IVA; el IVA se suma al final' : 'sin IVA')) + ', sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.' + ` Para concretar tu pedido escríbenos por WhatsApp al ${contactPhone()}.`;
+  if (!isMay()){
+    const bt = doc.splitTextToSize(`¿Quieres un mejor precio? Pregunta por ofertas especiales a ${mayNow() ? mayNow().corto : 'nuestros vendedores'} por WhatsApp: ${contactPhone()}.`, W - 2*M - 10);
+    if (y + bt.length * 5 + 22 > 285){ doc.addPage(); header(false); y = 28; }
+    doc.setFillColor(255, 246, 204); doc.setDrawColor(...Y); doc.setLineWidth(0.4); doc.roundedRect(M, y - 4, W - 2*M, bt.length * 5 + 5, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...INK); doc.text(bt, M + 5, y + 1.5);
+    y += bt.length * 5 + 8; doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...MUT);
+  }
   doc.text(doc.splitTextToSize(legal, W - 2*M), M, y);
   const n = doc.getNumberOfPages();
   for (let i = 1; i <= n; i++){
@@ -1317,7 +1336,7 @@ function login(code){
 }
 function aplicarPrecios(lista){
   const m = new Map(lista.map(x => [String(x[0]), x]));
-  for (const p of PRODUCTS){ const x = m.get(p.ref); if (!x) continue; const v = Number(x[1]); if (v > 0) p.mayor = v; p.e.mayorista = Number(x[2]) || 0; }
+  for (const p of PRODUCTS){ const x = m.get(p.ref); if (!x) continue; const v = Number(x[1]); if (v > 0) p.mayor = v; p.e.mayorista = Number(x[2]) || 0; if (x.length > 3){ p.e.alm9 = Number(x[3]) || 0; p.e.alm17 = Number(x[4]) || 0; } }
 }
 async function loginNube(code){
   code = String(code || '').trim().toUpperCase();
@@ -1326,12 +1345,13 @@ async function loginNube(code){
   if (!r || !MAY[r.mid]) return false;
   aplicarPrecios(Array.isArray(r.precios) ? r.precios : []);
   CFG[r.mid] = (r.cfg && typeof r.cfg === 'object') ? r.cfg : {};
+  CAMBIOS = r.rol === 'mayorista' && Array.isArray(r.cambios) ? r.cambios : [];
   if (r.rol === 'mayorista'){ NUBE_CODE = code; Object.assign(state, {role:'mayorista', mid:r.mid, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); }
   else { NUBE_CODE = ''; Object.assign(state, {role:'cliente', mid:r.mid, ccode:r.ccode, cname:r.cname || '', preview:false}); if (!$('#fNombre').value) $('#fNombre').value = r.cname || ''; }
   sess.set('fermil_code', code);
   return true;
 }
-function logout(){ NUBE_CODE = ''; sess.set('fermil_code', null); Object.assign(state, {role:'publico', mid:null, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); ldisc = {}; saveCart(); applyRole(); toast('Volviste al catálogo general'); }
+function logout(){ NUBE_CODE = ''; CAMBIOS = []; sess.set('fermil_code', null); Object.assign(state, {role:'publico', mid:null, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); ldisc = {}; saveCart(); applyRole(); toast('Volviste al catálogo general'); }
 function applyRole(){
   saveSession();
   const band = $('#roleBand'), r = state.role;
@@ -1349,7 +1369,49 @@ function applyRole(){
     $('#rbActs').innerHTML = `<button type="button" data-act="logout">Salir</button>`;
   }
   if (state.cat !== 'todas' && !visibleProducts().some(p => p.cat === state.cat)) state.cat = 'todas';
-  resetPaging(); render(); refreshControls(); renderCartAll(); renderFooter(); renderHero();
+  resetPaging(); render(); refreshControls(); renderCartAll(); renderFooter(); renderHero(); renderPriceAlert();
+}
+
+/* Aviso de "Actualización de precios": solo para el mayorista (nunca para sus clientes).
+   El robot guarda en Supabase el precio al mayor anterior y la fecha del cambio; aquí se
+   muestran los cambios que el mayorista no ha marcado como vistos (cfg.preciosVistos). */
+let CAMBIOS = [];
+const dlgCambios = $('#dlgCambios');
+function cambiosPend(){
+  if (state.role !== 'mayorista' || state.preview || !CAMBIOS.length) return [];
+  const visto = Date.parse(cfg(state.mid).preciosVistos || '') || 0;
+  return CAMBIOS.filter(c => byRef[c[0]] && (Date.parse(c[3]) || 0) > visto);
+}
+const subio = c => Number(c[2]) > Number(c[1]);
+function cambiosResumen(pend){
+  const up = pend.filter(subio).length;
+  return `${fmt0.format(pend.length)} ${pend.length === 1 ? 'producto cambió' : 'productos cambiaron'} de precio al mayor${up ? ` (${fmt0.format(up)} ${up === 1 ? 'subió' : 'subieron'})` : ''}`;
+}
+function renderPriceAlert(){
+  const box = $('#priceAlert'), pend = cambiosPend();
+  box.hidden = !pend.length;
+  box.innerHTML = pend.length ? `<div class="wrap"><span class="pa-ic" aria-hidden="true">!</span><span class="pa-txt"><b>Actualización de precios</b> · ${cambiosResumen(pend)}. Revisa antes de cotizar.</span><span class="pa-acts"><button type="button" class="solid" data-act="cambios">Ver cambios</button><button type="button" data-act="cambiosok">Entendido</button></span></div>` : '';
+}
+function openCambios(){
+  const pend = cambiosPend(), list = (pend.length ? pend : CAMBIOS.filter(c => byRef[c[0]])).slice();
+  list.sort((a, b) => (Number(b[2]) / Number(b[1] || 1)) - (Number(a[2]) / Number(a[1] || 1)));
+  const fecha = d => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleDateString('es-VE', {day:'2-digit', month:'2-digit'}); };
+  const rows = list.map(c => { const p = byRef[c[0]], a = Number(c[1]), n = Number(c[2]), pct = a ? (n / a - 1) * 100 : 0;
+    return `<tr class="${n > a ? 'up' : 'down'}"><td><b>${esc(p.nombre)}</b><span class="ref">${esc(p.ref)}</span></td><td class="num">${usd(a)}</td><td class="num"><b>${usd(n)}</b></td><td class="num chg">${n > a ? '▲ +' : '▼ '}${pctTxt(pct)} %</td><td class="num">${fecha(c[3])}</td></tr>`; }).join('');
+  dlgCambios.innerHTML = `<div class="cmb"><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button>
+    <h2 id="cmbTitle">Actualización de precios</h2>
+    <p>${pend.length ? `${cambiosResumen(pend)} desde tu última revisión.` : 'Cambios de los últimos 30 días.'} Son precios al mayor sin IVA, tal como vienen de PLADE; tus descuentos se aplican encima.</p>
+    <div class="cmb-wrap"><table class="cmb-t"><thead><tr><th>Producto</th><th class="num">Antes</th><th class="num">Ahora</th><th class="num">Cambio</th><th class="num">Fecha</th></tr></thead><tbody>${rows || '<tr><td colspan="5">No hay cambios.</td></tr>'}</tbody></table></div>
+    <div class="cmb-btns">${pend.length ? '<button type="button" class="btn accent" data-act="cambiosok">Entendido, ya los vi</button>' : ''}<button type="button" class="btn ghost" data-act="close">Cerrar</button></div></div>`;
+  if (!dlgCambios.open) dlgCambios.showModal();
+}
+function cambiosOk(){
+  const c = cfg(state.mid), max = CAMBIOS.reduce((m, x) => Math.max(m, Date.parse(x[3]) || 0), 0);
+  c.preciosVistos = new Date(max || Date.now()).toISOString();
+  saveCfg(); renderPriceAlert();
+  if (dlgCambios.open) dlgCambios.close();
+  if (dlgPanel.open) rerenderKeep();
+  toast('Listo: marcaste los cambios de precio como vistos');
 }
 
 /* Panel del mayorista
@@ -1420,6 +1482,7 @@ function tabPrecios(c){
       <p>${cl ? `Estos descuentos los ve <b>solo ${esc(cl.nombre)}</b>. No cambian los de tus otros clientes.` : 'Tu precio base es el <b>precio al mayor sin IVA</b>. Aquí armas tu propio cálculo con los pasos que quieras: descuentos (−) y recargos (+), uno detrás del otro.'}</p>
       <p class="pn-orden">Los cálculos <b>se suman</b>: primero el de todo el catálogo, después el de la categoría y al final el del producto. Ejemplo: −8 % en todo y −4 % en un producto = ese producto lleva −8 % y luego −4 %.</p>
       ${propios.length ? '' : '<p class="hint">¿Un cliente necesita descuentos distintos? Créale un código "con descuentos exclusivos" en la pestaña Clientes y códigos.</p>'}
+      ${CAMBIOS.length ? `<p class="hint"><button type="button" class="btn link" data-act="cambios">Ver los cambios de precio de los últimos 30 días (${fmt0.format(CAMBIOS.filter(c => byRef[c[0]]).length)})</button></p>` : ''}
     </section>`;
   const todo = `<section class="pn-card">
       <h3><span class="pn-num">1</span> Cálculo para todo el catálogo</h3>
@@ -1574,7 +1637,7 @@ function renderPanel(){
       <button type="button" data-act="ptab" data-tab="codigos" aria-pressed="${tab === 'codigos'}">Clientes y códigos (${c.clients.length})</button>
       <button type="button" data-act="ptab" data-tab="ver" aria-pressed="${tab === 'ver'}">Qué ven mis clientes</button>
     </div>
-    <div class="pn-body">${body}</div>
+    <div class="pn-body">${cambiosPend().length ? `<div class="pn-alert"><span class="pa-ic" aria-hidden="true">!</span><span><b>Actualización de precios</b> · ${cambiosResumen(cambiosPend())}.</span><button type="button" class="btn sm" data-act="cambios">Ver cambios</button></div>` : ''}${body}</div>
     <div class="pn-foot"><span class="hint">${NUBE ? 'Los cambios se guardan solos en la nube.' : 'Los cambios se guardan al instante en este navegador.'}</span><button type="button" class="btn accent" data-act="preview">Ver como mi cliente</button></div>`;
   if (state.pnKeepScroll) dlgPanel.querySelector('.pn-body').scrollTop = top;
   state.pnKeepScroll = false;
@@ -1754,11 +1817,13 @@ document.addEventListener('click', e => {
     case 'full': toggleFull(); break;
     case 'close': { const d = el.closest('dialog'); if (d) d.close(); break; }
     case 'cart': openCart(); break;
+    case 'cambios': openCambios(); break;
+    case 'cambiosok': cambiosOk(); break;
     case 'cartbig': { const big = !cartBig(); dlgCart.classList.toggle('full', big); store.set('fermil_cartbig', big); renderCartAll(); $('#dlgCart .drawer-body').scrollTop = 0; break; }
     case 'rmunsel': [...unsel].forEach(r => { delete cart[r]; delete ldisc[r]; }); unsel.clear(); saveCart(); refreshControls(); renderCartAll(); toast('Listo: quitaste los productos que no estaban marcados'); break;
     case 'type': state.type = el.dataset.type; renderType(); updateLinks(); break;
     case 'mprice': state.mPriceMode = el.dataset.m; render(); refreshControls(); renderCartAll(); break;
-    case 'pdq': { const qi = $('#pdQty'); qi.value = Math.max(1, (Number(qi.value) || 0) + Number(el.dataset.d)); updateEst(byRef[dlgProduct.dataset.ref]); break; }
+    case 'pdq': { const qi = $('#pdQty'), pp = byRef[dlgProduct.dataset.ref], mx = maxQty(pp), v = (Number(qi.value) || 0) + Number(el.dataset.d); if (v > mx) toast(`Hay ${fmt0.format(mx)} en ${VISTA[state.vista].nombre}: es lo más que puedes llevar`); qi.value = Math.max(1, Math.min(mx, v)); updateEst(pp); break; }
     case 'pdadd': {
       const q = Math.max(0.01, Number($('#pdQty').value) || 1), had = cart[ref] || 0;
       dlgProduct.close(); setQty(ref, q);
@@ -1904,7 +1969,6 @@ function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add
 /* ===================== v4: portada, banners, menú y animaciones ===================== */
 const lineIll = id => ill(id).replace('class="ill"', 'class="ill line"');
 const waStore = txt => waLink(CONFIG.whatsapp, txt || `Hola, ${CONFIG.tienda}. Quisiera información.`);
-const DIV_MSG = 'Hola, quiero pagar en divisas. ¿Qué oferta especial me pueden dar?';
 function withPhotos(list){ return list.filter(p => FOTOS[p.ref] && disp(p)); }
 function pickVaried(list, n, key){
   key = key || (p => p.cat);
@@ -1921,7 +1985,7 @@ const SLIDES = [
     photos:[{src:'media/unda-patio.jpg', cap:'Nuestro patio', cls:'ph-wide'}, {src:'media/unda-tanques.jpg', cap:'Tanques y estructuras', cls:'ph-tall'}]},
   {id:'herramientas', nombre:'Herramientas', theme:'t-dark', eyebrow:'Herramientas', title:'Listos para el <em>trabajo pesado</em>', text:'Taladros, esmeriles, sierras y todas las herramientas manuales para tu obra o tu taller.', cta:'Ver herramientas', act:'cat', cat:'herramienta',
     photos:[{src:'media/unda-herramientas.jpg', cap:'Fermil La Unda', cls:'ph-tall'}], match:p => p.cat === 'herramienta' && /^(taladro|esmeril|pulidora|rotomartillo|sierra circular|atornillador|soldadora|caladora)/.test(p._name)},
-  {id:'divisas', nombre:'Oferta pagando en divisas', theme:'t-yellow', eyebrow:'Paga en divisas', title:'Pregunta por tu <em>oferta especial</em>', text:'Pagando con cash, Zelle o Binance puedes optar a un descuento. Tu vendedor te lo confirma por WhatsApp.', cta:'Escribir al vendedor', act:'better', chips:['Cash','Zelle','Binance'], onlyPublic:true, match:p => p.divisas && /taladro|esmeril|pulidora|sierra|rotomartillo|soldadora|pintura|cemento/.test(p._name)},
+  {id:'mejorprecio', nombre:'Pregunta por mejores precios', theme:'t-yellow', eyebrow:'Mejores precios', title:'Pregunta por <em>mejores precios</em>', text:'Nuestros vendedores te pueden ofrecer ofertas especiales y precios por cantidad. Escríbeles por WhatsApp con lo que necesitas.', cta:'Hablar con un vendedor', act:'better', chips:['Ofertas especiales','Precios por cantidad'], notMayorista:true, match:p => /taladro|esmeril|pulidora|sierra|rotomartillo|soldadora|pintura|cemento/.test(p._name)},
   {id:'sucursales', nombre:'4 ferreterías cerca de ti', theme:'t-green', eyebrow:'Guanare y Biscucuy', title:'4 ferreterías <em>cerca de ti</em>', text:'Mira la dirección de cada una, ábrela en Google Maps y revisa qué hay disponible antes de salir de casa.', cta:'Ver direcciones', act:'tosuc', chips:['La Unda','La Quinta','La Colonia','Biscucuy'],
     photos:[{src:'media/unda-fachada.jpg', cap:'La Unda', cls:'ph-w1'}, {src:'media/quinta-fachada2.jpg', cap:'La Quinta', cls:'ph-t2'}, {src:'media/biscucuy-fachada.jpg', cap:'Biscucuy', cls:'ph-w3'}]},
   {id:'mayoristas', nombre:'¿Vendes al mayor?', theme:'t-dark', eyebrow:'Mayoristas', title:'¿Vendes <em>al mayor?</em>', text:'Con tu código ves precios al mayor, armas presupuestos con tus descuentos y compartes tu catálogo con tus clientes.', cta:'Tengo un código', act:'login', onlyPublic:true,
@@ -1945,7 +2009,7 @@ function bannerLink(link){
 function heroItems(){
   const out = [];
   BANNERS.items.filter(b => b.activo).forEach(b => out.push({type:'img', b}));
-  SLIDES.filter(s => !BANNERS.off.includes(s.id) && (!s.onlyPublic || effRole() === 'publico')).forEach(s => out.push({type:'built', s}));
+  SLIDES.filter(s => !BANNERS.off.includes(s.id) && (!s.onlyPublic || effRole() === 'publico') && !(s.notMayorista && isMay())).forEach(s => out.push({type:'built', s}));
   return out;
 }
 function slideHtml(it, i){
@@ -1957,7 +2021,7 @@ function slideHtml(it, i){
   if (s.kind === 'feria') return feriaSlide(s, i);
   if (s.kind === 'marca') return marcaSlide(s, i);
   const picks = s.match ? pickVaried(withPhotos(visibleProducts().filter(s.match)), s.photos ? 1 : 3, p => p._words[0]) : [];
-  const cta = s.act === 'better' ? `<a class="btn s-cta" href="${waLink(CONFIG.whatsappVendedor, DIV_MSG)}" target="_blank" rel="noopener">${esc(s.cta)} →</a>`
+  const cta = s.act === 'better' ? `<a class="btn s-cta" href="${waLink(betterNum(), BETTER_MSG)}" target="_blank" rel="noopener">${mayNow() ? `Hablar con ${esc(mayNow().corto)}` : esc(s.cta)} →</a>`
     : `<button type="button" class="btn s-cta" data-act="${s.act}" ${s.cat ? `data-cat="${s.cat}" data-scroll` : ''}>${esc(s.cta)} →</button>`;
   const pickHtml = (p, k) => { const pi = priceOf(p); return `<figure class="s-pic s-pic${k}"><img src="${FOTOS[p.ref]}" alt="${esc(p.nombre)}">${pi.hidden ? '' : `<figcaption>${usd(pi.v)}</figcaption>`}</figure>`; };
   let art;
@@ -2023,7 +2087,7 @@ function startHero(){ clearInterval(heroTimer); if (heroSlides.length > 1 && !re
 function renderNav(){
   const quick = ['construccion','ferreteria','herramienta','pintura','electricidad','plomeria','bano'];
   $('#mnLinks').innerHTML = quick.filter(id => CAT[id] && visibleProducts().some(p => p.cat === id)).map(id => `<button type="button" data-act="cat" data-cat="${id}" data-scroll aria-current="${state.cat === id}">${esc(CAT[id].nombre.replace(': hierro y polvos', ''))}</button>`).join('')
-    + (effRole() === 'publico' ? `<a class="mn-hot" href="${waLink(CONFIG.whatsappVendedor, DIV_MSG)}" target="_blank" rel="noopener">Ofertas en divisas</a>` : '')
+    + (!isMay() ? `<a class="mn-hot" href="${waLink(betterNum(), BETTER_MSG)}" target="_blank" rel="noopener">Mejores precios</a>` : '')
     + `<button type="button" data-act="tosuc">Sucursales</button>`;
   $('#mnLinks').insertAdjacentHTML('afterbegin', `<button type="button" class="mn-how" data-act="tocomo">Cómo comprar</button>`);
 }
@@ -2262,7 +2326,7 @@ function renderFooter(){
       <a class="f-wa" href="${waStore()}" target="_blank" rel="noopener">WhatsApp ${CONFIG.telefono}</a><br><a class="f-ig" href="${IG.url}" target="_blank" rel="noopener">${IG_SVG}@${IG.user}</a><br>
       <span class="f-tasa">Tasa del día <b>Bs ${fmt2.format(CONFIG.tasaBs)}</b></span></div>
     <div><h3>Categorías</h3><ul>${CATS.slice(0, 9).map(c => `<li><button type="button" data-act="cat" data-cat="${c.id}" data-scroll>${esc(c.nombre)}</button></li>`).join('')}</ul></div>
-    <div><h3>Información</h3><ul><li><button type="button" data-act="tocomo">Cómo comprar</button></li><li><button type="button" data-act="login">Acceso mayoristas</button></li><li><a href="${waLink(CONFIG.whatsappVendedor, DIV_MSG)}" target="_blank" rel="noopener">Ofertas pagando en divisas</a></li><li><span>Pagos: cash, pago móvil, punto, Zelle, Binance</span></li><li><span>Envíos: consúltalos por WhatsApp</span></li><li><a href="${IG.url}" target="_blank" rel="noopener">Instagram @${IG.user}</a></li>${NUBE ? '<li><button type="button" data-act="admin">Administrar página</button></li>' : ''}</ul></div>
+    <div><h3>Información</h3><ul><li><button type="button" data-act="tocomo">Cómo comprar</button></li><li><button type="button" data-act="login">Acceso mayoristas</button></li><li><a href="${waLink(betterNum(), BETTER_MSG)}" target="_blank" rel="noopener">Pide mejores precios a un vendedor</a></li><li><span>Pagos: Cashea, pago móvil, punto, Zelle, Binance, transferencia</span></li><li><span>Envíos: consúltalos por WhatsApp</span></li><li><a href="${IG.url}" target="_blank" rel="noopener">Instagram @${IG.user}</a></li>${NUBE ? '<li><button type="button" data-act="admin">Administrar página</button></li>' : ''}</ul></div>
     <div id="sucursales"><h3>Sucursales</h3><div class="f-suc">${TODAS.map(id => { const s = SUCURSALES[id]; return `<div><b>${esc(s.nombre)}</b><a class="f-addr" href="${mapsSearch(id)}" target="_blank" rel="noopener">${PIN_SVG}${esc(s.dir)}</a><span>${esc(s.horario)}</span><a href="${mapsDir(id)}" target="_blank" rel="noopener">Cómo llegar →</a></div>`; }).join('')}</div></div>`;
   $('#footBottom').textContent = `© ${new Date().getFullYear()} Ferretería Fermil · Precios en dólares con IVA incluido, sujetos a cambio y a disponibilidad · Tasa usada: Bs ${fmt2.format(CONFIG.tasaBs)}`;
 }

@@ -28,6 +28,10 @@ create table if not exists public.precios_mayor (
   stock_mayorista numeric(14,2),
   actualizado timestamptz not null default now()
 );
+alter table public.precios_mayor add column if not exists stock_principal numeric(14,2);  -- Almacén Principal (9)
+alter table public.precios_mayor add column if not exists stock_unda numeric(14,2);       -- Almacén Unda (17)
+alter table public.precios_mayor add column if not exists mayor_anterior numeric(14,2);   -- para el aviso de cambios
+alter table public.precios_mayor add column if not exists cambio timestamptz;
 alter table public.precios_mayor enable row level security;
 
 -- 3. Mayoristas, con su configuración (qué muestran, descuentos y clientes)
@@ -86,7 +90,7 @@ language sql security definer set search_path = public as $$
   insert into public.intentos (ip) values (public.fermil_ip());
 $$;
 
--- 5. Entrar con un código: devuelve rol, configuración y precios al mayor
+-- 5. Entrar con un código: devuelve rol, configuración y precios al mayor (el mayorista, además, desglose por almacén y cambios de precio)
 create or replace function public.fermil_entrar(p_codigo text) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
@@ -94,19 +98,25 @@ declare
   m public.mayoristas%rowtype;
   cl jsonb;
   precios jsonb;
+  cambios jsonb;
 begin
   if public.fermil_bloqueado() then
     raise exception 'Demasiados intentos. Espera 15 minutos.' using errcode = 'P0001';
   end if;
   if length(c) < 6 then perform public.fermil_fallo(); return null; end if;
 
-  select coalesce(jsonb_agg(jsonb_build_array(p.cod, p.mayor, p.stock_mayorista)), '[]'::jsonb)
-    into precios from public.precios_mayor p;
-
   select * into m from public.mayoristas where codigo = c and activo;
   if found then
-    return jsonb_build_object('rol', 'mayorista', 'mid', m.id, 'cfg', m.cfg, 'precios', precios);
+    select coalesce(jsonb_agg(jsonb_build_array(p.cod, p.mayor, p.stock_mayorista, p.stock_principal, p.stock_unda)), '[]'::jsonb)
+      into precios from public.precios_mayor p;
+    select coalesce(jsonb_agg(jsonb_build_array(p.cod, p.mayor_anterior, p.mayor, p.cambio) order by p.cambio desc), '[]'::jsonb)
+      into cambios from public.precios_mayor p
+      where p.cambio > now() - interval '30 days' and p.mayor_anterior is not null and p.mayor_anterior <> p.mayor;
+    return jsonb_build_object('rol', 'mayorista', 'mid', m.id, 'cfg', m.cfg, 'precios', precios, 'cambios', cambios);
   end if;
+
+  select coalesce(jsonb_agg(jsonb_build_array(p.cod, p.mayor, p.stock_mayorista)), '[]'::jsonb)
+    into precios from public.precios_mayor p;
 
   for m in select * from public.mayoristas where activo loop
     select e into cl from jsonb_array_elements(coalesce(m.cfg -> 'clients', '[]'::jsonb)) e
@@ -129,6 +139,7 @@ begin
   perform public.fermil_fallo();
   return null;
 end $$;
+
 
 -- 6. El mayorista guarda su configuración (solo con su propio código)
 create or replace function public.fermil_guardar_cfg(p_codigo text, p_cfg jsonb) returns boolean
