@@ -9,6 +9,7 @@ Convierte los reportes de inventario de PLADE (Excel) en el catálogo que usa la
 import json
 import sys
 import unicodedata
+from decimal import Decimal, ROUND_CEILING
 from datetime import datetime, timedelta, timezone
 
 VET = timezone(timedelta(hours=-4))  # hora de Venezuela
@@ -113,9 +114,19 @@ def leer_excel(path):
             'venta': num(g('TOTAL EN VENTA (PRECIO DE VENTA)')) or num(g('PRECIO UNI.')),
             'mayor': num(g('TOTAL EN VENTA (MAYOR)')),
             'menor': num(g('TOTAL EN VENTA (MENOR)')),
+            'iva': num(g('IVA')),
         })
     wb.close()
     return filas
+
+
+def con_iva(precio, iva):
+    """PLADE da los precios del reporte SIN IVA; la página los muestra con IVA, redondeando
+    al céntimo hacia arriba como lo muestra PLADE (98,34 + 16 % = 114,08)."""
+    if not precio:
+        return 0
+    total = Decimal(str(precio)) * (Decimal(1) + Decimal(str(iva or 0)) / Decimal(100))
+    return float(total.quantize(Decimal('0.01'), rounding=ROUND_CEILING))
 
 
 def construir(archivos, tasa=None):
@@ -137,15 +148,15 @@ def construir(archivos, tasa=None):
                 p = productos[f['cod']] = {
                     'c': f['cod'], 'n': f['nom'], 'k': cat[0], 's': f['sub'].title() if f['sub'] else '',
                     'm': f['marca'], 'u': f['und'] or 'unidad',
-                    'v': round(f['venta'], 2), 'y': round(f['mayor'], 2),
+                    'v': con_iva(f['venta'], f['iva']), 'y': con_iva(f['mayor'], f['iva']),
                     'd': 1 if (f['menor'] > 0 and f['venta'] > 0 and f['menor'] < f['venta'] * 0.995) else 0,
                     'e': {},
                 }
             # si una sucursal trae precio y otra no, se completa
             if not p['v'] and f['venta']:
-                p['v'] = round(f['venta'], 2)
+                p['v'] = con_iva(f['venta'], f['iva'])
             if not p['y'] and f['mayor']:
-                p['y'] = round(f['mayor'], 2)
+                p['y'] = con_iva(f['mayor'], f['iva'])
             if f['disp'] > 0:
                 p['e'][suc] = round(f['disp'], 2)
     lista = [p for p in productos.values() if p['v'] > 0]

@@ -5,7 +5,7 @@ En cada corrida:
   1. Entra a PLADE con el usuario y la clave guardados como secretos de GitHub.
   2. Lee la tasa del día.
   3. Descarga el inventario en Excel de cada almacén y categoría (venta, mayor y menor).
-  4. Quita costos y utilidades y arma dos cosas:
+  4. Quita costos y utilidades, suma el IVA de cada producto (el reporte de PLADE viene sin IVA) y arma dos cosas:
        - salida/catalogo.json (público): nombre, precio de venta con IVA, existencias por
          sucursal y si aplica oferta en divisas (sin decir cuánto).
        - precios al mayor (privado): se suben a Supabase, que solo los entrega con un código válido.
