@@ -165,6 +165,8 @@
         <button type="button" data-act="mprice" data-m="cliente">Precios de un cliente</button>
       </div>
       <div class="field" id="mClientWrap" hidden><label for="mClient">¿De cuál cliente?</label><select id="mClient"></select></div>
+      <label class="sw iva-sw"><input type="checkbox" id="ivaOn">Sumar IVA a este presupuesto</label>
+      <p class="hint" id="ivaHint"></p>
       <span class="hint">También puedes poner un descuento distinto en cada producto.</span>
     </div>
     <div id="cartItems"></div>
@@ -369,7 +371,7 @@ const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
 const PRODUCTS = DATA.productos.filter(p => CAT[p.k] && !/^FLET/i.test(p.c) && !/^FLETE\b/i.test(p.n)).map((p, i) => {
   const nombre = titleCase(p.n);
   const n = norm(p.n);
-  return {ref:p.c, nombre, cat:p.k, sub:p.s ? titleCase(p.s) : '', marca:(p.m && !/^(GENERAL|GENERICO|GENÉRICO|AL MAYOR|SACO)$/i.test(p.m.trim())) ? titleCase(p.m) : '', unidad:(p.u || 'unidad').toLowerCase(), detal:p.v, mayor:p.y || p.v, divisas:!!p.d, e:p.e || {}, i,
+  return {ref:p.c, nombre, cat:p.k, sub:p.s ? titleCase(p.s) : '', marca:(p.m && !/^(GENERAL|GENERICO|GENÉRICO|AL MAYOR|SACO)$/i.test(p.m.trim())) ? titleCase(p.m) : '', unidad:(p.u || 'unidad').toLowerCase(), detal:p.v, mayor:p.y || p.v, iva:p.i != null ? Number(p.i) : 16, divisas:!!p.d, e:p.e || {}, i,
     _name:n, _words:n.split(/[^a-z0-9]+/).filter(Boolean), _ref:norm(p.c), _cat:norm(CAT[p.k].nombre + ' ' + (p.s || '') + ' ' + (p.m || ''))};
 });
 const byRef = Object.fromEntries(PRODUCTS.map(p => [p.ref, p]));
@@ -413,13 +415,25 @@ document.head.insertAdjacentHTML('beforeend', `<style>${ILL_CSS}</style>`);
 
 /* ===================== Estado ===================== */
 const state = { cat:'todas', sub:'', q:'', onlyAvail:true, sort:'rel', view:'grid', shown:CONFIG.porPagina, catPage:0, vista:'guanare',
-  role:'publico', mid:null, ccode:null, cname:'', preview:false, type:'pedido', mPriceMode:'mayor', mClient:'', panelTab:'ver', pnOpen:{}, pnScope:'' };
+  role:'publico', mid:null, ccode:null, cname:'', preview:false, type:'pedido', mPriceMode:'mayor', mClient:'', panelTab:'precios', pnOpen:{}, pnScope:'', pnCatEdit:'', pnKeepScroll:false, ivaOn: !!store.get('fermil_ivaon', false) };
 let cart = {}, ldisc = {}, quoteNo = null;
 let CFG = store.get('fermil_cfg3', {});
+const EMPTY_R = () => ({v:2, todo:[], cats:{}, prods:{}});
+const normChain = a => (Array.isArray(a) ? a : (a ? [a] : [])).map(clampPct).filter(x => x > 0).slice(0, 6);
+function normReglas(r){
+  if (r && r.v === 2) return Object.assign(EMPTY_R(), r);
+  const out = EMPTY_R();  // formato viejo: {código: porcentaje}
+  if (r && typeof r === 'object') for (const k in r){ const v = clampPct(r[k]); if (v && k !== 'iva') out.prods[k] = [v]; }
+  return out;
+}
 function cfg(mid){
-  const d = {hiddenCats:[], hiddenProducts:[], noPrice:[], noPriceCats:[], disc:{}, clientDisc:{}, clients:[]};
-  CFG[mid] = Object.assign(d, CFG[mid] || {});
-  return CFG[mid];
+  const d = {hiddenCats:[], hiddenProducts:[], noPrice:[], noPriceCats:[], disc:EMPTY_R(), clientDisc:{}, clients:[]};
+  const c = CFG[mid] = Object.assign(d, CFG[mid] || {});
+  if (!c.disc || c.disc.v !== 2) c.disc = normReglas(c.disc);
+  for (const k in c.clientDisc) if (!c.clientDisc[k] || c.clientDisc[k].v !== 2) c.clientDisc[k] = normReglas(c.clientDisc[k]);
+  c.clients.forEach(cl => { if (!cl.modo) cl.modo = (c.clientDisc[cl.code] && Object.keys(c.clientDisc[cl.code].prods).length) ? 'propio' : 'general'; });
+  if (!c.disc.iva) c.disc.iva = {base:100, ajuste:false, binance:0};
+  return c;
 }
 let cfgTimer = null;
 const saveCfg = () => {
@@ -446,15 +460,40 @@ function visible(p){
   return !c.hiddenCats.includes(p.cat) && !c.hiddenProducts.includes(p.ref);
 }
 const visibleProducts = () => PRODUCTS.filter(visible);
-function discFor(p, mid, code){
-  const c = cfg(mid);
-  if (code && c.clientDisc[code] && c.clientDisc[code][p.ref] != null) return clampPct(c.clientDisc[code][p.ref]);
-  return clampPct(c.disc[p.ref]);
+const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
+function chainFor(p, R){ if (!R) return []; if (own(R.prods, p.ref)) return R.prods[p.ref]; if (own(R.cats, p.cat)) return R.cats[p.cat]; return R.todo || []; }
+function reglasDe(mid, code){
+  const c = cfg(mid); if (!code) return c.disc;
+  const cl = c.clients.find(x => x.code === code); if (!cl) return c.disc;
+  if (cl.modo === 'full') return null;
+  if (cl.modo === 'propio') return c.clientDisc[code] || (c.clientDisc[code] = EMPTY_R());
+  return c.disc;
 }
+const chainPct = a => (1 - a.reduce((m, d) => m * (1 - d / 100), 1)) * 100;
+const chainTxt = a => a && a.length ? a.map(d => '-' + pctTxt(d) + '%').join(' ') : 'sin descuento';
+function discChain(p, mid, code){ const R = reglasDe(mid, code); return R ? normChain(chainFor(p, R)) : []; }
+function discFor(p, mid, code){ return chainPct(discChain(p, mid, code)); }
 function clientPrice(p, mid, code){
-  const c = cfg(mid);
-  const d = discFor(p, mid, code);
-  return {v: r2(p.mayor * (1 - d/100)), orig: d ? p.mayor : null, d, hidden: c.noPrice.includes(p.ref) || c.noPriceCats.includes(p.cat)};
+  const c = cfg(mid), ch = discChain(p, mid, code), f = ch.reduce((m, d) => m * (1 - d / 100), 1), d = (1 - f) * 100;
+  return {v: r2(p.mayor * f), orig: d > 0.001 ? p.mayor : null, d, ch, hidden: c.noPrice.includes(p.ref) || c.noPriceCats.includes(p.cat)};
+}
+/* IVA en presupuestos de mayoristas y sus clientes (sus precios son sin IVA) */
+function ivaCfg(){ const c = state.mid ? cfg(state.mid) : null; return (c && c.disc.iva) || {base:100, ajuste:false, binance:0}; }
+function ivaFactor(){
+  const k = ivaCfg(); let f = Math.max(0, Math.min(100, k.base == null ? 100 : Number(k.base))) / 100;
+  if (k.ajuste && Number(k.binance) > 0) f *= CONFIG.tasaBs / Number(k.binance);
+  return f;
+}
+function ivaOnNow(){
+  if (effRole() === 'publico') return false;
+  if (state.role === 'mayorista' && !state.preview) return !!state.ivaOn;
+  const code = state.role === 'cliente' ? state.ccode : state.pnScope;
+  const cl = code && cfg(state.mid).clients.find(x => x.code === code);
+  return !!(cl && cl.iva);
+}
+function ivaDesc(){
+  const k = ivaCfg(), base = k.base == null ? 100 : Number(k.base);
+  return `IVA 16 %${base !== 100 ? ` sobre el ${fmt0.format(base)} % del monto` : ''}${k.ajuste && Number(k.binance) > 0 ? `, ajustado a tasa Binance Bs ${fmt2.format(Number(k.binance))}` : ''}`;
 }
 function priceOf(p){
   const r = effRole();
@@ -485,8 +524,8 @@ const DIV_TXT_CORTO = 'Oferta pagando en divisas';
 function priceBlock(p, big){
   const pi = priceOf(p);
   if (pi.hidden) return `<span class="ptag off${big ? ' big' : ''}"><span class="tag-amt">Precio a consultar</span></span><span class="bsref">Agrégalo y te damos el precio por WhatsApp</span>`;
-  let h = `<span class="ptag${big ? ' big' : ''}"><span class="tag-amt">${usd(pi.v)}</span><span class="tag-u">/${esc(p.unidad)}</span></span><span class="bsref">≈ ${bs(pi.v)} <span class="iva">· IVA incluido</span></span>`;
-  if (pi.orig) h += `<span class="tag-sub"><s>${usd(pi.orig)}</s> <b class="dtag">-${pctTxt(pi.d)}%</b></span>`;
+  let h = `<span class="ptag${big ? ' big' : ''}"><span class="tag-amt">${usd(pi.v)}</span><span class="tag-u">/${esc(p.unidad)}</span></span><span class="bsref">≈ ${bs(pi.v)} <span class="iva">· ${effRole() === 'publico' ? 'IVA incluido' : 'sin IVA'}</span></span>`;
+  if (pi.orig) h += `<span class="tag-sub"><s>${usd(pi.orig)}</s> <b class="dtag">${pi.ch && pi.ch.length > 1 ? esc(chainTxt(pi.ch)) : '-' + pctTxt(pi.d) + '%'}</b></span>`;
   if (showDivisas(p)) h += `<span class="divisas">${big ? DIV_TXT : DIV_TXT_CORTO}</span>`;
   return h;
 }
@@ -826,9 +865,11 @@ function setQty(ref, q, added){
 }
 function refreshControls(){ $$('[data-ctrl]').forEach(el => { const p = byRef[el.dataset.ctrl]; if (p) el.innerHTML = controls(p); }); }
 function totals(){
-  let total = 0, units = 0, hidden = 0, div = 0;
-  for (const r of cartRefs()){ const p = byRef[r], li = lineInfo(p, cart[r]); units += cart[r]; if (li.hidden) hidden++; else total += li.total; if (p.divisas) div++; }
-  return {total: r2(total), units, hidden, div, n: cartRefs().length};
+  let total = 0, units = 0, hidden = 0, div = 0, iva = 0;
+  const on = ivaOnNow(), f = on ? ivaFactor() : 0;
+  for (const r of cartRefs()){ const p = byRef[r], li = lineInfo(p, cart[r]); units += cart[r]; if (li.hidden) hidden++; else { total += li.total; if (on) iva += li.total * (p.iva / 100) * f; } if (p.divisas) div++; }
+  total = r2(total); iva = r2(iva);
+  return {total, iva, ivaOn: on, grand: r2(total + iva), units, hidden, div, n: cartRefs().length};
 }
 function sucOptions(){
   const ids = isWholesaleView() ? Object.keys(SUCURSALES) : VISTA[state.vista].sucs;
@@ -851,11 +892,11 @@ function renderDivBox(t){
 function renderCartAll(){
   const t = totals();
   $('#cartCount').textContent = t.n;
-  $('#cartTotalTop').textContent = t.n ? usd(t.total) : '';
+  $('#cartTotalTop').textContent = t.n ? usd(t.grand) : '';
   $('#btnCart').setAttribute('aria-label', `Ver carrito: ${t.n} productos`);
   $('#mbar').classList.toggle('on', t.n > 0);
   document.body.classList.toggle('has-mbar', t.n > 0);
-  $('#mbarTxt').textContent = `${t.n} ${t.n === 1 ? 'producto' : 'productos'} · ${usd(t.total)}`;
+  $('#mbarTxt').textContent = `${t.n} ${t.n === 1 ? 'producto' : 'productos'} · ${usd(t.grand)}`;
   const M = isMay(), refs = cartRefs();
   $('#mPriceBox').hidden = !(M && refs.length);
   $$('[data-act="mprice"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === state.mPriceMode)));
@@ -864,6 +905,7 @@ function renderCartAll(){
     $('#mClientWrap').hidden = state.mPriceMode !== 'cliente';
     $('#mClient').innerHTML = `<option value="">Descuentos generales</option>` + cl.map(c => `<option value="${esc(c.code)}">${esc(c.nombre)} (${esc(c.code)})</option>`).join('');
     $('#mClient').value = state.mClient;
+    $('#ivaOn').checked = !!state.ivaOn; $('#ivaHint').textContent = state.ivaOn ? ivaDesc() + '. Se suma al final del presupuesto.' : 'Tus precios son sin IVA.';
   }
   $('.drawer-foot').hidden = !refs.length;
   $('#orderForm').hidden = !refs.length;
@@ -883,9 +925,10 @@ function renderCartAll(){
         <button type="button" class="x sm" data-act="rm" data-ref="${r}" aria-label="Quitar ${esc(p.nombre)} del carrito">×</button></div>`;
     }).join('');
     $('#cartTotals').innerHTML = `<div class="totals">
-      <div class="tot-sub"><span>${t.n} ${t.n === 1 ? 'producto' : 'productos'}</span>${M ? `<span>${state.mPriceMode === 'cliente' ? 'Precios de tu cliente' : 'Precios al mayor'}</span>` : '<span>IVA incluido</span>'}</div>
-      <div class="tot-big"><span>Total</span><b>${usd(t.total)}</b></div>
-      <div class="tot-sub"><span>≈ ${bs(t.total)}</span><span>Tasa Bs ${fmt2.format(CONFIG.tasaBs)}</span></div>
+      <div class="tot-sub"><span>${t.n} ${t.n === 1 ? 'producto' : 'productos'}</span>${M ? `<span>${state.mPriceMode === 'cliente' ? 'Precios de tu cliente' : 'Precios al mayor'} sin IVA</span>` : (effRole() === 'publico' ? '<span>IVA incluido</span>' : '<span>Precios sin IVA</span>')}</div>
+      ${t.ivaOn ? `<div class="tot-sub"><span>Subtotal sin IVA</span><b>${usd(t.total)}</b></div><div class="tot-sub"><span>${esc(ivaDesc())}</span><b>${usd(t.iva)}</b></div>` : ''}
+      <div class="tot-big"><span>${t.ivaOn ? 'Total con IVA' : 'Total'}</span><b>${usd(t.grand)}</b></div>
+      <div class="tot-sub"><span>≈ ${bs(t.grand)}</span><span>Tasa Bs ${fmt2.format(CONFIG.tasaBs)}</span></div>
       ${t.hidden ? `<div class="tot-sub"><span>+ ${t.hidden} ${t.hidden === 1 ? 'producto' : 'productos'} con precio a consultar</span></div>` : ''}
     </div>`;
   }
@@ -939,9 +982,10 @@ function buildText(){
     else L.push(`   Ref. ${p.ref} · ${fmt0.format(q)} ${p.unidad} × ${usd(li.unit)}${li.pct ? ` (-${pctTxt(li.pct)}%)` : ''} = ${usd(li.total)}`);
   });
   L.push('');
-  L.push(`*TOTAL: ${usd(t.total)}*${effRole() === 'publico' ? ' (IVA incluido)' : ''}`);
+  if (t.ivaOn){ L.push(`Subtotal sin IVA: ${usd(t.total)}`); L.push(`${ivaDesc()}: ${usd(t.iva)}`); L.push(`*TOTAL CON IVA: ${usd(t.grand)}*`); }
+  else L.push(`*TOTAL: ${usd(t.total)}*${effRole() === 'publico' ? ' (IVA incluido)' : ' (sin IVA)'}`);
   if (t.hidden) L.push(`+ ${t.hidden} producto(s) con precio a consultar`);
-  L.push(`Ref. ${bs(t.total)} (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`);
+  L.push(`Ref. ${bs(t.grand)} (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`);
   if (effRole() === 'publico' && t.div && DIVISAS.includes(f.pago)) L.push(`Pago en divisas: quisiera saber si aplica la oferta especial (${t.div} producto(s)).`);
   if (f.nota){ L.push(''); L.push(`Nota: ${f.nota}`); }
   return L.join('\n');
@@ -1022,13 +1066,14 @@ function openQuote(){
         <thead><tr><th></th><th>Producto</th><th class="num">Cant.</th><th class="num">P. unit.</th>${anyDisc ? '<th class="num">Desc.</th>' : ''}<th class="num">Total</th></tr></thead>
         <tbody>${rows}</tbody>
         <tfoot>
-          <tr class="q-total"><td></td><td colspan="${cols - 1}">Total en dólares${effRole() === 'publico' ? ' (IVA incluido)' : ''}</td><td class="num">${usd(t.total)}</td></tr>
-          <tr><td></td><td colspan="${cols - 1}">Referencia en bolívares (tasa Bs ${fmt2.format(CONFIG.tasaBs)})</td><td class="num">${bs(t.total)}</td></tr>
+          ${t.ivaOn ? `<tr><td></td><td colspan="${cols - 1}">Subtotal sin IVA</td><td class="num">${usd(t.total)}</td></tr><tr><td></td><td colspan="${cols - 1}">${esc(ivaDesc())}</td><td class="num">${usd(t.iva)}</td></tr>` : ''}
+          <tr class="q-total"><td></td><td colspan="${cols - 1}">${t.ivaOn ? 'Total con IVA' : 'Total en dólares' + (effRole() === 'publico' ? ' (IVA incluido)' : ' (sin IVA)')}</td><td class="num">${usd(t.grand)}</td></tr>
+          <tr><td></td><td colspan="${cols - 1}">Referencia en bolívares (tasa Bs ${fmt2.format(CONFIG.tasaBs)})</td><td class="num">${bs(t.grand)}</td></tr>
           ${t.hidden ? `<tr><td></td><td colspan="${cols}">+ ${t.hidden} producto(s) con precio a consultar</td></tr>` : ''}
         </tfoot>
       </table></div>
       ${f.nota ? `<p class="q-legal"><b>Nota:</b> ${esc(f.nota)}</p>` : ''}
-      <p class="q-legal">Precios en dólares con IVA incluido, sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.${effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : ''}</p>
+      <p class="q-legal">Precios en dólares ${effRole() === 'publico' ? 'con IVA incluido' : (t.ivaOn ? 'sin IVA; el IVA se suma al final' : 'sin IVA')}, sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.${effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : ''}</p>
     </div>
     <div class="q-btns"><a class="btn wa" data-act="wa" href="#" target="_blank" rel="noopener"></a><button type="button" class="btn ghost" data-act="pdf" data-pdf>Descargar PDF</button><button type="button" class="btn ghost" data-act="copy">Copiar texto</button></div>
     <p class="hint" id="pdfMsg" hidden></p>
@@ -1117,16 +1162,21 @@ async function buildPdf(){
   if (y + 34 > 280){ doc.addPage(); header(false); y = 28; }
   doc.setDrawColor(...G); doc.setLineWidth(0.6); doc.line(110, y, W - M, y);
   y += 7;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...INK); doc.text(effRole() === 'publico' ? 'Total (IVA incluido)' : 'Total en dólares', 110, y);
-  doc.setFontSize(16); doc.setTextColor(...G); doc.text(pdfUsd(t.total), W - M, y + 0.5, {align:'right'});
+  if (t.ivaOn){
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...INK);
+    doc.text('Subtotal sin IVA', 110, y); doc.text(pdfUsd(t.total), W - M, y, {align:'right'}); y += 5;
+    doc.text(doc.splitTextToSize(ivaDesc(), 62).slice(0, 2), 110, y); doc.text(pdfUsd(t.iva), W - M, y, {align:'right'}); y += 9;
+  }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...INK); doc.text(t.ivaOn ? 'Total con IVA' : (effRole() === 'publico' ? 'Total (IVA incluido)' : 'Total (sin IVA)'), 110, y);
+  doc.setFontSize(16); doc.setTextColor(...G); doc.text(pdfUsd(t.grand), W - M, y + 0.5, {align:'right'});
   y += 7;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...MUT);
-  doc.text(`Ref. en bolívares (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`, 110, y); doc.text('Bs ' + fmt2.format(t.total * CONFIG.tasaBs), W - M, y, {align:'right'});
+  doc.text(`Ref. en bolívares (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`, 110, y); doc.text('Bs ' + fmt2.format(t.grand * CONFIG.tasaBs), W - M, y, {align:'right'});
   if (t.hidden){ y += 5; doc.text(`+ ${t.hidden} producto(s) con precio a consultar`, 110, y); }
   y += 10;
   if (f.nota){ doc.setTextColor(...INK); doc.setFontSize(9); const nl = doc.splitTextToSize('Nota: ' + f.nota, W - 2*M); doc.text(nl, M, y); y += nl.length * 4.5 + 2; }
   doc.setFontSize(7.5); doc.setTextColor(...MUT);
-  const legal = 'Precios en dólares con IVA incluido, sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.' + (effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : '') + ` Para concretar tu pedido escríbenos por WhatsApp al ${CONFIG.telefono}.`;
+  const legal = 'Precios en dólares ' + (effRole() === 'publico' ? 'con IVA incluido' : (t.ivaOn ? 'sin IVA; el IVA se suma al final' : 'sin IVA')) + ', sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.' + (effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : '') + ` Para concretar tu pedido escríbenos por WhatsApp al ${CONFIG.telefono}.`;
   doc.text(doc.splitTextToSize(legal, W - 2*M), M, y);
   const n = doc.getNumberOfPages();
   for (let i = 1; i <= n; i++){
@@ -1220,101 +1270,228 @@ function applyRole(){
   resetPaging(); render(); refreshControls(); renderCartAll(); renderFooter(); renderHero();
 }
 
-/* Panel del mayorista */
+/* Panel del mayorista
+   Precio base: precio al mayor SIN IVA. Los descuentos se encadenan (ej.: -8 % y luego -4 %).
+   Reglas: producto > categoría > todo el catálogo. Se guardan en cfg.disc (generales) y en
+   cfg.clientDisc[código] (exclusivos de un cliente). cfg.disc.iva guarda cómo se calcula el IVA. */
 const dlgPanel = $('#dlgPanel');
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+const PN_MAX = 150;
+const DRAFT = {};          // borradores de los editores de descuentos, por id
+const PN_SEL = new Set();  // productos seleccionados en "Productos seleccionados"
+let pnQuery = '', pnFilterCat = '';
+const MODOS = {
+  general: {t: 'Con mis descuentos generales', s: 'Ve los mismos descuentos que pones para todos tus clientes.'},
+  propio: {t: 'Con descuentos exclusivos', s: 'Le armas descuentos solo para este cliente, distintos a los generales.'},
+  full: {t: 'Precio al mayor completo', s: 'Ve tu precio al mayor sin ningún descuento.'}
+};
 function openPanel(){ state.preview = false; applyRole(); renderPanel(); if (!dlgPanel.open) dlgPanel.showModal(); }
-function scopeDisc(p){
+const pnClient = code => cfg(state.mid).clients.find(x => x.code === code);
+function scopeReglas(){
   const c = cfg(state.mid);
-  if (state.pnScope){ const m = c.clientDisc[state.pnScope] || {}; return m[p.ref] != null ? m[p.ref] : ''; }
-  return c.disc[p.ref] || '';
+  if (!state.pnScope) return c.disc;
+  return c.clientDisc[state.pnScope] || (c.clientDisc[state.pnScope] = EMPTY_R());
+}
+const ejemplo = a => { const f = a.reduce((m, d) => m * (1 - d / 100), 1); return `${usd(100)} → <b>${usd(r2(100 * f))}</b>`; };
+function chainEditor(id, arr){
+  if (!DRAFT[id]) DRAFT[id] = arr.slice();
+  const a = DRAFT[id];
+  return `<div class="chain" data-chain="${id}">
+      ${a.map((d, i) => `<span class="chip-in"><input type="number" min="0" max="90" step="0.5" inputmode="decimal" value="${d}" data-chin="${id}" data-i="${i}" aria-label="Descuento ${i + 1} en porcentaje">%<button type="button" data-act="pn-chdel" data-chain="${id}" data-i="${i}" aria-label="Quitar este descuento">×</button></span>${i < a.length - 1 ? '<span class="then">y luego</span>' : ''}`).join('')}
+      <button type="button" class="btn ghost sm" data-act="pn-chadd" data-chain="${id}">+ ${a.length ? 'Otro descuento' : 'Agregar descuento'}</button>
+    </div>
+    <div class="chain-res" data-chres="${id}">${chainRes(a)}</div>
+    <div class="chain-pre"><span>Rápido:</span><button type="button" class="chip" data-act="pn-chpre" data-chain="${id}" data-v="8.5">-8,5 %</button><button type="button" class="chip" data-act="pn-chpre" data-chain="${id}" data-v="8,4">-8 % y -4 %</button><button type="button" class="chip" data-act="pn-chpre" data-chain="${id}" data-v="5">-5 %</button><button type="button" class="chip" data-act="pn-chpre" data-chain="${id}" data-v="10">-10 %</button></div>`;
+}
+function chainRes(a){
+  const ch = normChain(a);
+  return ch.length ? `Descuento total <b>${pctTxt(chainPct(ch))} %</b> · ejemplo ${ejemplo(ch)}` : 'Sin descuento: precio al mayor completo.';
 }
 function pnPriceHtml(p){
   const cp = clientPrice(p, state.mid, state.pnScope);
-  if (cp.hidden) return 'Oculto';
-  return `${usd(cp.v)}${cp.orig ? `<small><s>${usd(cp.orig)}</s></small>` : ''}`;
+  return `${usd(cp.v)}${cp.orig ? `<small><s>${usd(cp.orig)}</s> ${esc(chainTxt(cp.ch))}</small>` : ''}`;
 }
+function ruleSource(p, R){
+  if (R.prods && Object.prototype.hasOwnProperty.call(R.prods, p.ref)) return 'con descuento propio';
+  if (R.cats && Object.prototype.hasOwnProperty.call(R.cats, p.cat)) return 'con el descuento de su categoría';
+  return R.todo && R.todo.length ? 'con el descuento de todo el catálogo' : '';
+}
+/* ---------- pestaña 1: precios y descuentos ---------- */
+function tabPrecios(c){
+  const R = scopeReglas(), cl = state.pnScope ? pnClient(state.pnScope) : null;
+  const propios = c.clients.filter(x => x.modo === 'propio');
+  const scope = `<section class="pn-card pn-scopecard">
+      <div class="pn-scope"><label for="pnScope"><b>Estás armando los descuentos de:</b></label>
+        <select id="pnScope"><option value="">Todos mis clientes (descuentos generales)</option>${propios.map(x => `<option value="${esc(x.code)}">${esc(x.nombre)} · exclusivos (${esc(x.code)})</option>`).join('')}</select></div>
+      <p>${cl ? `Estos descuentos los ve <b>solo ${esc(cl.nombre)}</b>. No cambian los de tus otros clientes.` : 'Tu precio base es el <b>precio al mayor sin IVA</b>. Puedes poner varios descuentos seguidos: por ejemplo -8 % y luego -4 %. Si un producto tiene descuento propio, manda ese; si no, el de su categoría; si no, el de todo el catálogo.'}</p>
+      ${propios.length ? '' : '<p class="hint">¿Un cliente necesita descuentos distintos? Créale un código "con descuentos exclusivos" en la pestaña Clientes y códigos.</p>'}
+    </section>`;
+  const todo = `<section class="pn-card">
+      <h3><span class="pn-num">1</span> Descuento para todo el catálogo</h3>
+      ${chainEditor('todo', R.todo || [])}
+      <div class="pn-acts"><button type="button" class="btn accent" data-act="pn-apply" data-scope="todo">Aplicar a todo el catálogo</button>${(R.todo || []).length ? '<button type="button" class="btn link" data-act="pn-clear" data-scope="todo">Quitar</button>' : ''}<span class="pn-now">Ahora: <b>${esc(chainTxt(normChain(R.todo)))}</b></span></div>
+    </section>`;
+  const cats = `<section class="pn-card">
+      <h3><span class="pn-num">2</span> Descuento por categoría</h3>
+      <p>Úsalo cuando una categoría completa lleva un descuento distinto al de todo el catálogo.</p>
+      <div class="pn-catlist">${CATS.map(cat => {
+        const has = R.cats && Object.prototype.hasOwnProperty.call(R.cats, cat.id), open = state.pnCatEdit === cat.id;
+        const nProp = PRODUCTS.filter(p => p.cat === cat.id && R.prods && Object.prototype.hasOwnProperty.call(R.prods, p.ref)).length;
+        return `<div class="pn-catrow${open ? ' open' : ''}">
+          <div class="pn-cathead">${catIco(cat.id)}<span><b>${esc(cat.nombre)}</b><small>${has ? esc(chainTxt(normChain(R.cats[cat.id]))) : 'Usa el de todo el catálogo'}${nProp ? ` · ${nProp} con descuento propio` : ''}</small></span>
+            <button type="button" class="btn ghost sm" data-act="pn-catedit" data-cat="${cat.id}">${open ? 'Cerrar' : 'Cambiar'}</button></div>
+          ${open ? `<div class="pn-catbody">${chainEditor('cat-' + cat.id, has ? R.cats[cat.id] : [])}
+            <div class="pn-acts"><button type="button" class="btn accent" data-act="pn-apply" data-scope="cat" data-cat="${cat.id}">Aplicar a ${esc(cat.nombre)}</button>${has ? `<button type="button" class="btn link" data-act="pn-clear" data-scope="cat" data-cat="${cat.id}">Usar el de todo el catálogo</button>` : ''}</div></div>` : ''}
+        </div>`;
+      }).join('')}</div>
+    </section>`;
+  const list = pnProductList(R);
+  const prods = `<section class="pn-card">
+      <h3><span class="pn-num">3</span> Productos seleccionados</h3>
+      <p>Busca, marca los productos que quieras y aplícales un descuento propio.</p>
+      <div class="pn-tools"><input id="pnSearch" type="search" placeholder="Buscar producto o código" value="${esc(pnQuery)}" aria-label="Buscar producto en el panel">
+        <select id="pnFilterCat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option>${CATS.map(cat => `<option value="${cat.id}" ${pnFilterCat === cat.id ? 'selected' : ''}>${esc(cat.nombre)}</option>`).join('')}</select></div>
+      <div class="pn-selbar"><span id="pnSelCount">${PN_SEL.size} seleccionados</span><button type="button" class="btn link" data-act="pn-selall">Marcar los de la lista</button><button type="button" class="btn link" data-act="pn-selnone">Desmarcar todos</button></div>
+      <div id="pnList" class="pn-list">${list}</div>
+      <div class="pn-selapply">${chainEditor('sel', [])}
+        <div class="pn-acts"><button type="button" class="btn accent" data-act="pn-apply" data-scope="sel">Aplicar a los seleccionados</button><button type="button" class="btn link" data-act="pn-clear" data-scope="sel">Quitar su descuento propio</button></div></div>
+    </section>`;
+  const k = c.disc.iva || {};
+  const iva = state.pnScope ? '' : `<section class="pn-card">
+      <h3><span class="pn-num">4</span> Cómo se calcula el IVA en tus presupuestos</h3>
+      <p>Tus precios son sin IVA. Cuando un presupuesto lleva IVA, se suma así (16 %, o 0 % en productos exentos):</p>
+      <div class="pn-iva">
+        <label class="pdisc">IVA sobre el <input type="number" min="0" max="100" step="1" inputmode="decimal" data-ivacfg="base" value="${k.base == null ? 100 : k.base}" aria-label="Porcentaje del monto sobre el que se calcula el IVA">% del monto</label>
+        <label class="sw"><input type="checkbox" data-ivacfg="ajuste" ${k.ajuste ? 'checked' : ''}>Ajustar el IVA de tasa BCV a tasa Binance</label>
+        <label class="pdisc" ${k.ajuste ? '' : 'hidden'} id="pnBinWrap">Tasa Binance Bs <input type="number" min="0" step="0.01" inputmode="decimal" data-ivacfg="binance" value="${k.binance || ''}" placeholder="0,00" aria-label="Tasa Binance en bolívares"></label>
+      </div>
+      <p class="hint" id="pnIvaEj">${ivaEjemplo()}</p>
+    </section>`;
+  return scope + todo + cats + prods + iva;
+}
+function ivaEjemplo(){
+  const f = ivaFactor(), k = ivaCfg();
+  const partes = [`16 % sobre el ${k.base == null ? 100 : k.base} % del monto`];
+  if (k.ajuste && Number(k.binance) > 0) partes.push(`× tasa BCV ${fmt2.format(CONFIG.tasaBs)} ÷ tasa Binance ${fmt2.format(Number(k.binance))}`);
+  return `Ejemplo: compra de ${usd(100)} → IVA ${usd(r2(100 * 0.16 * f))} (${partes.join(' ')}) → total ${usd(r2(100 + 100 * 0.16 * f))}.`;
+}
+function pnProductList(R){
+  let list = PRODUCTS;
+  if (pnFilterCat) list = list.filter(p => p.cat === pnFilterCat);
+  if (pnQuery) list = search(pnQuery, list).res.map(x => x.p);
+  else if (!pnFilterCat) list = PRODUCTS.filter(p => R.prods && Object.prototype.hasOwnProperty.call(R.prods, p.ref));
+  pnProductList.last = list;
+  if (!list.length) return `<p class="hint">${pnQuery || pnFilterCat ? 'No encontramos productos.' : 'Busca un producto o elige una categoría para ver la lista. Aquí aparecen también los que ya tienen descuento propio.'}</p>`;
+  return list.slice(0, PN_MAX).map(p => {
+    const src = ruleSource(p, R);
+    return `<label class="pn-prow"><input type="checkbox" data-sel="${esc(p.ref)}" ${PN_SEL.has(p.ref) ? 'checked' : ''}>
+      <span class="pn-p"><b>${esc(p.nombre)}</b><span class="ref">${esc(p.ref)} · mayor sin IVA ${usd(p.mayor)}${src ? ` · ${src}` : ''}</span></span>
+      <span class="pn-price">${pnPriceHtml(p)}</span></label>`;
+  }).join('') + (list.length > PN_MAX ? `<p class="hint">Se muestran ${PN_MAX} de ${fmt0.format(list.length)}. Escribe algo más preciso para ver el resto.</p>` : '');
+}
+/* ---------- pestaña 2: qué ven ---------- */
 function pnRow(p, c){
   const off = c.hiddenCats.includes(p.cat) || c.hiddenProducts.includes(p.ref);
-  return `<div class="pn-row${off ? ' off' : ''}" id="pnr-${CSS.escape(p.ref)}">
-    <div class="pn-p"><b>${esc(p.nombre)}</b><span class="ref">${esc(p.ref)} · mayor ${usd(p.mayor)}</span></div>
+  return `<div class="pn-row vis${off ? ' off' : ''}" id="pnr-${CSS.escape(p.ref)}">
+    <div class="pn-p"><b>${esc(p.nombre)}</b><span class="ref">${esc(p.ref)} · mayor sin IVA ${usd(p.mayor)}</span></div>
     <label class="sw"><input type="checkbox" data-pcfg="prod" data-ref="${esc(p.ref)}" ${!c.hiddenProducts.includes(p.ref) ? 'checked' : ''}>Visible</label>
     <label class="sw"><input type="checkbox" data-pcfg="price" data-ref="${esc(p.ref)}" ${!c.noPrice.includes(p.ref) ? 'checked' : ''}>Precio</label>
-    <label class="pdisc">Desc. <input type="number" min="0" max="90" step="0.5" inputmode="decimal" data-pcfg="disc" data-ref="${esc(p.ref)}" value="${scopeDisc(p)}" placeholder="0" aria-label="Descuento para ${esc(p.nombre)}">%</label>
-    <span class="pn-price" data-pp="${esc(p.ref)}">${pnPriceHtml(p)}</span>
   </div>`;
 }
-const PN_MAX = 150;
 function pnRowsFor(list, c){
-  return list.slice(0, PN_MAX).map(p => pnRow(p, c)).join('') + (list.length > PN_MAX ? `<div class="pn-more">Se muestran ${PN_MAX} de ${fmt0.format(list.length)}. Usa el buscador del panel para encontrar un producto.</div>` : '');
+  return list.slice(0, PN_MAX).map(p => pnRow(p, c)).join('') + (list.length > PN_MAX ? `<div class="pn-more">Se muestran ${PN_MAX} de ${fmt0.format(list.length)}. Usa el buscador para encontrar un producto.</div>` : '');
 }
 function pnCounts(){
   const c = cfg(state.mid);
   const vis = PRODUCTS.filter(p => !c.hiddenCats.includes(p.cat) && !c.hiddenProducts.includes(p.ref)).length;
-  const dmap = state.pnScope ? (c.clientDisc[state.pnScope] || {}) : c.disc;
-  const disc = Object.keys(dmap).filter(k => clampPct(dmap[k]) > 0).length;
-  const sum = $('#pnSum'); if (sum) sum.innerHTML = `Tus clientes ven <b>${fmt0.format(vis)}</b> de ${fmt0.format(PRODUCTS.length)} productos · <b>${disc}</b> con descuento ${state.pnScope ? 'para este cliente' : 'general'}`;
+  const sum = $('#pnSum'); if (sum) sum.innerHTML = `Tus clientes ven <b>${fmt0.format(vis)}</b> de ${fmt0.format(PRODUCTS.length)} productos`;
   CATS.forEach(cat => {
     const el = $(`#pnc-${cat.id}`); if (!el) return;
     const all = PRODUCTS.filter(p => p.cat === cat.id);
     const v = c.hiddenCats.includes(cat.id) ? 0 : all.filter(p => !c.hiddenProducts.includes(p.ref)).length;
     el.textContent = c.hiddenCats.includes(cat.id) ? 'Categoría oculta' : `${fmt0.format(v)} de ${fmt0.format(all.length)} visibles`;
   });
-  $$('#dlgPanel .pn-row').forEach(row => {
+  $$('#dlgPanel .pn-row.vis').forEach(row => {
     const ref = row.querySelector('[data-pcfg="prod"]').dataset.ref, p = byRef[ref];
     row.classList.toggle('off', c.hiddenCats.includes(p.cat) || c.hiddenProducts.includes(p.ref));
-    row.querySelector('[data-pp]').innerHTML = pnPriceHtml(p);
   });
 }
-function renderPanel(){
-  const m = MAY[state.mid], c = cfg(state.mid), tab = state.panelTab;
-  let body = '';
-  if (tab === 'ver'){
-    body = `<section class="pn-card">
-        <h3>Tus clientes ven tu precio al mayor</h3>
-        <p>Aquí eliges qué productos y precios ven, y los descuentos que les das. Los descuentos pueden ser para todos tus clientes o solo para uno.</p>
-        <div class="pn-scope"><label for="pnScope"><b>Descuentos para:</b></label><select id="pnScope"><option value="">Todos mis clientes</option>${c.clients.map(cl => `<option value="${esc(cl.code)}">${esc(cl.nombre)} (${esc(cl.code)})</option>`).join('')}</select></div>
-      </section>
-      <section class="pn-card">
-        <h3>Qué productos y precios ven tus clientes</h3>
-        <div class="pn-tools"><input id="pnSearch" type="search" placeholder="Buscar un producto en el panel" aria-label="Buscar un producto en el panel"><span class="pn-sum" id="pnSum"></span></div>
-        <div id="pnSearchRes" hidden></div>
-        <div id="pnCats">${CATS.map(cat => {
-          const open = !!state.pnOpen[cat.id];
-          return `<div class="pn-cat" data-pcat="${cat.id}">
-            <div class="pn-ch">
-              <button type="button" class="pn-tg" data-act="pnexp" data-cat="${cat.id}" aria-expanded="${open}">${CHEV}${catIco(cat.id)}<span class="pn-cname"><b>${esc(cat.nombre)}</b><small id="pnc-${cat.id}"></small></span></button>
-              <label class="sw"><input type="checkbox" data-pcfg="cat" data-cat="${cat.id}" ${!c.hiddenCats.includes(cat.id) ? 'checked' : ''}>Visible</label>
-              <label class="sw"><input type="checkbox" data-pcfg="catprice" data-cat="${cat.id}" ${!c.noPriceCats.includes(cat.id) ? 'checked' : ''}>Precios</label>
-              <label class="pdisc">Desc. a todo <input type="number" min="0" max="90" step="0.5" inputmode="decimal" data-pcfg="catdisc" data-cat="${cat.id}" placeholder="0" aria-label="Descuento para toda la categoría ${esc(cat.nombre)}">%</label>
-            </div>
-            <div class="pn-rows" id="pnrows-${cat.id}" ${open ? '' : 'hidden'}>${open ? pnRowsFor(PRODUCTS.filter(p => p.cat === cat.id), c) : ''}</div>
-          </div>`;
-        }).join('')}</div>
-      </section>`;
-  } else {
-    body = `<section class="pn-card">
-        <h3>Crear código para un cliente</h3>
-        <form id="newClient" class="pn-new"><label class="sr" for="ncName">Nombre del cliente</label><input id="ncName" placeholder="Nombre del cliente o de su negocio" autocomplete="off"><button class="btn accent" type="submit">Crear código</button></form>
+function tabVer(c){
+  return `<section class="pn-card">
+      <h3>Qué productos y precios ven tus clientes</h3>
+      <p>Apaga una categoría o un producto para que no lo vean, o apaga "Precio" para que lo vean como "precio a consultar".</p>
+      <div class="pn-tools"><input id="pnVisSearch" type="search" placeholder="Buscar un producto" aria-label="Buscar un producto en el panel"><span class="pn-sum" id="pnSum"></span></div>
+      <div id="pnSearchRes" hidden></div>
+      <div id="pnCats">${CATS.map(cat => {
+        const open = !!state.pnOpen[cat.id];
+        return `<div class="pn-cat" data-pcat="${cat.id}">
+          <div class="pn-ch vis">
+            <button type="button" class="pn-tg" data-act="pnexp" data-cat="${cat.id}" aria-expanded="${open}">${CHEV}${catIco(cat.id)}<span class="pn-cname"><b>${esc(cat.nombre)}</b><small id="pnc-${cat.id}"></small></span></button>
+            <label class="sw"><input type="checkbox" data-pcfg="cat" data-cat="${cat.id}" ${!c.hiddenCats.includes(cat.id) ? 'checked' : ''}>Visible</label>
+            <label class="sw"><input type="checkbox" data-pcfg="catprice" data-cat="${cat.id}" ${!c.noPriceCats.includes(cat.id) ? 'checked' : ''}>Precios</label>
+          </div>
+          <div class="pn-rows" id="pnrows-${cat.id}" ${open ? '' : 'hidden'}>${open ? pnRowsFor(PRODUCTS.filter(p => p.cat === cat.id), c) : ''}</div>
+        </div>`;
+      }).join('')}</div>
+    </section>`;
+}
+/* ---------- pestaña 3: clientes y códigos ---------- */
+function tabCodigos(c, m){
+  return `<section class="pn-card">
+      <h3>Crear un código para un cliente</h3>
+      <form id="newClient" class="pn-newc" novalidate>
+        <div class="field"><label for="ncName">Nombre del cliente o de su negocio</label><input id="ncName" autocomplete="off" placeholder="Ej.: Ferretería Javier"></div>
+        <fieldset class="pn-modos"><legend>¿Qué precios ve?</legend>
+          ${Object.entries(MODOS).map(([k, v], i) => `<label class="pn-modo"><input type="radio" name="ncModo" value="${k}" ${i === 0 ? 'checked' : ''}><span><b>${v.t}</b><small>${v.s}</small></span></label>`).join('')}
+        </fieldset>
+        <label class="sw"><input type="checkbox" id="ncIva">Sus presupuestos llevan IVA</label>
         <p class="err" id="ncErr" hidden>Escribe el nombre del cliente.</p>
-        <p>Tu cliente entra con ese código y ve solo lo que elegiste, con tus descuentos. Sus pedidos y presupuestos te llegan a tu WhatsApp (${esc(m.whatsapp.replace(/^58/, '0'))}).</p>
-      </section>
-      <section class="pn-card">
-        <h3>Tus códigos (${c.clients.length})</h3>
-        ${c.clients.length ? c.clients.map(cl => `<div class="code-row"><span class="code">${esc(cl.code)}</span><div><b>${esc(cl.nombre)}</b><small>Creado el ${esc(cl.fecha)}${c.clientDisc[cl.code] && Object.keys(c.clientDisc[cl.code]).length ? ` · ${Object.keys(c.clientDisc[cl.code]).length} descuentos propios` : ''}</small></div>
-          <div class="code-acts"><button type="button" class="btn ghost" data-act="ccopy" data-code="${esc(cl.code)}">Copiar</button><a class="btn ghost" target="_blank" rel="noopener" href="${waLink('', `Hola ${cl.nombre}, este es tu código para ver mi catálogo de Ferretería Fermil: ${cl.code}\nEntra a la página, toca "Tengo un código" y escríbelo. Ahí puedes sacar presupuestos y hacer pedidos.`)}">Enviar por WhatsApp</a><button type="button" class="btn ghost" data-act="cdisc" data-code="${esc(cl.code)}">Sus descuentos</button><button type="button" class="btn link" data-act="cdel" data-code="${esc(cl.code)}">Eliminar</button></div></div>`).join('')
-        : '<p>Todavía no has creado códigos.</p>'}
-      </section>`;
-  }
+        <button class="btn accent" type="submit">Crear código</button>
+      </form>
+      <p>Tu cliente entra con su código y ve solo lo que elegiste. Sus pedidos y presupuestos te llegan a tu WhatsApp (${esc(m.whatsapp.replace(/^58/, '0'))}).</p>
+    </section>
+    <section class="pn-card">
+      <h3>Tus códigos (${c.clients.length})</h3>
+      ${c.clients.length ? c.clients.map(cl => `<div class="code-row">
+          <span class="code">${esc(cl.code)}</span>
+          <div><b>${esc(cl.nombre)}</b><small>Creado el ${esc(cl.fecha || '')}</small>
+            <div class="code-opts"><label class="sr" for="cm-${esc(cl.code)}">Precios de ${esc(cl.nombre)}</label><select id="cm-${esc(cl.code)}" data-cmodo="${esc(cl.code)}">${Object.entries(MODOS).map(([k, v]) => `<option value="${k}" ${cl.modo === k ? 'selected' : ''}>${v.t}</option>`).join('')}</select>
+            <label class="sw"><input type="checkbox" data-civa="${esc(cl.code)}" ${cl.iva ? 'checked' : ''}>Con IVA</label></div></div>
+          <div class="code-acts"><button type="button" class="btn ghost" data-act="ccopy" data-code="${esc(cl.code)}">Copiar</button>
+            <a class="btn ghost" target="_blank" rel="noopener" href="${waLink('', `Hola ${cl.nombre}, este es tu código para ver mi catálogo de Ferretería Fermil: ${cl.code}\nEntra a ${location.origin.startsWith('http') ? location.origin : 'la página'}, toca "Mayoristas" y escríbelo. Ahí puedes sacar presupuestos y hacer pedidos.`)}">Enviar por WhatsApp</a>
+            ${cl.modo === 'propio' ? `<button type="button" class="btn ghost" data-act="cdisc" data-code="${esc(cl.code)}">Sus descuentos</button>` : ''}
+            <button type="button" class="btn ghost" data-act="pn-verc" data-code="${esc(cl.code)}">Ver como ${esc(cl.nombre.split(' ')[0])}</button>
+            <button type="button" class="btn link" data-act="cdel" data-code="${esc(cl.code)}">Eliminar</button></div>
+        </div>`).join('') : '<p>Todavía no has creado códigos.</p>'}
+    </section>`;
+}
+function renderPanel(){
+  const m = MAY[state.mid], c = cfg(state.mid);
+  if (!['precios', 'ver', 'codigos'].includes(state.panelTab)) state.panelTab = 'precios';
+  if (state.pnScope && (pnClient(state.pnScope) || {}).modo !== 'propio') state.pnScope = '';
+  const tab = state.panelTab;
+  const body = tab === 'precios' ? tabPrecios(c) : tab === 'ver' ? tabVer(c) : tabCodigos(c, m);
+  const top = dlgPanel.querySelector('.pn-body') ? dlgPanel.querySelector('.pn-body').scrollTop : 0;
   dlgPanel.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Panel del mayorista</span><h2 id="pnTitle">${esc(m.nombre)}</h2></div><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
-    <div class="seg pn-tabs" role="group" aria-label="Secciones del panel"><button type="button" data-act="ptab" data-tab="ver" aria-pressed="${tab === 'ver'}">Qué ven mis clientes</button><button type="button" data-act="ptab" data-tab="codigos" aria-pressed="${tab === 'codigos'}">Códigos de clientes (${c.clients.length})</button></div>
+    <div class="seg pn-tabs" role="group" aria-label="Secciones del panel">
+      <button type="button" data-act="ptab" data-tab="precios" aria-pressed="${tab === 'precios'}">Mis precios y descuentos</button>
+      <button type="button" data-act="ptab" data-tab="codigos" aria-pressed="${tab === 'codigos'}">Clientes y códigos (${c.clients.length})</button>
+      <button type="button" data-act="ptab" data-tab="ver" aria-pressed="${tab === 'ver'}">Qué ven mis clientes</button>
+    </div>
     <div class="pn-body">${body}</div>
-    <div class="pn-foot"><span class="hint">Los cambios se guardan al instante. En este prototipo quedan guardados solo en este navegador.</span><button type="button" class="btn accent" data-act="preview">Ver como mi cliente</button></div>`;
-  if (tab === 'ver'){
+    <div class="pn-foot"><span class="hint">${NUBE ? 'Los cambios se guardan solos en la nube.' : 'Los cambios se guardan al instante en este navegador.'}</span><button type="button" class="btn accent" data-act="preview">Ver como mi cliente</button></div>`;
+  if (state.pnKeepScroll) dlgPanel.querySelector('.pn-body').scrollTop = top;
+  state.pnKeepScroll = false;
+  if (tab === 'precios'){
     $('#pnScope').value = state.pnScope;
-    $('#pnScope').addEventListener('change', e => { state.pnScope = e.target.value; renderPanel(); });
+    $('#pnScope').addEventListener('change', e => { state.pnScope = e.target.value; for (const k in DRAFT) delete DRAFT[k]; renderPanel(); });
+    const upd = () => { $('#pnList').innerHTML = pnProductList(scopeReglas()); };
+    let tmr; $('#pnSearch').addEventListener('input', e => { pnQuery = e.target.value.trim(); clearTimeout(tmr); tmr = setTimeout(upd, 180); });
+    $('#pnFilterCat').addEventListener('change', e => { pnFilterCat = e.target.value; upd(); });
+  }
+  if (tab === 'ver'){
     pnCounts();
-    $('#pnSearch').addEventListener('input', e => {
+    $('#pnVisSearch').addEventListener('input', e => {
       const v = e.target.value.trim(), box = $('#pnSearchRes');
       if (!v){ box.hidden = true; box.innerHTML = ''; $('#pnCats').hidden = false; return; }
       const {res} = search(v, PRODUCTS);
@@ -1323,43 +1500,82 @@ function renderPanel(){
     });
   }
 }
+function rerenderKeep(){ state.pnKeepScroll = true; renderPanel(); }
+dlgPanel.addEventListener('click', e => {
+  const el = e.target.closest('[data-act^="pn-"]'); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.chain, R = () => scopeReglas();
+  if (a === 'pn-chadd'){ (DRAFT[id] = DRAFT[id] || []).push(DRAFT[id].length ? 4 : 8); rerenderKeep(); }
+  else if (a === 'pn-chdel'){ DRAFT[id].splice(Number(el.dataset.i), 1); rerenderKeep(); }
+  else if (a === 'pn-chpre'){ DRAFT[id] = el.dataset.v.split(',').map(Number); rerenderKeep(); }
+  else if (a === 'pn-catedit'){ state.pnCatEdit = state.pnCatEdit === el.dataset.cat ? '' : el.dataset.cat; delete DRAFT['cat-' + el.dataset.cat]; rerenderKeep(); }
+  else if (a === 'pn-selall'){ (pnProductList.last || []).slice(0, PN_MAX).forEach(p => PN_SEL.add(p.ref)); rerenderKeep(); }
+  else if (a === 'pn-selnone'){ PN_SEL.clear(); rerenderKeep(); }
+  else if (a === 'pn-verc'){ state.pnScope = el.dataset.code; state.preview = true; dlgPanel.close(); state.cat = 'todas'; applyRole(); window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); toast('Así ve tu catálogo este cliente'); }
+  else if (a === 'pn-apply' || a === 'pn-clear'){
+    const sc = el.dataset.scope, r = R(), clear = a === 'pn-clear';
+    if (sc === 'todo'){ r.todo = clear ? [] : normChain(DRAFT.todo); delete DRAFT.todo; toast(clear ? 'Quitaste el descuento de todo el catálogo' : `Listo: ${chainTxt(r.todo)} en todo el catálogo`); }
+    else if (sc === 'cat'){
+      const cat = el.dataset.cat;
+      if (clear) delete r.cats[cat]; else r.cats[cat] = normChain(DRAFT['cat-' + cat]);
+      delete DRAFT['cat-' + cat]; state.pnCatEdit = '';
+      toast(clear ? `${CAT[cat].nombre} vuelve a usar el descuento de todo el catálogo` : `Listo: ${chainTxt(r.cats[cat])} en ${CAT[cat].nombre}`);
+    } else if (sc === 'sel'){
+      if (!PN_SEL.size){ toast('Primero marca los productos en la lista'); return; }
+      const ch = normChain(DRAFT.sel);
+      PN_SEL.forEach(ref => { if (clear) delete r.prods[ref]; else r.prods[ref] = ch; });
+      toast(clear ? `Quitaste el descuento propio de ${PN_SEL.size} productos` : `Listo: ${chainTxt(ch)} en ${PN_SEL.size} productos`);
+      PN_SEL.clear(); delete DRAFT.sel;
+    }
+    saveCfg(); rerenderKeep();
+  }
+});
+dlgPanel.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.chin){ const id = t.dataset.chin; DRAFT[id][Number(t.dataset.i)] = clampPct(t.value); const res = dlgPanel.querySelector(`[data-chres="${id}"]`); if (res) res.innerHTML = chainRes(DRAFT[id]); }
+});
 function pnChange(e){
   const el = e.target, k = el.dataset.pcfg;
   const c = cfg(state.mid);
+  if (el.dataset.sel){ if (el.checked) PN_SEL.add(el.dataset.sel); else PN_SEL.delete(el.dataset.sel); const n = $('#pnSelCount'); if (n) n.textContent = `${PN_SEL.size} seleccionados`; return; }
+  if (el.dataset.ivacfg){
+    const iv = c.disc.iva = c.disc.iva || {base:100, ajuste:false, binance:0};
+    if (el.dataset.ivacfg === 'ajuste'){ iv.ajuste = el.checked; $('#pnBinWrap').hidden = !el.checked; }
+    else iv[el.dataset.ivacfg] = Math.max(0, Math.min(el.dataset.ivacfg === 'base' ? 100 : 1e9, Number(String(el.value).replace(',', '.')) || 0));
+    $('#pnIvaEj').textContent = ivaEjemplo(); saveCfg(); renderCartAll(); return;
+  }
+  if (el.dataset.cmodo){
+    const cl = pnClient(el.dataset.cmodo); if (!cl) return;
+    cl.modo = el.value;
+    if (cl.modo === 'propio' && !c.clientDisc[cl.code]) c.clientDisc[cl.code] = JSON.parse(JSON.stringify(Object.assign(EMPTY_R(), {todo:c.disc.todo, cats:c.disc.cats, prods:c.disc.prods})));
+    saveCfg(); renderPanel(); toast(`${cl.nombre}: ${MODOS[cl.modo].t.toLowerCase()}`); return;
+  }
+  if (el.dataset.civa){ const cl = pnClient(el.dataset.civa); if (cl){ cl.iva = el.checked; saveCfg(); toast(el.checked ? `${cl.nombre}: presupuestos con IVA` : `${cl.nombre}: presupuestos sin IVA`); } return; }
   const tog = (arr, val, on) => { const i = arr.indexOf(val); if (on && i < 0) arr.push(val); if (!on && i >= 0) arr.splice(i, 1); };
-  const dmap = () => { if (!state.pnScope) return c.disc; return c.clientDisc[state.pnScope] || (c.clientDisc[state.pnScope] = {}); };
   if (k === 'cat') tog(c.hiddenCats, el.dataset.cat, !el.checked);
   else if (k === 'catprice') tog(c.noPriceCats, el.dataset.cat, !el.checked);
   else if (k === 'prod') tog(c.hiddenProducts, el.dataset.ref, !el.checked);
   else if (k === 'price') tog(c.noPrice, el.dataset.ref, !el.checked);
-  else if (k === 'disc'){
-    const m = dmap(), raw = el.value.trim(), v = clampPct(raw);
-    if (raw === '') delete m[el.dataset.ref]; else m[el.dataset.ref] = v;
-    if (raw !== '' && String(v) !== raw && e.type === 'change') el.value = v;
-  }
-  else if (k === 'catdisc'){
-    if (e.type !== 'change') return;
-    const m = dmap(), v = clampPct(el.value);
-    PRODUCTS.filter(p => p.cat === el.dataset.cat).forEach(p => { if (v) m[p.ref] = v; else delete m[p.ref]; });
-    $$(`#dlgPanel [data-pcfg="disc"]`).forEach(inp => { const p = byRef[inp.dataset.ref]; if (p && p.cat === el.dataset.cat) inp.value = v || ''; });
-    el.value = '';
-    toast(v ? `Descuento de ${pctTxt(v)}% aplicado a ${CAT[el.dataset.cat].nombre}` : `Descuentos quitados en ${CAT[el.dataset.cat].nombre}`);
-  } else return;
+  else return;
   saveCfg(); pnCounts();
 }
 dlgPanel.addEventListener('change', pnChange);
-dlgPanel.addEventListener('input', e => { if (e.target.dataset.pcfg === 'disc') pnChange(e); });
 dlgPanel.addEventListener('submit', e => {
   if (e.target.id !== 'newClient') return;
   e.preventDefault();
   const name = $('#ncName').value.trim();
   if (!name){ $('#ncErr').hidden = false; $('#ncName').focus(); return; }
   const m = MAY[state.mid], c = cfg(state.mid);
+  const modo = (document.querySelector('input[name="ncModo"]:checked') || {}).value || 'general';
   const all = new Set(MAYORISTAS.flatMap(x => cfg(x.id).clients.map(cl => cl.code)));
   let code; do { code = `${m.prefijo}-${rnd(4)}-${rnd(4)}`; } while (all.has(code) || MAYORISTAS.some(x => x.codigo === code));
-  c.clients.unshift({code, nombre:name, fecha:today()});
+  c.clients.unshift({code, nombre:name, fecha:today(), modo, iva: $('#ncIva').checked});
+  if (modo === 'propio'){
+    c.clientDisc[code] = JSON.parse(JSON.stringify(Object.assign(EMPTY_R(), {todo:c.disc.todo, cats:c.disc.cats, prods:c.disc.prods})));
+    state.panelTab = 'precios'; state.pnScope = code;
+    for (const k in DRAFT) delete DRAFT[k];
+    toast(`Código ${code} creado. Ahora arma los descuentos de ${name}.`);
+  } else toast(`Código creado: ${code}`);
   saveCfg(); renderPanel();
-  toast(`Código creado: ${code}`);
 });
 dlgPanel.addEventListener('close', () => { if (state.role === 'mayorista'){ render(); refreshControls(); renderCartAll(); } });
 
@@ -1463,13 +1679,13 @@ document.addEventListener('click', e => {
       box.hidden = !open;
       break;
     }
-    case 'cdisc': state.panelTab = 'ver'; state.pnScope = el.dataset.code; renderPanel(); break;
+    case 'cdisc': state.panelTab = 'precios'; state.pnScope = el.dataset.code; for (const k in DRAFT) delete DRAFT[k]; renderPanel(); break;
     case 'ccopy': {
       const code = el.dataset.code, old = el.textContent;
       (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(() => { el.textContent = '¡Copiado!'; }).catch(() => { el.textContent = code; }).finally(() => setTimeout(() => { el.textContent = old; }, 1800));
       break;
     }
-    case 'cdel': twoStep(el, 'Eliminar', '¿Seguro? Toca otra vez', () => { const c = cfg(state.mid); c.clients = c.clients.filter(x => x.code !== el.dataset.code); delete c.clientDisc[el.dataset.code]; saveCfg(); renderPanel(); toast('Código eliminado'); }); break;
+    case 'cdel': twoStep(el, 'Eliminar', '¿Seguro? Toca otra vez', () => { const c = cfg(state.mid); c.clients = c.clients.filter(x => x.code !== el.dataset.code); delete c.clientDisc[el.dataset.code]; if (state.pnScope === el.dataset.code) state.pnScope = ''; saveCfg(); renderPanel(); toast('Código eliminado'); }); break;
     case 'quote': openQuote(); break;
     case 'mega': toggleMega(); break;
     case 'megacat': toggleMega(false); state.q = ''; syncQ(); setCat(el.dataset.cat, true); break;
@@ -1520,6 +1736,7 @@ document.addEventListener('change', e => {
   if (t.matches('[data-qty]')) setQty(t.dataset.qty, t.value);
   if (t.matches('[data-ldisc]')){ const v = clampPct(t.value); if (v) ldisc[t.dataset.ldisc] = v; else delete ldisc[t.dataset.ldisc]; saveCart(); $$(`[data-ctrl="${CSS.escape(t.dataset.ldisc)}"]`).forEach(x => { x.innerHTML = controls(byRef[t.dataset.ldisc]); }); renderCartAll(); }
   if (t.id === 'mClient'){ state.mClient = t.value; render(); refreshControls(); renderCartAll(); }
+  if (t.id === 'ivaOn'){ state.ivaOn = t.checked; store.set('fermil_ivaon', state.ivaOn); renderCartAll(); }
   if (t.id === 'branch'){ state.vista = t.value; store.set('fermil_vista', state.vista); resetPaging(); render(); renderCartAll(); toast(`Viendo inventario de ${VISTA[state.vista].nombre}`); }
 });
 document.addEventListener('keydown', e => {

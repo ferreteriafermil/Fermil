@@ -56,6 +56,7 @@ jobs:
           PLADE_URL: ${{ secrets.PLADE_URL }}
           PLADE_USUARIO: ${{ secrets.PLADE_USUARIO }}
           PLADE_CLAVE: ${{ secrets.PLADE_CLAVE }}
+          FOTOS_MINUTOS: '45'   # las fotos que falten siguen en la próxima corrida
         run: python robot/sync.py fotos
 
       - name: Publicar otra vez con las fotos nuevas

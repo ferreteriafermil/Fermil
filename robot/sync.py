@@ -201,11 +201,12 @@ def descargar_reportes(s, carpeta):
     return archivos
 
 
-def ids_por_codigo(s, almacen):
-    """El reporte en pantalla trae el id interno de cada producto (hace falta para pedir su foto)."""
-    url = (f'{BASE}/panel/index.php?op=reporte_inventario&id_almacen%5B%5D={almacen}&orden=V.cod_inv'
+def ids_por_codigo(s, almacen, cate):
+    """El reporte en pantalla trae el id interno de cada producto (hace falta para pedir su foto).
+    Se pide por categoría, igual que los Excel, porque el reporte completo tarda demasiado."""
+    url = (f'{BASE}/panel/index.php?op=reporte_inventario&id_almacen%5B%5D={almacen}&cate={cate}&orden=V.cod_inv'
            f'&precio_utilidad%5B%5D=venta&estatus=1&mostrar_exi=on&solo_exi=on&bt_filtrar=1')
-    html = s.get(url, timeout=900).text
+    html = s.get(url, timeout=300).text
     return {m.group(2).strip(): m.group(1)
             for m in re.finditer(r"id=['\"](\d+)['\"][^>]*class=['\"]bt_resumen_producto['\"][^>]*>([^<]+)<", html)}
 
@@ -221,19 +222,26 @@ def actualizar_fotos(s, productos):
     if not pendientes:
         return cache
     ids = {}
+    t_ids = time.time()
     for alm, suc in ALMACENES:
-        if suc == 'mayorista' or all(c in ids for c in pendientes):
+        if suc == 'mayorista':
             continue
-        try:
-            t0 = time.time()
-            ids.update({k: v for k, v in ids_por_codigo(s, alm).items() if k not in ids})
-            log(f'ids de productos tras almacén {alm}: {len(ids)}')
-            aviso('notice', f'Fotos: ids del almacén {alm} leídos en {time.time() - t0:.0f}s ({len(ids)} en total)')
-        except requests.RequestException as e:
-            log(f'no se pudo leer los ids del almacén {alm}: {e}')
-    for cod in pendientes:
-        if cod not in ids:
-            cache[cod] = ''  # no aparece en los reportes de las tiendas: sin foto por ahora
+        for cate in CATEGORIAS_PLADE:
+            if all(c in ids for c in pendientes) or time.time() - t_ids > 25 * 60:
+                break
+            try:
+                t0 = time.time()
+                nuevos = ids_por_codigo(s, alm, cate)
+                ids.update({k: v for k, v in nuevos.items() if k not in ids})
+                log(f'ids almacén {alm} categoría {cate}: {len(nuevos)} en {time.time() - t0:.0f}s')
+            except requests.RequestException as e:
+                log(f'ids almacén {alm} categoría {cate}: {e}')
+    completo = bool(ids) and time.time() - t_ids <= 25 * 60
+    aviso('notice', f'Fotos: {len(ids)} ids de productos leídos en {time.time() - t_ids:.0f}s' + ('' if completo else ' (incompleto)'))
+    if completo:
+        for cod in pendientes:
+            if cod not in ids:
+                cache[cod] = ''  # no aparece en los reportes de las tiendas: sin foto por ahora
     limite = time.time() + FOTOS_MINUTOS * 60
     hechas = 0
     for cod in pendientes:

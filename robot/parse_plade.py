@@ -121,7 +121,8 @@ def leer_excel(path):
 
 
 def con_iva(precio, iva):
-    """PLADE da los precios del reporte SIN IVA; la página los muestra con IVA, redondeando
+    """PLADE da los precios del reporte SIN IVA. El precio de venta se muestra con IVA (el al mayor
+    va sin IVA: así lo trabajan los mayoristas). Se redondea
     al céntimo hacia arriba como lo muestra PLADE (98,34 + 16 % = 114,08)."""
     if not precio:
         return 0
@@ -148,15 +149,17 @@ def construir(archivos, tasa=None):
                 p = productos[f['cod']] = {
                     'c': f['cod'], 'n': f['nom'], 'k': cat[0], 's': f['sub'].title() if f['sub'] else '',
                     'm': f['marca'], 'u': f['und'] or 'unidad',
-                    'v': con_iva(f['venta'], f['iva']), 'y': con_iva(f['mayor'], f['iva']),
+                    'v': con_iva(f['venta'], f['iva']), 'y': round(f['mayor'], 2),
                     'd': 1 if (f['menor'] > 0 and f['venta'] > 0 and f['menor'] < f['venta'] * 0.995) else 0,
                     'e': {},
                 }
+                if f['iva'] is not None and round(f['iva'], 2) != 16:
+                    p['i'] = round(f['iva'], 2)  # IVA distinto al 16 % (0 = exento)
             # si una sucursal trae precio y otra no, se completa
             if not p['v'] and f['venta']:
                 p['v'] = con_iva(f['venta'], f['iva'])
             if not p['y'] and f['mayor']:
-                p['y'] = con_iva(f['mayor'], f['iva'])
+                p['y'] = round(f['mayor'], 2)
             if f['disp'] > 0:
                 p['e'][suc] = round(f['disp'], 2)
     lista = [p for p in productos.values() if p['v'] > 0]
