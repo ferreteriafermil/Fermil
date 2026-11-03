@@ -54,11 +54,13 @@ MINIMO_PRODUCTOS = int(os.environ.get('MINIMO_PRODUCTOS', '1000'))
 
 # Almacén de PLADE -> sucursal de la página
 ALMACENES = [
-    (1, 'unda'),        # Inversiones Fermil Centro, C.A. (Fermil La Unda). El almacén "Unda 17" es depósito: no se usa.
+    (1, 'unda'),        # Inversiones Fermil Centro, C.A. (Fermil La Unda)
     (7, 'quinta'),      # Inversiones La Esquina del Constructor, C.A. (Fermil La Quinta)
     (5, 'colonia'),     # Inversiones Fermil, C.A. (Fermil La Colonia)
     (6, 'biscucuy'),    # Ferreagro Fermil Biscucuy, C.A. (no INGCO Biscucuy)
-    (15, 'mayorista'),  # Venta Mayorista
+    # Lo que ven los mayoristas y sus clientes: la suma de estos dos almacenes (no el 15, Venta Mayorista)
+    (9, 'mayorista'),   # Almacén Principal
+    (17, 'mayorista'),  # Almacén Unda
 ]
 # Categorías de PLADE: se piden por separado para que cada reporte sea rápido
 CATEGORIAS_PLADE = [1, 2, 6, 11, 14, 15, 17, 18, 19, 20, 21, 22, 23, 27, 40]
@@ -305,7 +307,7 @@ def diagnostico_almacenes():
                 vistos[o.group(1)] = ' '.join(o.group(2).split())
     aviso('notice', 'Almacenes en PLADE: ' + (' · '.join(f'{k} = {v}' for k, v in sorted(vistos.items(), key=lambda x: int(x[0]))) or 'no se encontró la lista'))
     from parse_plade import leer_excel
-    for alm in (9, 17, 15):
+    for alm in (9, 17):
         total = con = 0
         nombre = ''
         for cate in CATEGORIAS_PLADE:
@@ -335,7 +337,7 @@ def actualizar_fotos(s, productos):
         return cache
     guardado = json.loads(CACHE_IDS.read_text()) if CACHE_IDS.exists() else {}
     ids, leidos = guardado.get('ids', {}), set(guardado.get('leidos', []))
-    reportes = [(alm, cate) for alm, suc in ALMACENES if suc != 'mayorista' for cate in CATEGORIAS_PLADE]
+    reportes = [(alm, cate) for alm, _ in ALMACENES for cate in CATEGORIAS_PLADE]
     t_ids = time.time()
     n = 0
     for alm, cate in reportes:

@@ -457,8 +457,9 @@ const effRole = () => (state.role === 'mayorista' && state.preview) ? 'cliente' 
 const isMay = () => effRole() === 'mayorista';
 const isWholesaleView = () => state.role !== 'publico';
 const TODAS = ['unda','quinta','colonia','biscucuy'];
+const ALM_MAYOR = 'Existencias de Almacén Principal y Almacén Unda';
 function stockOf(p){
-  if (isWholesaleView()){ if (p.e.mayorista != null) return p.e.mayorista; let s = 0; for (const id of TODAS) s += p.e[id] || 0; return s; }
+  if (isWholesaleView()) return p.e.mayorista || 0;  // mayoristas: solo Almacén Principal (9) + Almacén Unda (17)
   let s = 0; for (const id of VISTA[state.vista].sucs) s += p.e[id] || 0; return s;
 }
 function visible(p){
@@ -704,7 +705,7 @@ function renderBranch(){
   const bar = $('#branchBar');
   if (isWholesaleView()){
     sel.hidden = true;
-    $('#branchInfo').innerHTML = `<b>Existencias de las 4 sucursales</b> · el almacén Venta Mayorista no tiene existencias cargadas en PLADE`;
+    $('#branchInfo').innerHTML = `<b>${ALM_MAYOR}</b> · solo se muestran productos con 20 o más`;
     bar.querySelector('label').lastChild.textContent = 'Inventario:';
     return;
   }
@@ -906,7 +907,7 @@ function updateEst(p){
   const q = Math.max(0, Number(qi.value) || 0), li = lineInfo(p, q);
   $('#pdEst').innerHTML = li.hidden ? `${fmt0.format(q)} ${esc(p.unidad)}<b>A consultar</b>` : `${fmt0.format(q)} ${esc(p.unidad)} × ${usd(li.unit)}<b>${usd(li.total)}</b>≈ ${bs(li.total)}`;
   const w = $('#pdWarn'), st = stockOf(p);
-  if (q > st){ w.hidden = false; w.textContent = isMay() ? `Hay ${fmt0.format(st)} ${p.unidad} en el almacén mayorista. El resto se confirma por WhatsApp.` : 'Esa cantidad supera lo que hay en tienda. Te confirmamos por WhatsApp.'; }
+  if (q > st){ w.hidden = false; w.textContent = isWholesaleView() ? `Hay ${fmt0.format(st)} ${p.unidad} entre Almacén Principal y Almacén Unda. El resto se confirma por WhatsApp.` : 'Esa cantidad supera lo que hay en tienda. Te confirmamos por WhatsApp.'; }
   else w.hidden = true;
 }
 
@@ -990,7 +991,7 @@ function renderCartAll(){
   } else {
     $('#cartItems').innerHTML = all.map(r => {
       const p = byRef[r], q = cart[r], li = lineInfo(p, q), st = stockOf(p), off = unsel.has(r), chk = big || off;
-      const warn = q <= st ? '' : (st <= 0 ? 'Agotado aquí: se confirma disponibilidad por WhatsApp.' : (M ? `Hay ${fmt0.format(st)} en el almacén mayorista; el resto se confirma.` : 'Supera la existencia; te confirmamos por WhatsApp.'));
+      const warn = q <= st ? '' : (st <= 0 ? 'Agotado aquí: se confirma disponibilidad por WhatsApp.' : (isWholesaleView() ? `Hay ${fmt0.format(st)} entre Almacén Principal y Almacén Unda; el resto se confirma.` : 'Supera la existencia; te confirmamos por WhatsApp.'));
       const unitTxt = li.hidden ? 'Precio a consultar' : `${usd(li.unit)} / ${esc(p.unidad)}${li.pct ? ` <span class="dtag">${li.pct > 0 ? '-' : '+'}${pctTxt(Math.abs(li.pct))}%</span>` : ''}`;
       const pi = M && state.mPriceMode === 'cliente' && !li.hidden ? priceOf(p) : null;
       const cuenta = pi && pi.parts && pi.parts.length ? `<div class="ci-cuenta cuenta">${cuentaHtml(p.mayor, pi.parts)}</div>` : '';
@@ -1316,7 +1317,7 @@ function login(code){
 }
 function aplicarPrecios(lista){
   const m = new Map(lista.map(x => [String(x[0]), x]));
-  for (const p of PRODUCTS){ const x = m.get(p.ref); if (!x) continue; const v = Number(x[1]); if (v > 0) p.mayor = v; if (x[2] != null && Number(x[2]) > 0) p.e.mayorista = Number(x[2]); }
+  for (const p of PRODUCTS){ const x = m.get(p.ref); if (!x) continue; const v = Number(x[1]); if (v > 0) p.mayor = v; p.e.mayorista = Number(x[2]) || 0; }
 }
 async function loginNube(code){
   code = String(code || '').trim().toUpperCase();
