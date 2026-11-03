@@ -174,7 +174,6 @@
 .pn-scope select{font-weight:600}
 .chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .chip-in{display:inline-flex;align-items:center;gap:4px;padding:4px 4px 4px 10px;border:1.5px solid var(--green);border-radius:99px;background:var(--surface);font-weight:600;color:var(--green)}
-.chip-in::before{content:"−";font-weight:700}
 .chip-in input{width:58px;border:0;background:transparent;font:inherit;color:var(--ink);text-align:right;padding:4px 0}
 .chip-in input:focus{outline:none}
 .chip-in:focus-within{box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 25%,transparent)}
@@ -226,3 +225,11 @@
 .totals .tot-sub{gap:12px}
 .totals .tot-sub > span:first-child{flex:1;min-width:0}
 .totals .tot-sub > b{white-space:nowrap;margin-left:auto}
+
+.chip-in .sg{width:26px;height:26px;border-radius:50%;border:0;background:var(--green);color:var(--on-green);font-weight:800;font-size:1rem;line-height:1;cursor:pointer}
+.chip-in .sg:hover{filter:brightness(1.15)}
+.chip-in.neg{border-color:var(--warn);color:var(--warn)}
+.chip-in.neg .sg{background:var(--warn)}
+.pn-tasas{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pn-tasas small{flex-basis:100%;color:var(--muted);font-size:.78rem}
+.pn-tasas .pdisc input{width:96px}
