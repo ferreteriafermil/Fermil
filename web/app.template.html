@@ -1752,6 +1752,7 @@ function renderHomeRows(){
   const pint = pickVaried(withPhotos(vis.filter(p => p.cat === 'pintura')), 16, p => p.sub || p._words[0]);
   $('#row3Sec').hidden = pint.length < 4; $('#row3').innerHTML = pint.map(card).join('');
   renderSucSec();
+  for (const id of ['recRow', 'row2']){ const el = $('#' + id); el.closest('section').hidden = !el.children.length; }
   const pub = effRole() === 'publico', may = state.role === 'mayorista';
   $('#promo2').innerHTML = `<div class="pr-card pr-yellow"><h3>${pub ? '¿Vendes al mayor?' : 'Tu catálogo mayorista'}</h3><p>${pub ? 'Pide tu código a Ferretería Fermil: precios al mayor, presupuestos con tus descuentos y un catálogo para tus clientes.' : 'Precios al mayor, presupuestos y descuentos para tus clientes.'}</p><button type="button" class="btn" data-act="${pub ? 'login' : (may ? 'panel' : 'cart')}">${pub ? 'Tengo un código' : (may ? 'Abrir mi panel' : 'Ver mi carrito')}</button><span class="pr-art">${ill('generica')}</span></div>
     <div class="pr-card pr-green"><h3>4 ferreterías en Portuguesa</h3><ul>${Object.values(SUCURSALES).map(s => `<li>${esc(s.nombre)} · ${esc(s.ciudad)}</li>`).join('')}</ul><button type="button" class="btn" data-act="tosuc">Ver direcciones y horarios</button><span class="pr-art">${ill('hogar')}</span></div>`;
