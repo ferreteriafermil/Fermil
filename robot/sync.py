@@ -280,6 +280,49 @@ def minutos_para_fotos():
     return FOTOS_MINUTOS
 
 
+def nombre_almacen(path):
+    """Valor de la columna ALMACÉN de un Excel de PLADE."""
+    import openpyxl
+    ws = openpyxl.load_workbook(path, read_only=True, data_only=True).worksheets[0]
+    col = None
+    for row in ws.iter_rows(values_only=True):
+        if col is None:
+            hdr = [str(c or '').upper() for c in (row or [])]
+            col = next((i for i, c in enumerate(hdr) if 'ALMAC' in c), None)
+            continue
+        if row and len(row) > col and row[col]:
+            return ' '.join(str(row[col]).split())
+    return ''
+
+
+def diagnostico_almacenes():
+    """Prueba corta: lista los almacenes que tiene PLADE y cuántos productos con existencia trae cada uno."""
+    s, inicio = entrar()
+    vistos = {}
+    for html in (inicio, s.get(f'{BASE}/panel/index.php?op=reporte_inventario', timeout=120).text):
+        for m in re.finditer(r'<select[^>]*id_almacen[^>]*>(.*?)</select>', html, re.S | re.I):
+            for o in re.finditer(r'<option[^>]*value=["\']?(\d+)["\']?[^>]*>([^<]*)<', m.group(1), re.I):
+                vistos[o.group(1)] = ' '.join(o.group(2).split())
+    aviso('notice', 'Almacenes en PLADE: ' + (' · '.join(f'{k} = {v}' for k, v in sorted(vistos.items(), key=lambda x: int(x[0]))) or 'no se encontró la lista'))
+    from parse_plade import leer_excel
+    for alm in (9, 17, 15):
+        total = con = 0
+        nombre = ''
+        for cate in CATEGORIAS_PLADE:
+            try:
+                r = s.get(url_excel(alm, cate), timeout=600)
+                if r.status_code != 200 or r.content[:2] != b'PK':
+                    continue
+                f = Path(f'/tmp/alm{alm}_{cate}.xlsx'); f.write_bytes(r.content)
+                filas = leer_excel(f)
+                total += len(filas); con += sum(1 for x in filas if x['disp'] > 0)
+                if not nombre:
+                    nombre = nombre_almacen(f)
+            except Exception as e:
+                aviso('warning', f'Almacén {alm} categoría {cate}: {type(e).__name__}')
+        aviso('notice', f'Almacén {alm} ({nombre or "?"}): {total} productos en los reportes, {con} con existencia')
+
+
 def actualizar_fotos(s, productos):
     from PIL import Image
     FOTOS.mkdir(parents=True, exist_ok=True)
@@ -420,7 +463,9 @@ def solo_fotos():
 
 
 if __name__ == '__main__':
-    if 'diagnostico' in sys.argv[1:]:
+    if 'almacenes' in sys.argv[1:]:
+        diagnostico_almacenes()
+    elif 'diagnostico' in sys.argv[1:]:
         diagnostico_fotos()
     elif 'fotos' in sys.argv[1:]:
         try:
