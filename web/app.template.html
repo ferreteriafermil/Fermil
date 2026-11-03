@@ -151,8 +151,9 @@
 <dialog id="dlgProduct" aria-label="Detalle del producto"></dialog>
 
 <dialog id="dlgCart" class="drawer" aria-labelledby="cartTitle">
-  <div class="drawer-head"><h2 id="cartTitle">Tu carrito</h2><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+  <div class="drawer-head"><h2 id="cartTitle">Tu carrito</h2><div class="dh-acts"><button type="button" class="btn ghost sm cart-big" data-act="cartbig" aria-pressed="false"></button><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
   <div class="drawer-body">
+   <div class="cart-main">
     <div class="seg type-seg" role="group" aria-label="Qué quieres hacer">
       <button type="button" data-act="type" data-type="pedido">Hacer pedido</button>
       <button type="button" data-act="type" data-type="presupuesto">Sacar presupuesto</button>
@@ -169,7 +170,10 @@
       <p class="hint" id="ivaHint"></p>
       <span class="hint">También puedes poner un descuento distinto en cada producto.</span>
     </div>
+    <div id="cartSel" class="cart-sel" hidden></div>
     <div id="cartItems"></div>
+   </div>
+   <div class="cart-side">
     <div id="cartTotals"></div>
     <div id="divBox" class="div-box" hidden></div>
     <a class="btn better" data-better href="#" target="_blank" rel="noopener"></a>
@@ -193,6 +197,7 @@
       <div class="field"><label for="fNota">Nota (opcional)</label><textarea id="fNota" rows="2" placeholder="Ej.: necesito el material para el sábado"></textarea></div>
       <p id="formErr" class="err" role="alert" hidden></p>
     </form>
+   </div>
   </div>
   <div class="drawer-foot">
     <a class="btn wa" data-act="wa" href="#" target="_blank" rel="noopener"></a>
@@ -433,7 +438,8 @@ function cfg(mid){
   if (!c.disc || c.disc.v !== 2) c.disc = normReglas(c.disc);
   for (const k in c.clientDisc) if (!c.clientDisc[k] || c.clientDisc[k].v !== 2) c.clientDisc[k] = normReglas(c.clientDisc[k]);
   c.clients.forEach(cl => { if (!cl.modo) cl.modo = (c.clientDisc[cl.code] && Object.keys(c.clientDisc[cl.code].prods).length) ? 'propio' : 'general'; });
-  if (!c.disc.iva) c.disc.iva = {pct:16, base:100, ajuste:false, tasaA:0, tasaB:0};
+  if (!c.disc.iva) c.disc.iva = {v:2, pct:16, base:25, ajuste:false, tasaA:0, tasaB:0};
+  else if (!c.disc.iva.v){ if (c.disc.iva.base == null || Number(c.disc.iva.base) === 100) c.disc.iva.base = 25; c.disc.iva.v = 2; }
   return c;
 }
 let cfgTimer = null;
@@ -462,7 +468,30 @@ function visible(p){
 }
 const visibleProducts = () => PRODUCTS.filter(visible);
 const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
-function chainFor(p, R){ if (!R) return []; if (own(R.prods, p.ref)) return R.prods[p.ref]; if (own(R.cats, p.cat)) return R.cats[p.cat]; return R.todo || []; }
+/* Los cálculos se suman en este orden: todo el catálogo, luego su categoría, luego el del producto */
+function chainParts(p, R, sin){
+  if (!R) return [];
+  const out = [], add = (src, a) => { const ch = normChain(a); if (ch.length) out.push({src, ch}); };
+  add('todo', R.todo);
+  if (sin !== 'cat' && own(R.cats, p.cat)) add('cat', R.cats[p.cat]);
+  if (sin !== 'prod' && own(R.prods, p.ref)) add('prod', R.prods[p.ref]);
+  return out;
+}
+function chainFor(p, R){ return chainParts(p, R).flatMap(x => x.ch); }
+const SRC_TXT = {todo:'todo el catálogo', cat:'categoría', prod:'producto', nuevo:'nuevo'};
+const pctSigned = d => (d > 0 ? '-' : '+') + pctTxt(Math.abs(d)) + '%';
+const stepTxt = d => (d > 0 ? '−' : '+') + pctTxt(Math.abs(d)) + ' %';
+/* Toda la cuenta: "$2,94 −8 % = $2,70 −4 % = $2,59", con de dónde sale cada paso */
+function cuentaHtml(base, parts){
+  let v = base; const out = [`<span class="ct-b">${usd(base)}</span>`];
+  parts.forEach(pt => pt.ch.forEach((d, i) => { v = v * (1 - d / 100); out.push(`<span class="ct-s${d < 0 ? ' neg' : ''}">${stepTxt(d)}${i === 0 && SRC_TXT[pt.src] ? `<small>${esc(SRC_TXT[pt.src])}</small>` : ''}</span><span class="ct-r">= ${usd(r2(v))}</span>`); }));
+  return out.join('');
+}
+function cuentaTxt(base, parts){
+  let v = base; const out = [usd(base)];
+  parts.forEach(pt => pt.ch.forEach(d => { v = v * (1 - d / 100); out.push(`${stepTxt(d)} = ${usd(r2(v))}`); }));
+  return out.join(' ');
+}
 function reglasDe(mid, code){
   const c = cfg(mid); if (!code) return c.disc;
   const cl = c.clients.find(x => x.code === code); if (!cl) return c.disc;
@@ -472,22 +501,32 @@ function reglasDe(mid, code){
 }
 const chainPct = a => (1 - a.reduce((m, d) => m * (1 - d / 100), 1)) * 100;
 const chainTxt = a => a && a.length ? a.map(d => (d > 0 ? '-' : '+') + pctTxt(Math.abs(d)) + '%').join(' ') : 'sin descuento';
-function discChain(p, mid, code){ const R = reglasDe(mid, code); return R ? normChain(chainFor(p, R)) : []; }
+function discChain(p, mid, code){ const R = reglasDe(mid, code); return R ? chainFor(p, R) : []; }
+function discParts(p, mid, code){ return chainParts(p, reglasDe(mid, code)); }
 function discFor(p, mid, code){ return chainPct(discChain(p, mid, code)); }
 function clientPrice(p, mid, code){
   const c = cfg(mid), ch = discChain(p, mid, code), f = ch.reduce((m, d) => m * (1 - d / 100), 1), d = (1 - f) * 100;
-  return {v: r2(p.mayor * f), orig: d > 0.001 ? p.mayor : null, d, ch, hidden: c.noPrice.includes(p.ref) || c.noPriceCats.includes(p.cat)};
+  return {v: r2(p.mayor * f), orig: d > 0.001 ? p.mayor : null, d, ch, parts: discParts(p, mid, code), hidden: c.noPrice.includes(p.ref) || c.noPriceCats.includes(p.cat)};
 }
 /* IVA en presupuestos de mayoristas y sus clientes (sus precios son sin IVA) */
 function ivaCfg(){
   const c = state.mid ? cfg(state.mid) : null, k = (c && c.disc.iva) || {};
   if (k.binance && !k.tasaB) k.tasaB = k.binance;  // formato anterior
-  return {pct: k.pct == null ? 16 : Number(k.pct), base: k.base == null ? 100 : Number(k.base), ajuste: !!k.ajuste, tasaA: Number(k.tasaA) || 0, tasaB: Number(k.tasaB) || 0};
+  return {pct: k.pct == null ? 16 : Number(k.pct), base: k.base == null ? 25 : Math.max(0, Math.min(100, Number(k.base))), ajuste: !!k.ajuste, tasaA: Number(k.tasaA) || 0, tasaB: Number(k.tasaB) || 0};
 }
-function ivaFactor(){
-  const k = ivaCfg(); let f = Math.max(0, Math.min(100, k.base)) / 100;
-  if (k.ajuste && k.tasaA > 0 && k.tasaB > 0) f *= k.tasaA / k.tasaB;
-  return f;
+const ivaTasa = k => (k.ajuste && k.tasaA > 0 && k.tasaB > 0) ? k.tasaA / k.tasaB : 1;
+/* IVA = (monto de los productos con IVA × base %) × IVA % [× tasa A ÷ tasa B] */
+function ivaCalc(grav){
+  const k = ivaCfg(), base = grav * k.base / 100, tasa = ivaTasa(k);
+  return {k, grav: r2(grav), base: r2(base), iva: r2(base * k.pct / 100 * tasa), tasa};
+}
+function ivaLines(t){
+  const k = t.ivaK, L = [['Subtotal sin IVA', t.total]];
+  const exentos = t.grav < t.total - 0.004;
+  if (k.base !== 100) L.push([`Monto para el IVA: ${fmt0.format(k.base)} % de ${usd(t.grav)}${exentos ? ' (sin los exentos)' : ''}`, t.ivaBase]);
+  else if (exentos) L.push([`Monto con IVA (sin los exentos)`, t.ivaBase]);
+  L.push([`IVA ${pctTxt(k.pct)} %${ivaTasa(k) !== 1 ? ` × ${fmt2.format(k.tasaA)} ÷ ${fmt2.format(k.tasaB)}` : ''}`, t.iva]);
+  return L;
 }
 function ivaOnNow(){
   if (effRole() === 'publico') return false;
@@ -498,7 +537,7 @@ function ivaOnNow(){
 }
 function ivaDesc(){
   const k = ivaCfg();
-  return `IVA ${pctTxt(k.pct)} %${k.base !== 100 ? ` sobre el ${fmt0.format(k.base)} % del monto` : ''}${k.ajuste && k.tasaA > 0 && k.tasaB > 0 ? ` × ${fmt2.format(k.tasaA)} ÷ ${fmt2.format(k.tasaB)}` : ''}`;
+  return `IVA ${pctTxt(k.pct)} %${k.base !== 100 ? ` sobre el ${fmt0.format(k.base)} % del monto` : ''}${ivaTasa(k) !== 1 ? ` × ${fmt2.format(k.tasaA)} ÷ ${fmt2.format(k.tasaB)}` : ''}`;
 }
 function priceOf(p){
   const r = effRole();
@@ -529,7 +568,10 @@ function tamano(p){
 const minStock = p => isWholesaleView() ? 20 : ({grande:1, medio:2, pequeno:6})[p._t || (p._t = tamano(p))];
 const disp = p => stockOf(p) >= minStock(p);
 const status = p => { const s = stockOf(p); return !disp(p) ? 'out' : (s <= CONFIG.pocasUnidades && !isWholesaleView() ? 'low' : 'ok'); };
-const cartRefs = () => Object.keys(cart).filter(r => byRef[r]);
+const allRefs = () => Object.keys(cart).filter(r => byRef[r]);
+/* En el carrito grande se puede desmarcar un producto: se queda guardado pero no entra en el pedido */
+const unsel = new Set(store.get('fermil_unsel3', []));
+const cartRefs = () => allRefs().filter(r => !unsel.has(r));
 
 function stockPill(p){
   const s = status(p), M = isMay(), st = stockOf(p);
@@ -870,12 +912,13 @@ function updateEst(p){
 
 /* ===================== Carrito ===================== */
 const dlgCart = $('#dlgCart');
-const saveCart = () => { store.set('fermil_cart3', cart); store.set('fermil_ldisc3', ldisc); };
+const saveCart = () => { store.set('fermil_cart3', cart); store.set('fermil_ldisc3', ldisc); store.set('fermil_unsel3', [...unsel]); };
+const cartBig = () => dlgCart.classList.contains('full');
 function setQty(ref, q, added){
   const p = byRef[ref]; if (!p) return;
   q = Math.max(0, Math.min(99999, Math.round((Number(q) || 0) * 100) / 100));
-  if (q) cart[ref] = q; else { delete cart[ref]; delete ldisc[ref]; }
-  if (!cartRefs().length){ quoteNo = null; sess.set('fermil_qno', null); }
+  if (q) cart[ref] = q; else { delete cart[ref]; delete ldisc[ref]; unsel.delete(ref); }
+  if (!allRefs().length){ quoteNo = null; sess.set('fermil_qno', null); }
   saveCart();
   $$(`[data-ctrl="${CSS.escape(ref)}"]`).forEach(el => { el.innerHTML = controls(p); });
   renderCartAll();
@@ -883,12 +926,12 @@ function setQty(ref, q, added){
 }
 function refreshControls(){ $$('[data-ctrl]').forEach(el => { const p = byRef[el.dataset.ctrl]; if (p) el.innerHTML = controls(p); }); }
 function totals(){
-  let total = 0, units = 0, hidden = 0, div = 0, iva = 0;
-  const on = ivaOnNow(), f = on ? ivaFactor() : 0;
-  const pct = on ? ivaCfg().pct : 0;
-  for (const r of cartRefs()){ const p = byRef[r], li = lineInfo(p, cart[r]); units += cart[r]; if (li.hidden) hidden++; else { total += li.total; if (on && p.iva > 0) iva += li.total * (pct / 100) * f; } if (p.divisas) div++; }
-  total = r2(total); iva = r2(iva);
-  return {total, iva, ivaOn: on, grand: r2(total + iva), units, hidden, div, n: cartRefs().length};
+  let total = 0, units = 0, hidden = 0, div = 0, grav = 0;
+  const on = ivaOnNow();
+  for (const r of cartRefs()){ const p = byRef[r], li = lineInfo(p, cart[r]); units += cart[r]; if (li.hidden) hidden++; else { total += li.total; if (p.iva > 0) grav += li.total; } if (p.divisas) div++; }
+  total = r2(total);
+  const ic = ivaCalc(grav), iva = on ? ic.iva : 0;
+  return {total, iva, ivaOn: on, ivaK: ic.k, grav: ic.grav, ivaBase: ic.base, grand: r2(total + iva), units, hidden, div, n: cartRefs().length, all: allRefs().length};
 }
 function sucOptions(){
   const ids = isWholesaleView() ? Object.keys(SUCURSALES) : VISTA[state.vista].sucs;
@@ -908,16 +951,19 @@ function renderDivBox(t){
     ? `<b>Pagando en divisas</b> puedes optar a una oferta especial en ${t.div} ${t.div === 1 ? 'producto' : 'productos'} de tu pedido. El vendedor te confirma el descuento por WhatsApp al cerrar la venta.`
     : `${t.div} ${t.div === 1 ? 'producto tiene' : 'productos tienen'} oferta especial si pagas en divisas (cash, Zelle o Binance). Pregunta al vendedor.`;
 }
+const ICO_BIG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+const ICO_SMALL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>';
 function renderCartAll(){
-  const t = totals();
-  $('#cartCount').textContent = t.n;
+  const t = totals(), all = allRefs(), big = cartBig();
+  $('#cartCount').textContent = t.all;
   $('#cartTotalTop').textContent = t.n ? usd(t.grand) : '';
-  $('#btnCart').setAttribute('aria-label', `Ver carrito: ${t.n} productos`);
-  $('#mbar').classList.toggle('on', t.n > 0);
-  document.body.classList.toggle('has-mbar', t.n > 0);
+  $('#btnCart').setAttribute('aria-label', `Ver carrito: ${t.all} productos`);
+  $('#mbar').classList.toggle('on', t.all > 0);
+  document.body.classList.toggle('has-mbar', t.all > 0);
   $('#mbarTxt').textContent = `${t.n} ${t.n === 1 ? 'producto' : 'productos'} · ${usd(t.grand)}`;
+  const bb = $('[data-act="cartbig"]'); bb.setAttribute('aria-pressed', String(big)); bb.innerHTML = big ? `${ICO_SMALL}Vista lateral` : `${ICO_BIG}Ver carrito grande`;
   const M = isMay(), refs = cartRefs();
-  $('#mPriceBox').hidden = !(M && refs.length);
+  $('#mPriceBox').hidden = !(M && all.length);
   $$('[data-act="mprice"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === state.mPriceMode)));
   if (M){
     const cl = cfg(state.mid).clients;
@@ -926,26 +972,37 @@ function renderCartAll(){
     $('#mClient').value = state.mClient;
     $('#ivaOn').checked = !!state.ivaOn; $('#ivaHint').textContent = state.ivaOn ? ivaDesc() + '. Se suma al final del presupuesto.' : 'Tus precios son sin IVA.';
   }
-  $('.drawer-foot').hidden = !refs.length;
-  $('#orderForm').hidden = !refs.length;
+  $('.drawer-foot').hidden = !all.length;
+  $('#orderForm').hidden = !all.length;
   renderSucField();
-  if (!refs.length){
+  const sel = $('#cartSel');
+  sel.hidden = !(big && all.length);
+  if (big && all.length){
+    const n = refs.length;
+    sel.innerHTML = `<label class="cs-all"><input type="checkbox" data-cselall ${n === all.length ? 'checked' : ''} aria-label="Marcar todos los productos">${n === all.length ? 'Todos marcados' : 'Marcar todos'}</label>
+      <span>${n} de ${all.length} ${all.length === 1 ? 'producto va' : 'productos van'} en ${state.type === 'pedido' ? 'el pedido' : 'el presupuesto'}</span>
+      ${n < all.length ? `<button type="button" class="btn link" data-act="rmunsel">Quitar del carrito los no marcados</button>` : ''}`;
+    const ch = sel.querySelector('[data-cselall]'); ch.indeterminate = n > 0 && n < all.length;
+  }
+  if (!all.length){
     $('#cartItems').innerHTML = `<div class="empty-cart"><b>Tu carrito está vacío</b>Busca productos o entra a una categoría y toca “Agregar”.</div>`;
     $('#cartTotals').innerHTML = '';
   } else {
-    $('#cartItems').innerHTML = refs.map(r => {
-      const p = byRef[r], q = cart[r], li = lineInfo(p, q), st = stockOf(p);
+    $('#cartItems').innerHTML = all.map(r => {
+      const p = byRef[r], q = cart[r], li = lineInfo(p, q), st = stockOf(p), off = unsel.has(r), chk = big || off;
       const warn = q <= st ? '' : (st <= 0 ? 'Agotado aquí: se confirma disponibilidad por WhatsApp.' : (M ? `Hay ${fmt0.format(st)} en el almacén mayorista; el resto se confirma.` : 'Supera la existencia; te confirmamos por WhatsApp.'));
-      const unitTxt = li.hidden ? 'Precio a consultar' : `${usd(li.unit)} / ${esc(p.unidad)}${li.pct ? ` <span class="dtag">-${pctTxt(li.pct)}%</span>` : ''}`;
-      return `<div class="ci">${pimg(p)}<div><div class="ci-name">${esc(p.nombre)}</div><div class="ci-meta"><span class="ref">${esc(p.ref)}</span> · ${unitTxt}</div>${warn ? `<div class="ci-warn">${warn}</div>` : ''}
+      const unitTxt = li.hidden ? 'Precio a consultar' : `${usd(li.unit)} / ${esc(p.unidad)}${li.pct ? ` <span class="dtag">${li.pct > 0 ? '-' : '+'}${pctTxt(Math.abs(li.pct))}%</span>` : ''}`;
+      const pi = M && state.mPriceMode === 'cliente' && !li.hidden ? priceOf(p) : null;
+      const cuenta = pi && pi.parts && pi.parts.length ? `<div class="ci-cuenta cuenta">${cuentaHtml(p.mayor, pi.parts)}</div>` : '';
+      return `<div class="ci${chk ? ' has-chk' : ''}${off ? ' off' : ''}">${chk ? `<label class="ci-chk"><input type="checkbox" data-csel="${esc(r)}" ${off ? '' : 'checked'} aria-label="Incluir ${esc(p.nombre)}"></label>` : ''}${pimg(p)}<div><button type="button" class="ci-name" data-act="open" data-ref="${esc(r)}">${esc(p.nombre)}</button><div class="ci-meta"><span class="ref">${esc(p.ref)}</span>${big ? ` · ${esc((CAT[p.cat] || {}).nombre || '')}` : ''} · ${unitTxt}</div>${cuenta}${off ? '<div class="ci-off">No va en este pedido</div>' : ''}${warn ? `<div class="ci-warn">${warn}</div>` : ''}
         <div class="ci-row"><div class="stepper sm"><button type="button" data-act="dec" data-ref="${r}" aria-label="Quitar uno">−</button><input type="number" min="0" inputmode="decimal" data-qty="${r}" value="${q}" aria-label="Cantidad de ${esc(p.nombre)}"><button type="button" data-act="inc" data-ref="${r}" aria-label="Agregar uno">+</button></div>
         ${M ? `<label class="ldisc">Desc. <input type="number" min="0" max="90" step="0.5" inputmode="decimal" data-ldisc="${r}" value="${ldisc[r] || ''}" placeholder="0" aria-label="Descuento para ${esc(p.nombre)}">%</label>` : ''}
-        <b>${li.hidden ? 'A consultar' : usd(li.total)}</b></div></div>
+        ${big ? `<button type="button" class="btn link ci-del" data-act="rm" data-ref="${r}">Eliminar</button>` : ''}<b>${li.hidden ? 'A consultar' : usd(li.total)}</b></div></div>
         <button type="button" class="x sm" data-act="rm" data-ref="${r}" aria-label="Quitar ${esc(p.nombre)} del carrito">×</button></div>`;
     }).join('');
-    $('#cartTotals').innerHTML = `<div class="totals">
-      <div class="tot-sub"><span>${t.n} ${t.n === 1 ? 'producto' : 'productos'}</span>${M ? `<span>${state.mPriceMode === 'cliente' ? 'Precios de tu cliente' : 'Precios al mayor'} sin IVA</span>` : (effRole() === 'publico' ? '<span>IVA incluido</span>' : '<span>Precios sin IVA</span>')}</div>
-      ${t.ivaOn ? `<div class="tot-sub"><span>Subtotal sin IVA</span><b>${usd(t.total)}</b></div><div class="tot-sub"><span>${esc(ivaDesc())}</span><b>${usd(t.iva)}</b></div>` : ''}
+    $('#cartTotals').innerHTML = !t.n ? `<div class="totals"><div class="tot-sub"><span>Marca al menos un producto para ${state.type === 'pedido' ? 'hacer el pedido' : 'sacar el presupuesto'}.</span></div></div>` : `<div class="totals">
+      <div class="tot-sub"><span>${t.n} ${t.n === 1 ? 'producto' : 'productos'}${t.n < t.all ? ` de ${t.all}` : ''}</span>${M ? `<span>${state.mPriceMode === 'cliente' ? 'Precios de tu cliente' : 'Precios al mayor'} sin IVA</span>` : (effRole() === 'publico' ? '<span>IVA incluido</span>' : '<span>Precios sin IVA</span>')}</div>
+      ${t.ivaOn ? ivaLines(t).map(([k, v]) => `<div class="tot-sub"><span>${esc(k)}</span><b>${usd(v)}</b></div>`).join('') : ''}
       <div class="tot-big"><span>${t.ivaOn ? 'Total con IVA' : 'Total'}</span><b>${usd(t.grand)}</b></div>
       <div class="tot-sub"><span>≈ ${bs(t.grand)}</span><span>Tasa Bs ${fmt2.format(CONFIG.tasaBs)}</span></div>
       ${t.hidden ? `<div class="tot-sub"><span>+ ${t.hidden} ${t.hidden === 1 ? 'producto' : 'productos'} con precio a consultar</span></div>` : ''}
@@ -976,8 +1033,8 @@ function quoteNumber(){
 }
 function whoLines(){
   const r = effRole(), L = [];
-  if (r === 'mayorista') L.push(['Mayorista', MAY[state.mid].nombre]);
-  if (r === 'cliente' && state.role === 'cliente') L.push(['Atendido por', `${MAY[state.mid].nombre} (código ${state.ccode})`]);
+  if (r === 'mayorista') L.push(['Mayorista', `${MAY[state.mid].nombre} · ${telTxt(MAY[state.mid].whatsapp)}`]);
+  if (r === 'cliente' && state.role === 'cliente') L.push(['Atendido por', `${MAY[state.mid].nombre} · ${telTxt(MAY[state.mid].whatsapp)} (código ${state.ccode})`]);
   return L;
 }
 function buildText(){
@@ -998,10 +1055,10 @@ function buildText(){
     const p = byRef[r], q = cart[r], li = lineInfo(p, q);
     L.push(`${i + 1}) ${p.nombre}`);
     if (li.hidden) L.push(`   Ref. ${p.ref} · ${fmt0.format(q)} ${p.unidad} · precio a consultar`);
-    else L.push(`   Ref. ${p.ref} · ${fmt0.format(q)} ${p.unidad} × ${usd(li.unit)}${li.pct ? ` (-${pctTxt(li.pct)}%)` : ''} = ${usd(li.total)}`);
+    else L.push(`   Ref. ${p.ref} · ${fmt0.format(q)} ${p.unidad} × ${usd(li.unit)}${li.pct ? ` (${pctSigned(li.pct)})` : ''} = ${usd(li.total)}`);
   });
   L.push('');
-  if (t.ivaOn){ L.push(`Subtotal sin IVA: ${usd(t.total)}`); L.push(`${ivaDesc()}: ${usd(t.iva)}`); L.push(`*TOTAL CON IVA: ${usd(t.grand)}*`); }
+  if (t.ivaOn){ ivaLines(t).forEach(([k, v]) => L.push(`${k}: ${usd(v)}`)); L.push(`*TOTAL CON IVA: ${usd(t.grand)}*`); }
   else L.push(`*TOTAL: ${usd(t.total)}*${effRole() === 'publico' ? ' (IVA incluido)' : ' (sin IVA)'}`);
   if (t.hidden) L.push(`+ ${t.hidden} producto(s) con precio a consultar`);
   L.push(`Ref. ${bs(t.grand)} (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`);
@@ -1009,7 +1066,11 @@ function buildText(){
   if (f.nota){ L.push(''); L.push(`Nota: ${f.nota}`); }
   return L.join('\n');
 }
-const storeNumber = () => effRole() === 'cliente' ? MAY[state.mid].whatsapp : CONFIG.whatsapp;
+/* Del lado mayor (el mayorista, sus clientes o su vista previa) todo va al WhatsApp personal del mayorista */
+const mayNow = () => (isWholesaleView() && state.mid && MAY[state.mid]) ? MAY[state.mid] : null;
+const storeNumber = () => mayNow() ? mayNow().whatsapp : CONFIG.whatsapp;
+const telTxt = n => String(n || '').replace(/^58/, '0').replace(/^(\d{4})(\d+)$/, '$1-$2');
+const contactPhone = () => mayNow() ? telTxt(mayNow().whatsapp) : CONFIG.telefono;
 function waLink(num, text){ return `https://wa.me/${String(num || '').replace(/\D/g, '')}?text=${encodeURIComponent(text)}`; }
 function betterText(){
   const refs = cartRefs(), r = effRole();
@@ -1023,12 +1084,12 @@ const TAG_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 function updateLinks(){
   const has = cartRefs().length > 0;
   const href = has ? waLink(storeNumber(), buildText()) : '#';
-  const who = effRole() === 'cliente' ? MAY[state.mid].corto : (isMay() ? '' : 'la ferretería');
-  const label = (state.type === 'pedido' ? 'Enviar pedido' : 'Enviar presupuesto') + (who ? ` a ${who}` : '') + ' por WhatsApp';
+  const m = mayNow(), who = isMay() ? 'tu WhatsApp' : (m ? m.corto : 'la ferretería');
+  const label = (state.type === 'pedido' ? 'Enviar pedido' : 'Enviar presupuesto') + ` a ${who}` + (isMay() ? '' : ' por WhatsApp');
   $$('[data-act="wa"]').forEach(a => { a.href = href; a.classList.toggle('is-off', !has); a.innerHTML = WA_ICO + label; });
   const r = effRole();
-  const whoB = r === 'cliente' ? MAY[state.mid].corto : 'un vendedor';
-  const num = r === 'cliente' ? MAY[state.mid].whatsapp : CONFIG.whatsappVendedor;
+  const whoB = mayNow() ? mayNow().corto : 'un vendedor';
+  const num = mayNow() ? mayNow().whatsapp : CONFIG.whatsappVendedor;
   $$('[data-better]').forEach(a => {
     a.hidden = r === 'mayorista';
     a.href = waLink(num, betterText());
@@ -1046,6 +1107,7 @@ function validate(){
   return {ok:true};
 }
 function openCart(){
+  dlgCart.classList.toggle('full', !!store.get('fermil_cartbig', false) && matchMedia('(min-width: 900px)').matches);
   $('#lblNombre').textContent = isMay() ? 'Cliente (para quién es) *' : 'Tu nombre *';
   renderCartAll(); renderType();
   if (!dlgCart.open) dlgCart.showModal();
@@ -1062,7 +1124,7 @@ function openQuote(){
   const f = formData(), t = totals(), M = isMay();
   const anyDisc = refs.some(r => { const li = lineInfo(byRef[r], cart[r]); return !li.hidden && li.pct; });
   const rows = refs.map(r => { const p = byRef[r], q = cart[r], li = lineInfo(p, q);
-    return `<tr><td class="qi">${pimg(p)}</td><td>${esc(p.nombre)}<span class="qr">${esc(p.ref)}</span></td><td class="num">${fmt0.format(q)} ${esc(p.unidad)}</td><td class="num">${li.hidden ? 'A consultar' : usd(li.ref)}</td>${anyDisc ? `<td class="num">${!li.hidden && li.pct ? '-' + pctTxt(li.pct) + '%' : '—'}</td>` : ''}<td class="num">${li.hidden ? '—' : usd(li.total)}</td></tr>`; }).join('');
+    return `<tr><td class="qi">${pimg(p)}</td><td>${esc(p.nombre)}<span class="qr">${esc(p.ref)}</span></td><td class="num">${fmt0.format(q)} ${esc(p.unidad)}</td><td class="num">${li.hidden ? 'A consultar' : usd(li.ref)}</td>${anyDisc ? `<td class="num">${!li.hidden && li.pct ? pctSigned(li.pct) : '—'}</td>` : ''}<td class="num">${li.hidden ? '—' : usd(li.total)}</td></tr>`; }).join('');
   const cols = anyDisc ? 5 : 4;
   dlgQuote.innerHTML = `<div class="quote">
     <button type="button" class="x" data-act="close" aria-label="Cerrar">×</button>
@@ -1085,7 +1147,7 @@ function openQuote(){
         <thead><tr><th></th><th>Producto</th><th class="num">Cant.</th><th class="num">P. unit.</th>${anyDisc ? '<th class="num">Desc.</th>' : ''}<th class="num">Total</th></tr></thead>
         <tbody>${rows}</tbody>
         <tfoot>
-          ${t.ivaOn ? `<tr><td></td><td colspan="${cols - 1}">Subtotal sin IVA</td><td class="num">${usd(t.total)}</td></tr><tr><td></td><td colspan="${cols - 1}">${esc(ivaDesc())}</td><td class="num">${usd(t.iva)}</td></tr>` : ''}
+          ${t.ivaOn ? ivaLines(t).map(([k, v]) => `<tr><td></td><td colspan="${cols - 1}">${esc(k)}</td><td class="num">${usd(v)}</td></tr>`).join('') : ''}
           <tr class="q-total"><td></td><td colspan="${cols - 1}">${t.ivaOn ? 'Total con IVA' : 'Total en dólares' + (effRole() === 'publico' ? ' (IVA incluido)' : ' (sin IVA)')}</td><td class="num">${usd(t.grand)}</td></tr>
           <tr><td></td><td colspan="${cols - 1}">Referencia en bolívares (tasa Bs ${fmt2.format(CONFIG.tasaBs)})</td><td class="num">${bs(t.grand)}</td></tr>
           ${t.hidden ? `<tr><td></td><td colspan="${cols}">+ ${t.hidden} producto(s) con precio a consultar</td></tr>` : ''}
@@ -1173,18 +1235,18 @@ async function buildPdf(){
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...INK);
     doc.text(`${fmt0.format(q)} ${p.unidad}`, C.qty, y + 5.5, {align:'right'});
     doc.text(li.hidden ? 'A consultar' : pdfUsd(li.ref), C.pu, y + 5.5, {align:'right'});
-    if (anyDisc) doc.text(!li.hidden && li.pct ? '-' + pctTxt(li.pct) + '%' : '-', C.dsc, y + 5.5, {align:'right'});
+    if (anyDisc) doc.text(!li.hidden && li.pct ? pctSigned(li.pct) : '-', C.dsc, y + 5.5, {align:'right'});
     doc.setFont('helvetica', 'bold'); doc.text(li.hidden ? '-' : pdfUsd(li.total), C.tot, y + 5.5, {align:'right'});
     doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(M, y + rowH - 3, W - M, y + rowH - 3);
     y += rowH;
   }
-  if (y + 34 > 280){ doc.addPage(); header(false); y = 28; }
+  if (y + (t.ivaOn ? 50 : 34) > 280){ doc.addPage(); header(false); y = 28; }
   doc.setDrawColor(...G); doc.setLineWidth(0.6); doc.line(110, y, W - M, y);
   y += 7;
   if (t.ivaOn){
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...INK);
-    doc.text('Subtotal sin IVA', 110, y); doc.text(pdfUsd(t.total), W - M, y, {align:'right'}); y += 5;
-    doc.text(doc.splitTextToSize(ivaDesc(), 62).slice(0, 2), 110, y); doc.text(pdfUsd(t.iva), W - M, y, {align:'right'}); y += 9;
+    ivaLines(t).forEach(([k, v]) => { const kl = doc.splitTextToSize(k, 62).slice(0, 2); doc.text(kl, 110, y); doc.text(pdfUsd(v), W - M, y, {align:'right'}); y += 5 + (kl.length - 1) * 4; });
+    y += 4;
   }
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...INK); doc.text(t.ivaOn ? 'Total con IVA' : (effRole() === 'publico' ? 'Total (IVA incluido)' : 'Total (sin IVA)'), 110, y);
   doc.setFontSize(16); doc.setTextColor(...G); doc.text(pdfUsd(t.grand), W - M, y + 0.5, {align:'right'});
@@ -1195,7 +1257,7 @@ async function buildPdf(){
   y += 10;
   if (f.nota){ doc.setTextColor(...INK); doc.setFontSize(9); const nl = doc.splitTextToSize('Nota: ' + f.nota, W - 2*M); doc.text(nl, M, y); y += nl.length * 4.5 + 2; }
   doc.setFontSize(7.5); doc.setTextColor(...MUT);
-  const legal = 'Precios en dólares ' + (effRole() === 'publico' ? 'con IVA incluido' : (t.ivaOn ? 'sin IVA; el IVA se suma al final' : 'sin IVA')) + ', sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.' + (effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : '') + ` Para concretar tu pedido escríbenos por WhatsApp al ${CONFIG.telefono}.`;
+  const legal = 'Precios en dólares ' + (effRole() === 'publico' ? 'con IVA incluido' : (t.ivaOn ? 'sin IVA; el IVA se suma al final' : 'sin IVA')) + ', sujetos a cambio y a disponibilidad al momento de la compra. El monto en bolívares se calcula a la tasa del día de pago.' + (effRole() === 'publico' && t.div ? ' Algunos productos pueden tener una oferta especial pagando en divisas: consúltala con el vendedor.' : '') + ` Para concretar tu pedido escríbenos por WhatsApp al ${contactPhone()}.`;
   doc.text(doc.splitTextToSize(legal, W - 2*M), M, y);
   const n = doc.getNumberOfPages();
   for (let i = 1; i <= n; i++){
@@ -1320,22 +1382,32 @@ function chainEditor(id, arr){
       <button type="button" class="btn ghost sm" data-act="pn-chadd" data-chain="${id}" data-v="5">+ Descuento</button>
       <button type="button" class="btn ghost sm" data-act="pn-chadd" data-chain="${id}" data-v="-10">+ Recargo</button>
     </div>
-    <div class="chain-res" data-chres="${id}">${chainRes(a)}</div>`;
+    <div class="chain-res" data-chres="${id}">${chainRes(id, a)}</div>`;
 }
-function chainRes(a){
-  const ch = normChain(a);
-  if (!ch.length) return 'Sin cambios: precio al mayor completo.';
-  const tot = chainPct(ch);
-  return `${tot >= 0 ? 'Descuento' : 'Recargo'} total <b>${pctTxt(Math.abs(tot))} %</b> · ejemplo ${ejemplo(ch)}`;
+const totTxt = parts => { const t = chainPct(parts.flatMap(x => x.ch)); return Math.abs(t) < 0.001 ? '' : `${t >= 0 ? 'Descuento' : 'Recargo'} total <b>${pctTxt(Math.abs(t))} %</b>`; };
+/* Lo que va quedando mientras escriben: con un producto marcado se usa su precio real; si no, un ejemplo de $100 */
+function chainRes(id, a){
+  const ch = normChain(a), R = scopeReglas(), nuevo = ch.length ? [{src: id === 'todo' ? 'todo' : id === 'sel' ? 'prod' : 'cat', ch}] : [];
+  if (id === 'sel'){
+    const sel = [...PN_SEL].map(r => byRef[r]).filter(Boolean);
+    if (sel.length){
+      const filas = sel.slice(0, 5).map(p => {
+        const parts = chainParts(p, R, 'prod').concat(nuevo), f = parts.flatMap(x => x.ch).reduce((m, d) => m * (1 - d / 100), 1);
+        return `<div class="cr-row"><span class="cr-p"><b>${esc(p.nombre)}</b><span class="ref">${esc(p.ref)}</span></span><span class="cuenta">${parts.length ? cuentaHtml(p.mayor, parts) : `<span class="ct-b">${usd(p.mayor)}</span><span class="ct-r">sin cambios</span>`}</span><b class="cr-fin">${usd(r2(p.mayor * f))}</b></div>`;
+      }).join('');
+      return `<div class="cr-head">Así quedan los productos marcados${ch.length ? '' : ' (escribe el descuento y lo ves aquí mismo)'}:</div>${filas}${sel.length > 5 ? `<div class="hint">y ${sel.length - 5} más.</div>` : ''}`;
+    }
+    const parts = (R.todo && R.todo.length ? [{src:'todo', ch: normChain(R.todo)}] : []).concat(nuevo);
+    return parts.length ? `${totTxt(parts)} · ejemplo con ${usd(100)}: <span class="cuenta">${cuentaHtml(100, parts)}</span><div class="hint">Marca un producto en la lista para ver su precio real.</div>` : 'Marca productos en la lista y escribe el descuento: aquí ves cómo queda cada uno.';
+  }
+  const prev = id.startsWith('cat-') && R.todo && R.todo.length ? [{src:'todo', ch: normChain(R.todo)}] : [];
+  const parts = prev.concat(nuevo);
+  if (!parts.length) return 'Sin cambios: precio al mayor completo.';
+  return `${totTxt(parts)} · ejemplo: <span class="cuenta">${cuentaHtml(100, parts)}</span>`;
 }
 function pnPriceHtml(p){
   const cp = clientPrice(p, state.mid, state.pnScope);
-  return `${usd(cp.v)}${cp.orig ? `<small><s>${usd(cp.orig)}</s> ${esc(chainTxt(cp.ch))}</small>` : ''}`;
-}
-function ruleSource(p, R){
-  if (R.prods && Object.prototype.hasOwnProperty.call(R.prods, p.ref)) return 'con descuento propio';
-  if (R.cats && Object.prototype.hasOwnProperty.call(R.cats, p.cat)) return 'con el descuento de su categoría';
-  return R.todo && R.todo.length ? 'con el descuento de todo el catálogo' : '';
+  return `${usd(cp.v)}${cp.ch.length ? `<small>${esc(chainTxt(cp.ch))}</small>` : ''}`;
 }
 /* ---------- pestaña 1: precios y descuentos ---------- */
 function tabPrecios(c){
@@ -1344,7 +1416,8 @@ function tabPrecios(c){
   const scope = `<section class="pn-card pn-scopecard">
       <div class="pn-scope"><label for="pnScope"><b>Estás armando los descuentos de:</b></label>
         <select id="pnScope"><option value="">Todos mis clientes (descuentos generales)</option>${propios.map(x => `<option value="${esc(x.code)}">${esc(x.nombre)} · exclusivos (${esc(x.code)})</option>`).join('')}</select></div>
-      <p>${cl ? `Estos descuentos los ve <b>solo ${esc(cl.nombre)}</b>. No cambian los de tus otros clientes.` : 'Tu precio base es el <b>precio al mayor sin IVA</b>. Aquí armas tu propio cálculo con los pasos que quieras: descuentos (−) y recargos (+), uno detrás del otro. Si un producto tiene cálculo propio, manda ese; si no, el de su categoría; si no, el de todo el catálogo.'}</p>
+      <p>${cl ? `Estos descuentos los ve <b>solo ${esc(cl.nombre)}</b>. No cambian los de tus otros clientes.` : 'Tu precio base es el <b>precio al mayor sin IVA</b>. Aquí armas tu propio cálculo con los pasos que quieras: descuentos (−) y recargos (+), uno detrás del otro.'}</p>
+      <p class="pn-orden">Los cálculos <b>se suman</b>: primero el de todo el catálogo, después el de la categoría y al final el del producto. Ejemplo: −8 % en todo y −4 % en un producto = ese producto lleva −8 % y luego −4 %.</p>
       ${propios.length ? '' : '<p class="hint">¿Un cliente necesita descuentos distintos? Créale un código "con descuentos exclusivos" en la pestaña Clientes y códigos.</p>'}
     </section>`;
   const todo = `<section class="pn-card">
@@ -1359,28 +1432,28 @@ function tabPrecios(c){
         const has = R.cats && Object.prototype.hasOwnProperty.call(R.cats, cat.id), open = state.pnCatEdit === cat.id;
         const nProp = PRODUCTS.filter(p => p.cat === cat.id && R.prods && Object.prototype.hasOwnProperty.call(R.prods, p.ref)).length;
         return `<div class="pn-catrow${open ? ' open' : ''}">
-          <div class="pn-cathead">${catIco(cat.id)}<span><b>${esc(cat.nombre)}</b><small>${has ? esc(chainTxt(normChain(R.cats[cat.id]))) : 'Usa el de todo el catálogo'}${nProp ? ` · ${nProp} con descuento propio` : ''}</small></span>
+          <div class="pn-cathead">${catIco(cat.id)}<span><b>${esc(cat.nombre)}</b><small>${has ? esc(chainTxt(normChain(R.cats[cat.id]))) + ((R.todo || []).length ? ', después del de todo el catálogo' : '') : 'Sin cálculo propio: solo el de todo el catálogo'}${nProp ? ` · ${nProp} con cálculo de producto` : ''}</small></span>
             <button type="button" class="btn ghost sm" data-act="pn-catedit" data-cat="${cat.id}">${open ? 'Cerrar' : 'Cambiar'}</button></div>
           ${open ? `<div class="pn-catbody">${chainEditor('cat-' + cat.id, has ? R.cats[cat.id] : [])}
-            <div class="pn-acts"><button type="button" class="btn accent" data-act="pn-apply" data-scope="cat" data-cat="${cat.id}">Aplicar a ${esc(cat.nombre)}</button>${has ? `<button type="button" class="btn link" data-act="pn-clear" data-scope="cat" data-cat="${cat.id}">Usar el de todo el catálogo</button>` : ''}</div></div>` : ''}
+            <div class="pn-acts"><button type="button" class="btn accent" data-act="pn-apply" data-scope="cat" data-cat="${cat.id}">Aplicar a ${esc(cat.nombre)}</button>${has ? `<button type="button" class="btn link" data-act="pn-clear" data-scope="cat" data-cat="${cat.id}">Quitar el de la categoría</button>` : ''}</div></div>` : ''}
         </div>`;
       }).join('')}</div>
     </section>`;
   const list = pnProductList(R);
   const prods = `<section class="pn-card">
       <h3><span class="pn-num">3</span> Productos seleccionados</h3>
-      <p>Busca, marca los productos que quieras y aplícales un cálculo propio.</p>
+      <p>Busca, marca los productos que quieras y aplícales un cálculo propio. Se suma al de todo el catálogo y al de su categoría; abajo ves cómo va quedando cada producto marcado.</p>
       <div class="pn-tools"><input id="pnSearch" type="search" placeholder="Buscar producto o código" value="${esc(pnQuery)}" aria-label="Buscar producto en el panel">
         <select id="pnFilterCat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option>${CATS.map(cat => `<option value="${cat.id}" ${pnFilterCat === cat.id ? 'selected' : ''}>${esc(cat.nombre)}</option>`).join('')}</select></div>
       <div class="pn-selbar"><span id="pnSelCount">${PN_SEL.size} seleccionados</span><button type="button" class="btn link" data-act="pn-selall">Marcar los de la lista</button><button type="button" class="btn link" data-act="pn-selnone">Desmarcar todos</button></div>
       <div id="pnList" class="pn-list">${list}</div>
       <div class="pn-selapply">${chainEditor('sel', [])}
-        <div class="pn-acts"><button type="button" class="btn accent" data-act="pn-apply" data-scope="sel">Aplicar a los seleccionados</button><button type="button" class="btn link" data-act="pn-clear" data-scope="sel">Quitar su descuento propio</button></div></div>
+        <div class="pn-acts"><button type="button" class="btn accent" data-act="pn-apply" data-scope="sel">Aplicar a los seleccionados</button><button type="button" class="btn link" data-act="pn-clear" data-scope="sel">Quitar su cálculo de producto</button></div></div>
     </section>`;
   const k = ivaCfg();
   const iva = state.pnScope ? '' : `<section class="pn-card">
       <h3><span class="pn-num">4</span> Calculadora del IVA</h3>
-      <p>Solo se usa en los presupuestos donde tú (o el código de tu cliente) marcas "con IVA". Tú decides cómo se calcula; los productos exentos siempre quedan sin IVA.</p>
+      <p>Solo se usa en los presupuestos donde tú (o el código de tu cliente) marcas "con IVA". Viene como la cuenta de Fermil: se toma el <b>25 % del monto</b> y a eso se le saca el <b>16 %</b>. Puedes cambiar los números si un caso lo pide. Los productos exentos quedan fuera.</p>
       <div class="pn-iva">
         <label class="pdisc">IVA <input type="number" min="0" max="100" step="0.5" inputmode="decimal" data-ivacfg="pct" value="${k.pct}" aria-label="Porcentaje de IVA">%</label>
         <label class="pdisc">calculado sobre el <input type="number" min="0" max="100" step="1" inputmode="decimal" data-ivacfg="base" value="${k.base}" aria-label="Porcentaje del monto sobre el que se calcula el IVA">% del monto</label>
@@ -1394,8 +1467,8 @@ function tabPrecios(c){
   return scope + todo + cats + prods + iva;
 }
 function ivaEjemplo(){
-  const k = ivaCfg(), iva = r2(100 * k.pct / 100 * ivaFactor());
-  return `Ejemplo: compra de ${usd(100)} sin IVA → ${ivaDesc()} = ${usd(iva)} → total ${usd(r2(100 + iva))}.`;
+  const ic = ivaCalc(100), k = ic.k;
+  return `Ejemplo con una compra de ${usd(100)} sin IVA: ${k.base !== 100 ? `${fmt0.format(k.base)} % de ${usd(100)} = ${usd(ic.base)} → ` : ''}IVA ${pctTxt(k.pct)} % de ${usd(ic.base)}${ivaTasa(k) !== 1 ? ` × ${fmt2.format(k.tasaA)} ÷ ${fmt2.format(k.tasaB)}` : ''} = ${usd(ic.iva)} → total ${usd(r2(100 + ic.iva))}.`;
 }
 function pnProductList(R){
   let list = PRODUCTS;
@@ -1405,9 +1478,9 @@ function pnProductList(R){
   pnProductList.last = list;
   if (!list.length) return `<p class="hint">${pnQuery || pnFilterCat ? 'No encontramos productos.' : 'Busca un producto o elige una categoría para ver la lista. Aquí aparecen también los que ya tienen descuento propio.'}</p>`;
   return list.slice(0, PN_MAX).map(p => {
-    const src = ruleSource(p, R);
+    const parts = chainParts(p, R);
     return `<label class="pn-prow"><input type="checkbox" data-sel="${esc(p.ref)}" ${PN_SEL.has(p.ref) ? 'checked' : ''}>
-      <span class="pn-p"><b>${esc(p.nombre)}</b><span class="ref">${esc(p.ref)} · mayor sin IVA ${usd(p.mayor)}${src ? ` · ${src}` : ''}</span></span>
+      <span class="pn-p"><b>${esc(p.nombre)}</b><span class="ref">${esc(p.ref)} · mayor sin IVA ${usd(p.mayor)}</span>${parts.length ? `<span class="cuenta">${cuentaHtml(p.mayor, parts)}</span>` : ''}</span>
       <span class="pn-price">${pnPriceHtml(p)}</span></label>`;
   }).join('') + (list.length > PN_MAX ? `<p class="hint">Se muestran ${PN_MAX} de ${fmt0.format(list.length)}. Escribe algo más preciso para ver el resto.</p>` : '');
 }
@@ -1540,12 +1613,12 @@ dlgPanel.addEventListener('click', e => {
       const cat = el.dataset.cat;
       if (clear) delete r.cats[cat]; else r.cats[cat] = normChain(DRAFT['cat-' + cat]);
       delete DRAFT['cat-' + cat]; state.pnCatEdit = '';
-      toast(clear ? `${CAT[cat].nombre} vuelve a usar el descuento de todo el catálogo` : `Listo: ${chainTxt(r.cats[cat])} en ${CAT[cat].nombre}`);
+      toast(clear ? `${CAT[cat].nombre}: quitaste su cálculo; queda solo el de todo el catálogo` : `Listo: ${chainTxt(r.cats[cat])} en ${CAT[cat].nombre}`);
     } else if (sc === 'sel'){
       if (!PN_SEL.size){ toast('Primero marca los productos en la lista'); return; }
       const ch = normChain(DRAFT.sel);
       PN_SEL.forEach(ref => { if (clear) delete r.prods[ref]; else r.prods[ref] = ch; });
-      toast(clear ? `Quitaste el descuento propio de ${PN_SEL.size} productos` : `Listo: ${chainTxt(ch)} en ${PN_SEL.size} productos`);
+      toast(clear ? `Quitaste el cálculo de producto de ${PN_SEL.size} productos` : `Listo: ${chainTxt(ch)} en ${PN_SEL.size} productos`);
       PN_SEL.clear(); delete DRAFT.sel;
     }
     saveCfg(); rerenderKeep();
@@ -1553,14 +1626,14 @@ dlgPanel.addEventListener('click', e => {
 });
 dlgPanel.addEventListener('input', e => {
   const t = e.target;
-  if (t.dataset.chin){ const id = t.dataset.chin, neg = t.closest('.chip-in').dataset.neg === '1', v = Math.abs(Number(String(t.value).replace(',', '.')) || 0); DRAFT[id][Number(t.dataset.i)] = neg ? -Math.min(500, v) : Math.min(90, v); const res = dlgPanel.querySelector(`[data-chres="${id}"]`); if (res) res.innerHTML = chainRes(DRAFT[id]); }
+  if (t.dataset.chin){ const id = t.dataset.chin, neg = t.closest('.chip-in').dataset.neg === '1', v = Math.abs(Number(String(t.value).replace(',', '.')) || 0); DRAFT[id][Number(t.dataset.i)] = neg ? -Math.min(500, v) : Math.min(90, v); const res = dlgPanel.querySelector(`[data-chres="${id}"]`); if (res) res.innerHTML = chainRes(id, DRAFT[id]); }
 });
 function pnChange(e){
   const el = e.target, k = el.dataset.pcfg;
   const c = cfg(state.mid);
-  if (el.dataset.sel){ if (el.checked) PN_SEL.add(el.dataset.sel); else PN_SEL.delete(el.dataset.sel); const n = $('#pnSelCount'); if (n) n.textContent = `${PN_SEL.size} seleccionados`; return; }
+  if (el.dataset.sel){ if (el.checked) PN_SEL.add(el.dataset.sel); else PN_SEL.delete(el.dataset.sel); const n = $('#pnSelCount'); if (n) n.textContent = `${PN_SEL.size} seleccionados`; const res = dlgPanel.querySelector('[data-chres="sel"]'); if (res) res.innerHTML = chainRes('sel', DRAFT.sel || []); return; }
   if (el.dataset.ivacfg){
-    const iv = c.disc.iva = c.disc.iva || {pct:16, base:100, ajuste:false, tasaA:0, tasaB:0};
+    const iv = c.disc.iva = c.disc.iva || {v:2, pct:16, base:25, ajuste:false, tasaA:0, tasaB:0};
     const kk = el.dataset.ivacfg;
     if (kk === 'ajuste'){ iv.ajuste = el.checked; $('#pnTasas').hidden = !el.checked; }
     else iv[kk] = Math.max(0, Math.min(kk === 'pct' || kk === 'base' ? 100 : 1e9, Number(String(el.value).replace(',', '.')) || 0));
@@ -1680,6 +1753,8 @@ document.addEventListener('click', e => {
     case 'full': toggleFull(); break;
     case 'close': { const d = el.closest('dialog'); if (d) d.close(); break; }
     case 'cart': openCart(); break;
+    case 'cartbig': { const big = !cartBig(); dlgCart.classList.toggle('full', big); store.set('fermil_cartbig', big); renderCartAll(); $('#dlgCart .drawer-body').scrollTop = 0; break; }
+    case 'rmunsel': [...unsel].forEach(r => { delete cart[r]; delete ldisc[r]; }); unsel.clear(); saveCart(); refreshControls(); renderCartAll(); toast('Listo: quitaste los productos que no estaban marcados'); break;
     case 'type': state.type = el.dataset.type; renderType(); updateLinks(); break;
     case 'mprice': state.mPriceMode = el.dataset.m; render(); refreshControls(); renderCartAll(); break;
     case 'pdq': { const qi = $('#pdQty'); qi.value = Math.max(1, (Number(qi.value) || 0) + Number(el.dataset.d)); updateEst(byRef[dlgProduct.dataset.ref]); break; }
@@ -1735,7 +1810,7 @@ document.addEventListener('click', e => {
     case 'adm': adminOp(el); break;
     case 'pdf': downloadPdf(el); break;
     case 'copy': copyText(el); break;
-    case 'clear': twoStep(el, 'Vaciar', '¿Vaciar? Toca otra vez', () => { cart = {}; ldisc = {}; saveCart(); quoteNo = null; sess.set('fermil_qno', null); refreshControls(); renderCartAll(); }); break;
+    case 'clear': twoStep(el, 'Vaciar', '¿Vaciar? Toca otra vez', () => { cart = {}; ldisc = {}; unsel.clear(); saveCart(); quoteNo = null; sess.set('fermil_qno', null); refreshControls(); renderCartAll(); }); break;
     case 'wa': {
       const v = validate();
       if (!v.ok){
@@ -1757,6 +1832,8 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.matches('[data-qty]')) setQty(t.dataset.qty, t.value);
+  if (t.matches('[data-csel]')){ if (t.checked) unsel.delete(t.dataset.csel); else unsel.add(t.dataset.csel); saveCart(); renderCartAll(); }
+  if (t.matches('[data-cselall]')){ if (t.checked) unsel.clear(); else allRefs().forEach(r => unsel.add(r)); saveCart(); renderCartAll(); }
   if (t.matches('[data-ldisc]')){ const v = clampPct(t.value); if (v) ldisc[t.dataset.ldisc] = v; else delete ldisc[t.dataset.ldisc]; saveCart(); $$(`[data-ctrl="${CSS.escape(t.dataset.ldisc)}"]`).forEach(x => { x.innerHTML = controls(byRef[t.dataset.ldisc]); }); renderCartAll(); }
   if (t.id === 'mClient'){ state.mClient = t.value; render(); refreshControls(); renderCartAll(); }
   if (t.id === 'ivaOn'){ state.ivaOn = t.checked; store.set('fermil_ivaon', state.ivaOn); renderCartAll(); }
