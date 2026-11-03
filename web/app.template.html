@@ -90,7 +90,7 @@
     </div>
   </section>
   <section class="wrap perks reveal" aria-label="Por qué comprar en Fermil">
-    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l1.5-5h15L21 10"/><path d="M4 10v10h16V10"/><path d="M3 10h18"/><path d="M9 20v-5h6v5"/></svg></span><div><b>4 ferreterías</b><span>Retira en Guanare o Biscucuy</span></div></div>
+    <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l1.5-5h15L21 10"/><path d="M4 10v10h16V10"/><path d="M3 10h18"/><path d="M9 20v-5h6v5"/></svg></span><div><b>5 tiendas</b><span>Retira en Guanare o Biscucuy</span></div></div>
     <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M16 15h2"/></svg></span><div><b>Paga como quieras</b><span>Cashea, pago móvil, punto, Zelle, Binance</span></div></div>
     <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></svg></span><div><b>Mejores precios</b><span>Pregunta a nuestros vendedores</span></div></div>
     <div class="perk"><span class="pk-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/></svg></span><div><b>Pedido por WhatsApp</b><span>Arma tu carrito y envíalo</span></div></div>
@@ -152,6 +152,7 @@
 <dialog id="dlgProduct" aria-label="Detalle del producto"></dialog>
 
 <dialog id="dlgCambios" aria-labelledby="cmbTitle"></dialog>
+<dialog id="dlgWa" class="small" aria-labelledby="waTitle"></dialog>
 
 <dialog id="dlgCart" class="drawer" aria-labelledby="cartTitle">
   <div class="drawer-head"><h2 id="cartTitle">Tu carrito</h2><div class="dh-acts"><button type="button" class="btn ghost sm cart-big" data-act="cartbig" aria-pressed="false"></button><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
@@ -260,6 +261,7 @@ const CONFIG = {
   telefono: '0412-2332610',
   whatsapp: '584122332610',
   whatsappVendedor: '584122332610',
+  whatsappIngco: '584143525870',   // Ingco Biscucuy (0414-3525870)
   tasaBs: DATA.tasa || 0,
   pocasUnidades: 5,
   porPagina: 24
@@ -276,7 +278,7 @@ const SUCURSALES = {
   quinta:   {nombre:'Fermil La Quinta',          ciudad:'Guanare',  dir:'Carrera 5 con calle 10, barrio La Arenosa, Guanare 3350, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Inversiones La Esquina del Constructor, C.A.', rif:'J-40239921-9'},
   colonia:  {nombre:'Fermil La Colonia',         ciudad:'Guanare',  dir:'La Colonia parte baja, frente a la Ruta 1, Troncal 5, Guanare 3350, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Inversiones Fermil, C.A.', rif:'J-40025035-8'},
   biscucuy: {nombre:'Ferreagro Fermil Biscucuy', ciudad:'Biscucuy', dir:'Av. Bolívar entre calles Páez y Negro Primero, Biscucuy 3351, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'Ferreagro Fermil Biscucuy, C.A.', rif:'J-50096035-2'},
-  ingco:    {nombre:'Ingco Biscucuy',            ciudad:'Biscucuy', dir:'Biscucuy, Portuguesa', horario:'', razon:'', rif:''}
+  ingco:    {nombre:'Ingco Biscucuy',            ciudad:'Biscucuy', dir:'Calle Negro Primero con carrera 5, Urdaneta, Biscucuy, municipio Sucre, Portuguesa', horario:'Lun a sáb 8:00 a. m. – 6:00 p. m.', razon:'', rif:'', wa:'584143525870', tel:'0414-3525870'}
 };
 const VISTAS = [
   {id:'guanare',  nombre:'Todas las de Guanare',          sucs:['unda','quinta','colonia']},
@@ -461,7 +463,7 @@ const saveCfg = () => {
 const effRole = () => (state.role === 'mayorista' && state.preview) ? 'cliente' : state.role;
 const isMay = () => effRole() === 'mayorista';
 const isWholesaleView = () => state.role !== 'publico';
-const TODAS = ['unda','quinta','colonia','biscucuy'];
+const TODAS = ['unda','quinta','colonia','biscucuy','ingco'];
 const ALM_MAYOR = 'Existencias de Almacén Principal y Almacén Unda';
 function stockOf(p){
   if (isWholesaleView()) return p.e.mayorista || 0;  // mayoristas: solo Almacén Principal (9) + Almacén Unda (17)
@@ -1050,39 +1052,47 @@ function whoLines(){
   if (r === 'cliente' && state.role === 'cliente') L.push(['Atendido por', `${MAY[state.mid].nombre} · ${telTxt(MAY[state.mid].whatsapp)} (código ${state.ccode})`]);
   return L;
 }
+/* Mensaje de WhatsApp: ordenado por bloques (datos, productos, total), con negritas de WhatsApp */
+const WA_SEP = '────────────────';
 function buildText(){
-  const f = formData(), refs = cartRefs(), t = totals();
+  const f = formData(), refs = cartRefs(), t = totals(), W = isWholesaleView();
   const L = [];
-  L.push(`*${CONFIG.tienda.toUpperCase()}*`);
-  L.push(`*${state.type === 'pedido' ? 'PEDIDO' : 'PRESUPUESTO'}* N° ${quoteNumber()}`);
-  L.push(`Fecha: ${today()}`);
-  whoLines().forEach(([k, v]) => L.push(`${k}: ${v}`));
-  if (f.suc) L.push(`Sucursal: ${SUCURSALES[f.suc].nombre} (${SUCURSALES[f.suc].ciudad})`);
-  L.push(`Cliente: ${f.nombre || '-'}`);
-  if (f.doc) L.push(`C.I./RIF: ${f.doc}`);
-  if (f.tel) L.push(`Teléfono: ${f.tel}`);
-  L.push(`Entrega: ${f.entrega}${f.dir ? ' - ' + f.dir : ''}`);
-  if (!isWholesaleView()) L.push(`Forma de pago: ${f.pago || 'por definir'}`);
+  L.push(`🧾 *${state.type === 'pedido' ? 'PEDIDO' : 'PRESUPUESTO'} · FERRETERÍA FERMIL*`);
+  L.push(`N° ${quoteNumber()} · ${today()}`);
   L.push('');
+  L.push(`👤 *${isMay() ? 'Para' : 'Cliente'}:* ${f.nombre || '-'}`);
+  if (f.doc) L.push(`🆔 *C.I./RIF:* ${f.doc}`);
+  if (f.tel) L.push(`📞 *Teléfono:* ${f.tel}`);
+  if (f.suc) L.push(`🏪 *Tienda:* ${SUCURSALES[f.suc].nombre}`);
+  L.push(`🚚 *Entrega:* ${f.entrega}${f.dir ? ` (${f.dir})` : ''}`);
+  if (!W) L.push(`💳 *Pago:* ${f.pago || 'por definir'}`);
+  whoLines().forEach(([k, v]) => L.push(`🤝 *${k}:* ${v}`));
+  L.push('');
+  L.push(WA_SEP);
+  L.push(`*PRODUCTOS (${refs.length})*`);
+  L.push(WA_SEP);
   refs.forEach((r, i) => {
     const p = byRef[r], q = cart[r], li = lineInfo(p, q);
-    L.push(`${i + 1}) ${p.nombre}`);
-    if (li.hidden) L.push(`   Ref. ${p.ref} · ${fmt0.format(q)} ${p.unidad} · precio a consultar`);
-    else L.push(`   Ref. ${p.ref} · ${fmt0.format(q)} ${p.unidad} × ${usd(li.unit)}${li.pct ? ` (${pctSigned(li.pct)})` : ''} = ${usd(li.total)}`);
+    L.push(`*${i + 1}. ${p.nombre}*`);
+    L.push(li.hidden ? `     ${fmt0.format(q)} ${p.unidad} · precio a consultar`
+      : `     ${fmt0.format(q)} ${p.unidad} × ${usd(li.unit)}${li.pct ? ` (${pctSigned(li.pct)})` : ''} = *${usd(li.total)}*`);
+    L.push(`     _Cód. ${p.ref}_`);
+    if (i < refs.length - 1) L.push('');
   });
-  L.push('');
-  if (t.ivaOn){ ivaLines(t).forEach(([k, v]) => L.push(`${k}: ${usd(v)}`)); L.push(`*TOTAL CON IVA: ${usd(t.grand)}*`); }
-  else L.push(`*TOTAL: ${usd(t.total)}*${effRole() === 'publico' ? ' (IVA incluido)' : ' (sin IVA)'}`);
+  L.push(WA_SEP);
+  if (t.ivaOn){ ivaLines(t).forEach(([k, v]) => L.push(`${k}: ${usd(v)}`)); L.push(`💵 *TOTAL CON IVA: ${usd(t.grand)}*`); }
+  else L.push(`💵 *TOTAL: ${usd(t.grand)}*  _(${effRole() === 'publico' ? 'IVA incluido' : 'sin IVA'})_`);
   if (t.hidden) L.push(`+ ${t.hidden} producto(s) con precio a consultar`);
-  L.push(`Ref. ${bs(t.grand)} (tasa Bs ${fmt2.format(CONFIG.tasaBs)})`);
-  if (f.nota){ L.push(''); L.push(`Nota: ${f.nota}`); }
+  L.push(`≈ ${bs(t.grand)}  _(tasa ${fmt2.format(CONFIG.tasaBs)})_`);
+  if (f.nota){ L.push(''); L.push(`📝 *Nota:* ${f.nota}`); }
   return L.join('\n');
 }
 /* Del lado mayor (el mayorista, sus clientes o su vista previa) todo va al WhatsApp personal del mayorista */
 const mayNow = () => (isWholesaleView() && state.mid && MAY[state.mid]) ? MAY[state.mid] : null;
-const storeNumber = () => mayNow() ? mayNow().whatsapp : CONFIG.whatsapp;
+const sucWa = () => { const s = SUCURSALES[formData().suc]; return s && s.wa ? s : null; };
+const storeNumber = () => mayNow() ? mayNow().whatsapp : (sucWa() ? sucWa().wa : CONFIG.whatsapp);
 const telTxt = n => String(n || '').replace(/^58/, '0').replace(/^(\d{4})(\d+)$/, '$1-$2');
-const contactPhone = () => mayNow() ? telTxt(mayNow().whatsapp) : CONFIG.telefono;
+const contactPhone = () => mayNow() ? telTxt(mayNow().whatsapp) : (sucWa() ? sucWa().tel : CONFIG.telefono);
 function waLink(num, text){ return `https://wa.me/${String(num || '').replace(/\D/g, '')}?text=${encodeURIComponent(text)}`; }
 function betterText(){
   const refs = cartRefs(), r = effRole();
@@ -1096,7 +1106,7 @@ const TAG_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 function updateLinks(){
   const has = cartRefs().length > 0;
   const href = has ? waLink(storeNumber(), buildText()) : '#';
-  const m = mayNow(), who = isMay() ? 'tu WhatsApp' : (m ? m.corto : 'la ferretería');
+  const m = mayNow(), who = isMay() ? 'tu WhatsApp' : (m ? m.corto : (sucWa() ? sucWa().nombre : 'la ferretería'));
   const label = (state.type === 'pedido' ? 'Enviar pedido' : 'Enviar presupuesto') + ` a ${who}` + (isMay() ? '' : ' por WhatsApp');
   $$('[data-act="wa"]').forEach(a => { a.href = href; a.classList.toggle('is-off', !has); a.innerHTML = WA_ICO + label; });
   const r = effRole();
@@ -1791,6 +1801,20 @@ function twoStep(el, label, confirmLabel, fn){
   if (armed !== el){ if (armed) armed.textContent = armed.dataset.label; armed = el; el.dataset.label = label; el.textContent = confirmLabel; clearTimeout(armTimer); armTimer = setTimeout(() => { if (armed === el){ el.textContent = label; armed = null; } }, 3000); }
   else { clearTimeout(armTimer); armed = null; el.textContent = label; fn(); }
 }
+/* En el detal, todo lo que va al número de Fermil pregunta primero: ¿Fermil Guanare o Ingco Biscucuy?
+   (el botón de enviar pedido no pregunta: ya va a la tienda donde se retira) */
+document.addEventListener('click', e => {
+  const a = e.target.closest(`a[href^="https://wa.me/${CONFIG.whatsapp}"]`);
+  if (!a || isWholesaleView() || a.matches('[data-act="wa"]') || a.closest('#dlgWa')) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  const txt = new URL(a.href).searchParams.get('text') || '';
+  const opt = (num, nombre, tel, sub) => `<a class="wa-opt" href="${waLink(num, txt)}" target="_blank" rel="noopener">${WA_ICO}<span><b>${nombre}</b><small>${sub} · ${tel}</small></span></a>`;
+  $('#dlgWa').innerHTML = `<div class="mf"><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button>
+    <h2 id="waTitle">¿A cuál tienda quieres escribir?</h2>
+    <div class="wa-opts">${opt(CONFIG.whatsapp, 'Fermil Guanare', CONFIG.telefono, 'Ferretería Fermil')}${opt(CONFIG.whatsappIngco, 'Ingco Biscucuy', SUCURSALES.ingco.tel, 'Herramientas Ingco')}</div></div>`;
+  $('#dlgWa').showModal();
+}, true);
+$('#dlgWa').addEventListener('click', e => { if (e.target.closest('.wa-opt')) setTimeout(() => $('#dlgWa').close(), 150); });
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if (!el) return;
   const a = el.dataset.act, ref = el.dataset.ref;
@@ -1984,9 +2008,9 @@ const SLIDES = [
   {id:'obra', nombre:'Todo para tu obra', theme:'t-green', eyebrow:'Construcción', title:'Todo para <em>tu obra</em>', text:'Cabillas, tubos, láminas, tanques, cemento y bloques al mejor precio.', cta:'Ver construcción', act:'cat', cat:'construccion',
     photos:[{src:'media/unda-patio.jpg', cap:'Nuestro patio', cls:'ph-wide'}, {src:'media/unda-tanques.jpg', cap:'Tanques y estructuras', cls:'ph-tall'}]},
   {id:'herramientas', nombre:'Herramientas', theme:'t-dark', eyebrow:'Herramientas', title:'Listos para el <em>trabajo pesado</em>', text:'Taladros, esmeriles, sierras y todas las herramientas manuales para tu obra o tu taller.', cta:'Ver herramientas', act:'cat', cat:'herramienta',
-    photos:[{src:'media/unda-herramientas.jpg', cap:'Fermil La Unda', cls:'ph-tall'}], match:p => p.cat === 'herramienta' && /^(taladro|esmeril|pulidora|rotomartillo|sierra circular|atornillador|soldadora|caladora)/.test(p._name)},
+    photos:[{src:'media/ingco-biscucuy.jpg', cap:'Ingco Biscucuy', cls:'ph-tall'}], match:p => p.cat === 'herramienta' && /^(taladro|esmeril|pulidora|rotomartillo|sierra circular|atornillador|soldadora|caladora)/.test(p._name)},
   {id:'mejorprecio', nombre:'Pregunta por mejores precios', theme:'t-yellow', eyebrow:'Mejores precios', title:'Pregunta por <em>mejores precios</em>', text:'Nuestros vendedores te pueden ofrecer ofertas especiales y precios por cantidad. Escríbeles por WhatsApp con lo que necesitas.', cta:'Hablar con un vendedor', act:'better', chips:['Ofertas especiales','Precios por cantidad'], notMayorista:true, match:p => /taladro|esmeril|pulidora|sierra|rotomartillo|soldadora|pintura|cemento/.test(p._name)},
-  {id:'sucursales', nombre:'4 ferreterías cerca de ti', theme:'t-green', eyebrow:'Guanare y Biscucuy', title:'4 ferreterías <em>cerca de ti</em>', text:'Mira la dirección de cada una, ábrela en Google Maps y revisa qué hay disponible antes de salir de casa.', cta:'Ver direcciones', act:'tosuc', chips:['La Unda','La Quinta','La Colonia','Biscucuy'],
+  {id:'sucursales', nombre:'5 tiendas cerca de ti', theme:'t-green', eyebrow:'Guanare y Biscucuy', title:'5 tiendas <em>cerca de ti</em>', text:'Mira la dirección de cada una, ábrela en Google Maps y revisa qué hay disponible antes de salir de casa.', cta:'Ver direcciones', act:'tosuc', chips:['La Unda','La Quinta','La Colonia','Ferreagro Biscucuy','Ingco Biscucuy'],
     photos:[{src:'media/unda-fachada.jpg', cap:'La Unda', cls:'ph-w1'}, {src:'media/quinta-fachada2.jpg', cap:'La Quinta', cls:'ph-t2'}, {src:'media/biscucuy-fachada.jpg', cap:'Biscucuy', cls:'ph-w3'}]},
   {id:'mayoristas', nombre:'¿Vendes al mayor?', theme:'t-dark', eyebrow:'Mayoristas', title:'¿Vendes <em>al mayor?</em>', text:'Con tu código ves precios al mayor, armas presupuestos con tus descuentos y compartes tu catálogo con tus clientes.', cta:'Tengo un código', act:'login', onlyPublic:true,
     photos:[{src:'media/quinta-mostrador.jpg', cap:'Atención personalizada', cls:'ph-tall'}]}
@@ -2336,7 +2360,8 @@ const SUC_MEDIA = {
   unda:     {foto:'media/unda-fachada.jpg',      q:'Ferreteria Fermil Av. Unda, Guanare, Portuguesa'},
   quinta:   {foto:'media/quinta-fachada2.jpg',   q:'Ferretería Fermil, Carrera 5 con calle 10, Barrio La Arenosa, Guanare, Portuguesa'},
   colonia:  {foto:'',                            q:'Ferretería Fermil, La Colonia, Troncal 5, Guanare, Portuguesa'},
-  biscucuy: {foto:'media/biscucuy-fachada.jpg',  q:'Ferreteria Fermil Biscucuy, Av. Bolívar, Biscucuy, Portuguesa'}
+  biscucuy: {foto:'media/biscucuy-fachada.jpg',  q:'Ferreteria Fermil Biscucuy, Av. Bolívar, Biscucuy, Portuguesa'},
+  ingco:    {foto:'media/ingco-biscucuy.jpg',    q:'Calle Negro Primero con carrera 5, Urdaneta, Biscucuy, Portuguesa'}
 };
 const mapsSearch = id => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(SUC_MEDIA[id].q);
 const mapsDir = id => 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(SUC_MEDIA[id].q);

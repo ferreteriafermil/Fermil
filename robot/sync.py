@@ -435,11 +435,13 @@ def precios_guardados(url, key):
 
 
 def subir_supabase(filas):
+    """Sube precios y existencias de los mayoristas. Devuelve los precios que cambiaron: [(cod, antes, ahora)]."""
+    cambios = []
     url = solo_sitio(os.environ.get('SUPABASE_URL'), '') if os.environ.get('SUPABASE_URL', '').strip() else ''
     key = os.environ.get('SUPABASE_SECRET', '').strip()
     if not url or not key:
         log('Supabase no configurado: no se suben los precios al mayor')
-        return
+        return cambios
     antes = precios_guardados(url, key)
     if antes is None:
         aviso('warning', 'Supabase todavía no tiene las columnas nuevas (falta correr supabase-actualizacion-1.sql): '
@@ -452,6 +454,7 @@ def subir_supabase(filas):
             v = antes.get(f['cod'])
             if v and v.get('mayor') is not None and abs(float(v['mayor']) - f['mayor']) >= 0.005:
                 f['mayor_anterior'], f['cambio'] = float(v['mayor']), ahora
+                cambios.append((f['cod'], float(v['mayor']), f['mayor']))
                 if f['mayor'] > float(v['mayor']): suben += 1
                 else: bajan += 1
             else:
@@ -463,8 +466,65 @@ def subir_supabase(filas):
         if r.status_code >= 300:
             # La página pública se publica igual; solo los mayoristas se quedan sin precio nuevo
             print(f'::error title=Supabase::No se pudieron subir los precios al mayor ({r.status_code}): {r.text[:300]}', flush=True)
-            return
+            return []
     log(f'Supabase: {len(filas)} precios al mayor actualizados')
+    return cambios
+
+
+def avisar_por_correo(cambios, productos):
+    """Correo a cada mayorista cuando sube algún precio al mayor.
+    Secretos: CORREO_USUARIO y CORREO_CLAVE (cuenta de Gmail que envía, con clave de aplicación)
+    y CORREOS_MAYORISTAS: 'Nombre <correo>, Nombre <correo>'."""
+    import smtplib
+    from email.message import EmailMessage
+    from email.utils import getaddresses
+    suben = [c for c in cambios if c[2] > c[1]]
+    if not suben:
+        return
+    usuario, clave = os.environ.get('CORREO_USUARIO', '').strip(), os.environ.get('CORREO_CLAVE', '').replace(' ', '').strip()
+    destinos = [(n, c) for n, c in getaddresses([os.environ.get('CORREOS_MAYORISTAS', '')]) if '@' in c]
+    if not usuario or not clave or not destinos:
+        aviso('notice', f'{len(suben)} precios al mayor subieron; el aviso por correo no está configurado todavía')
+        return
+    nombre = {p['c']: p['n'] for p in productos}
+    orden = sorted(cambios, key=lambda c: -(c[2] / c[1] if c[1] else 0))
+    fmt = lambda v: f'${v:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+    filas = ''.join(
+        f'<tr><td style="padding:6px 8px;border-top:1px solid #e3e8e3">{nombre.get(cod, cod)}<br><span style="color:#6b7a6e;font-size:12px">{cod}</span></td>'
+        f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right">{fmt(a)}</td>'
+        f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right"><b>{fmt(n)}</b></td>'
+        f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right;color:{"#c62828" if n > a else "#006300"};font-weight:bold">'
+        f'{"▲ +" if n > a else "▼ "}{f"{(n / a - 1) * 100:.1f}".replace(".", ",")} %</td></tr>'
+        for cod, a, n in orden[:300])
+    bajan = len(cambios) - len(suben)
+    extra = f' y {bajan} {"bajó" if bajan == 1 else "bajaron"}' if bajan else ''
+    html = (f'<div style="font-family:Arial,sans-serif;color:#17241c;max-width:640px">'
+            f'<h2 style="color:#c62828;margin:0 0 6px">Actualización de precios al mayor</h2>'
+            f'<p style="margin:0 0 12px">{len(suben)} {"producto subió" if len(suben) == 1 else "productos subieron"} de precio'
+            f'{extra}. Son precios al mayor sin IVA; '
+            f'tus descuentos se aplican encima. Revisa antes de cotizar.</p>'
+            f'<table style="border-collapse:collapse;width:100%;font-size:14px"><tr style="background:#eef3ee;color:#5a6b60;font-size:12px">'
+            f'<th style="padding:6px 8px;text-align:left">Producto</th><th style="padding:6px 8px;text-align:right">Antes</th>'
+            f'<th style="padding:6px 8px;text-align:right">Ahora</th><th style="padding:6px 8px;text-align:right">Cambio</th></tr>{filas}</table>'
+            f'{"<p>Y otros más: míralos en tu panel.</p>" if len(orden) > 300 else ""}'
+            f'<p style="margin-top:16px"><a href="https://ferreteria-fermil.pages.dev" style="background:#006300;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Abrir el catálogo</a></p>'
+            f'<p style="color:#6b7a6e;font-size:12px">Ferretería Fermil · aviso automático del robot de precios</p></div>')
+    enviados = 0
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=60) as smtp:
+            smtp.login(usuario, clave)
+            for n, c in destinos:
+                m = EmailMessage()
+                m['Subject'] = f'Fermil · Actualización de precios al mayor ({len(suben)} {"subió" if len(suben) == 1 else "subieron"})'
+                m['From'] = f'Ferretería Fermil <{usuario}>'
+                m['To'] = f'{n} <{c}>' if n else c
+                m.set_content(f'{len(suben)} productos subieron de precio al mayor. Míralos en tu panel: https://ferreteria-fermil.pages.dev')
+                m.add_alternative(html, subtype='html')
+                smtp.send_message(m)
+                enviados += 1
+        aviso('notice', f'Aviso de precios enviado por correo a {enviados} mayoristas')
+    except Exception as e:
+        aviso('warning', f'No se pudo enviar el aviso por correo: {type(e).__name__}')
 
 
 def main():
@@ -496,7 +556,8 @@ def main():
     (SALIDA / 'catalogo.json').write_text(json.dumps({**data, 'productos': publico}, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     log(f'Catálogo público: {len(publico)} productos · actualizado {data["generado"]}')
     aviso('notice', f'Catálogo listo: {len(publico)} productos · tasa {tasa} · {data["generado"]}')
-    subir_supabase(privados)
+    cambios = subir_supabase(privados)
+    avisar_por_correo(cambios, productos)
 
 
 def solo_fotos():

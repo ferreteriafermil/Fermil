@@ -39,6 +39,10 @@ jobs:
           PLADE_CLAVE: ${{ secrets.PLADE_CLAVE }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET: ${{ secrets.SUPABASE_SECRET }}
+          # Aviso por correo cuando sube un precio al mayor (opcional)
+          CORREO_USUARIO: ${{ secrets.CORREO_USUARIO }}
+          CORREO_CLAVE: ${{ secrets.CORREO_CLAVE }}
+          CORREOS_MAYORISTAS: ${{ secrets.CORREOS_MAYORISTAS }}
         run: python robot/sync.py
 
       - name: Armar la página

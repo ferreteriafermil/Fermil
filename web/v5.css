@@ -314,3 +314,16 @@ button.ci-name:hover{color:var(--green);text-decoration:underline}
 .cmb-t tr.down .chg{color:var(--green);font-weight:700}
 .cmb-btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 .q-better{background:#fff6cc;border:1px solid var(--yellow,#f2ce14);border-radius:8px;padding:10px 12px;font-size:.88rem;margin:10px 0 0}
+
+/* ===== v9: ¿a cuál tienda escribir? y 5 tiendas ===== */
+#dlgWa .mf h2{font-size:1.25rem;margin:4px 40px 14px 0}
+.wa-opts{display:grid;gap:10px}
+.wa-opt{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1.5px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;transition:border-color .15s,background .15s}
+.wa-opt:hover{border-color:#25d366;background:color-mix(in srgb,#25d366 8%,transparent)}
+.wa-opt svg{width:30px;height:30px;color:#1aa34a;flex:none}
+.wa-opt b{display:block;font-size:1.02rem}
+.wa-opt small{color:var(--muted);font-size:.82rem}
+.suc-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:1250px){.suc-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:800px){.suc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.suc-grid{grid-template-columns:1fr}}
