@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from parse_plade import construir  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parent.parent
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 
 def solo_sitio(url, defecto):
@@ -47,6 +47,8 @@ CLAVE = os.environ.get('PLADE_CLAVE', '')
 SALIDA = RAIZ / os.environ.get('SALIDA', 'salida')
 FOTOS = RAIZ / 'fotos'
 CACHE_FOTOS = RAIZ / 'fotos_cache.json'
+CACHE_IDS = RAIZ / 'ids_plade.json'   # id interno de PLADE de cada código (no cambia)
+IDS_MINUTOS = float(os.environ.get('IDS_MINUTOS', '30'))
 FOTOS_MINUTOS = float(os.environ.get('FOTOS_MINUTOS', '150'))
 MINIMO_PRODUCTOS = int(os.environ.get('MINIMO_PRODUCTOS', '1000'))
 
@@ -267,6 +269,17 @@ def diagnostico_fotos():
             break
 
 
+def minutos_para_fotos():
+    """De día cada corrida dedica FOTOS_MINUTOS a fotos. De noche (7 p. m. a 7 a. m. en Venezuela) no hay corridas
+    programadas, así que se aprovecha hasta las 6:40 a. m. (máximo 4 horas) para no atrasar los precios de las 7."""
+    ahora = time.gmtime()
+    hora = ahora.tm_hour + ahora.tm_min / 60
+    if hora >= 23 or hora < 10.5:
+        hasta = (10 + 40 / 60) - hora + (24 if hora >= 23 else 0)
+        return max(FOTOS_MINUTOS, min(240, hasta * 60))
+    return FOTOS_MINUTOS
+
+
 def actualizar_fotos(s, productos):
     from PIL import Image
     FOTOS.mkdir(parents=True, exist_ok=True)
@@ -277,29 +290,40 @@ def actualizar_fotos(s, productos):
     log(f'Fotos: {len(cache)} revisadas antes, {len(pendientes)} por revisar')
     if not pendientes:
         return cache
-    ids = {}
+    guardado = json.loads(CACHE_IDS.read_text()) if CACHE_IDS.exists() else {}
+    ids, leidos = guardado.get('ids', {}), set(guardado.get('leidos', []))
+    reportes = [(alm, cate) for alm, suc in ALMACENES if suc != 'mayorista' for cate in CATEGORIAS_PLADE]
     t_ids = time.time()
-    for alm, suc in ALMACENES:
-        if suc == 'mayorista':
+    n = 0
+    for alm, cate in reportes:
+        if all(c in ids for c in pendientes) or time.time() - t_ids > IDS_MINUTOS * 60:
+            break
+        if f'{alm}-{cate}' in leidos:
             continue
-        for cate in CATEGORIAS_PLADE:
-            if all(c in ids for c in pendientes) or time.time() - t_ids > 25 * 60:
-                break
-            try:
-                t0 = time.time()
-                nuevos = ids_por_codigo(s, alm, cate)
-                ids.update({k: v for k, v in nuevos.items() if k not in ids})
-                log(f'ids almacén {alm} categoría {cate}: {len(nuevos)} en {time.time() - t0:.0f}s')
-            except requests.RequestException as e:
-                log(f'ids almacén {alm} categoría {cate}: {e}')
-    completo = bool(ids) and time.time() - t_ids <= 25 * 60
-    aviso('notice', f'Fotos: {len(ids)} ids de productos leídos en {time.time() - t_ids:.0f}s' + ('' if completo else ' (incompleto)'))
+        try:
+            t0 = time.time()
+            nuevos = ids_por_codigo(s, alm, cate)
+            ids.update({k: v for k, v in nuevos.items() if k not in ids})
+            leidos.add(f'{alm}-{cate}')
+            n += 1
+            log(f'ids almacén {alm} categoría {cate}: {len(nuevos)} en {time.time() - t0:.0f}s')
+        except requests.RequestException as e:
+            log(f'ids almacén {alm} categoría {cate}: {e}')
+        CACHE_IDS.write_text(json.dumps({'ids': ids, 'leidos': sorted(leidos)}, sort_keys=True))
+    vuelta_completa = len(leidos) >= len(reportes)
+    completo = vuelta_completa or all(c in ids for c in pendientes)
+    if vuelta_completa:  # la próxima vez que aparezcan productos nuevos se vuelve a revisar todo
+        leidos = set()
+    CACHE_IDS.write_text(json.dumps({'ids': ids, 'leidos': sorted(leidos)}, sort_keys=True))
+    aviso('notice', f'Fotos: {len(ids)} ids de productos conocidos · {n} reportes leídos en {time.time() - t_ids:.0f}s'
+                    + ('' if completo else f' (faltan {len(reportes) - len(leidos)} reportes; siguen en la próxima corrida)'))
     if completo:
         for cod in pendientes:
             if cod not in ids:
                 cache[cod] = ''  # no aparece en los reportes de las tiendas: sin foto por ahora
-    limite = time.time() + FOTOS_MINUTOS * 60
-    hechas = 0
+    limite = time.time() + minutos_para_fotos() * 60
+    hechas = errores = 0
+    primer_error = ''
     for cod in pendientes:
         if time.time() > limite:
             log(f'Se acabó el tiempo para fotos en esta corrida; siguen en la próxima ({hechas} hechas)')
@@ -313,7 +337,8 @@ def actualizar_fotos(s, productos):
             if not url:
                 cache[cod] = ''
                 continue
-            img = requests.get(url, timeout=60, headers=HEADERS)
+            img = s.get(urljoin(f'{BASE}/panel/', url), timeout=60)
+            img.raise_for_status()
             im = Image.open(io.BytesIO(img.content)).convert('RGB')
             im.thumbnail((360, 360))
             nombre = re.sub(r'[^A-Za-z0-9_-]', '_', cod) + '.jpg'
@@ -321,13 +346,20 @@ def actualizar_fotos(s, productos):
             cache[cod] = 'fotos/' + nombre
             hechas += 1
         except Exception as e:  # una foto que falla no detiene el robot; se reintenta en la próxima corrida
+            errores += 1
+            primer_error = primer_error or f'{cod}: {type(e).__name__}: {tapar(str(e))[:160]}'
             log(f'foto {cod}: {e}')
         if hechas and hechas % 200 == 0:
             CACHE_FOTOS.write_text(json.dumps(cache, sort_keys=True))
             log(f'{hechas} fotos nuevas hasta ahora')
     CACHE_FOTOS.write_text(json.dumps(cache, sort_keys=True))
     log(f'Fotos: {hechas} nuevas en esta corrida, {sum(1 for v in cache.values() if v)} con foto en total')
-    aviso('notice', f'Fotos: {hechas} nuevas en esta corrida, {sum(1 for v in cache.values() if v)} productos con foto en total')
+    faltan = sum(1 for p in productos if p['c'] not in cache)
+    aviso('notice', f'Fotos: {hechas} nuevas en esta corrida · {sum(1 for v in cache.values() if v)} productos con foto · '
+                    f'{sum(1 for v in cache.values() if v == "")} sin foto en PLADE · faltan por revisar {faltan}'
+                    + (' · FOTOS COMPLETAS' if not faltan else ''))
+    if errores:
+        aviso('warning', f'Fotos: {errores} no se pudieron bajar (se reintentan en la próxima corrida). Primera: {primer_error}')
     return cache
 
 
