@@ -291,7 +291,6 @@ const CATS = [
   {id:'herreria',     nombre:'Herrería'},
   {id:'hogar',        nombre:'Hogar'},
   {id:'seguridad',    nombre:'Seguridad'},
-  {id:'hotel',        nombre:'Hotel'},
   {id:'generica',     nombre:'Genéricos'}
 ];
 const SINONIMOS = [
@@ -2037,6 +2036,8 @@ applyRole();
 initCaps();
 renderIG();
 if (NUBE){ const c0 = sess.get('fermil_code', null); if (c0) loginNube(c0).then(ok => { if (ok) applyRole(); }).catch(() => {}); }
+if (location.hash === '#admin'){ renderAdmin(); if (!dlgAdmin.open) dlgAdmin.showModal(); }
+window.addEventListener('hashchange', () => { if (location.hash === '#admin'){ renderAdmin(); if (!dlgAdmin.open) dlgAdmin.showModal(); } });
 })();
 </script>
 </body>

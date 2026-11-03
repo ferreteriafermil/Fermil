@@ -225,8 +225,10 @@ def actualizar_fotos(s, productos):
         if suc == 'mayorista' or all(c in ids for c in pendientes):
             continue
         try:
+            t0 = time.time()
             ids.update({k: v for k, v in ids_por_codigo(s, alm).items() if k not in ids})
             log(f'ids de productos tras almacén {alm}: {len(ids)}')
+            aviso('notice', f'Fotos: ids del almacén {alm} leídos en {time.time() - t0:.0f}s ({len(ids)} en total)')
         except requests.RequestException as e:
             log(f'no se pudo leer los ids del almacén {alm}: {e}')
     for cod in pendientes:
@@ -261,6 +263,7 @@ def actualizar_fotos(s, productos):
             log(f'{hechas} fotos nuevas hasta ahora')
     CACHE_FOTOS.write_text(json.dumps(cache, sort_keys=True))
     log(f'Fotos: {hechas} nuevas en esta corrida, {sum(1 for v in cache.values() if v)} con foto en total')
+    aviso('notice', f'Fotos: {hechas} nuevas en esta corrida, {sum(1 for v in cache.values() if v)} productos con foto en total')
     return cache
 
 
