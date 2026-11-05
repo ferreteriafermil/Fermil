@@ -471,60 +471,108 @@ def subir_supabase(filas):
     return cambios
 
 
-def avisar_por_correo(cambios, productos):
-    """Correo a cada mayorista cuando sube algún precio al mayor.
-    Secretos: CORREO_USUARIO y CORREO_CLAVE (cuenta de Gmail que envía, con clave de aplicación)
-    y CORREOS_MAYORISTAS: 'Nombre <correo>, Nombre <correo>'."""
+def resumen_del_dia(url, key):
+    """Precios al mayor que cambiaron hoy (hora de Venezuela): [(cod, antes, ahora)]."""
+    hoy_utc = time.strftime('%Y-%m-%dT04:00:00Z', time.gmtime(time.time() - 4 * 3600))  # 12:00 a. m. en Venezuela
+    out, desde = [], 0
+    while True:
+        r = requests.get(f'{url}/rest/v1/precios_mayor?select=cod,mayor,mayor_anterior,cambio&cambio=gte.{hoy_utc}'
+                         f'&order=cod&limit=1000&offset={desde}', headers=_sb_headers(key), timeout=120)
+        if r.status_code >= 300:
+            return None
+        lote = r.json()
+        out += [(x['cod'], float(x['mayor_anterior']), float(x['mayor'])) for x in lote
+                if x.get('mayor_anterior') is not None and abs(float(x['mayor']) - float(x['mayor_anterior'])) >= 0.005]
+        if len(lote) < 1000:
+            return out
+        desde += 1000
+
+
+def avisar_por_correo(productos):
+    """Un solo correo al día a cada mayorista con los precios al mayor que cambiaron hoy.
+    Sale en la última corrida del día (desde las 6:00 p. m., hora de Venezuela) y una sola vez:
+    la fecha del último envío queda en Supabase (config: correo_precios).
+    Secretos: CORREO_USUARIO y CORREO_CLAVE (Gmail que envía, con clave de aplicación)
+    y CORREOS_MAYORISTAS: 'Nombre <correo>, Nombre <correo>'.
+    Para probarlo a cualquier hora: correr el robot a mano con FORZAR_CORREO=1."""
     import smtplib
     from email.message import EmailMessage
     from email.utils import getaddresses
-    suben = [c for c in cambios if c[2] > c[1]]
-    if not suben:
+    forzar = os.environ.get('FORZAR_CORREO', '').strip() == '1'
+    hora_ve = time.gmtime(time.time() - 4 * 3600)
+    if hora_ve.tm_hour < 18 and not forzar:
         return
     usuario, clave = os.environ.get('CORREO_USUARIO', '').strip(), os.environ.get('CORREO_CLAVE', '').replace(' ', '').strip()
     destinos = [(n, c) for n, c in getaddresses([os.environ.get('CORREOS_MAYORISTAS', '')]) if '@' in c]
-    if not usuario or not clave or not destinos:
-        aviso('notice', f'{len(suben)} precios al mayor subieron; el aviso por correo no está configurado todavía')
+    url = solo_sitio(os.environ.get('SUPABASE_URL'), '') if os.environ.get('SUPABASE_URL', '').strip() else ''
+    key = os.environ.get('SUPABASE_SECRET', '').strip()
+    if not usuario or not clave or not destinos or not url or not key:
+        aviso('notice', 'El resumen diario de precios por correo no está configurado todavía (faltan secretos)')
         return
+    fecha = time.strftime('%Y-%m-%d', hora_ve)
+    r = requests.get(f'{url}/rest/v1/config?select=valor&clave=eq.correo_precios', headers=_sb_headers(key), timeout=60)
+    if r.ok and r.json() and (r.json()[0].get('valor') or {}).get('fecha') == fecha and not forzar:
+        return  # ya se envió hoy
+    cambios = resumen_del_dia(url, key)
+    if cambios is None:
+        aviso('warning', 'No se pudo leer de Supabase qué precios cambiaron hoy: no se envía el correo')
+        return
+    if not cambios:
+        aviso('notice', 'Hoy no cambió ningún precio al mayor: no se envía correo')
+        requests.post(f'{url}/rest/v1/config?on_conflict=clave', headers=_sb_headers(key, {'Prefer': 'resolution=merge-duplicates,return=minimal'}),
+                      data=json.dumps({'clave': 'correo_precios', 'valor': {'fecha': fecha, 'enviados': 0}}), timeout=60)
+        return
+    suben = [c for c in cambios if c[2] > c[1]]
+    bajan = [c for c in cambios if c[2] < c[1]]
     nombre = {p['c']: p['n'] for p in productos}
-    orden = sorted(cambios, key=lambda c: -(c[2] / c[1] if c[1] else 0))
     fmt = lambda v: f'${v:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
-    filas = ''.join(
-        f'<tr><td style="padding:6px 8px;border-top:1px solid #e3e8e3">{nombre.get(cod, cod)}<br><span style="color:#6b7a6e;font-size:12px">{cod}</span></td>'
-        f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right">{fmt(a)}</td>'
-        f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right"><b>{fmt(n)}</b></td>'
-        f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right;color:{"#c62828" if n > a else "#006300"};font-weight:bold">'
-        f'{"▲ +" if n > a else "▼ "}{f"{(n / a - 1) * 100:.1f}".replace(".", ",")} %</td></tr>'
-        for cod, a, n in orden[:300])
-    bajan = len(cambios) - len(suben)
-    extra = f' y {bajan} {"bajó" if bajan == 1 else "bajaron"}' if bajan else ''
+    dia = f'{hora_ve.tm_mday:02d}/{hora_ve.tm_mon:02d}/{hora_ve.tm_year}'
+
+    def tabla(lista, titulo, color):
+        if not lista:
+            return ''
+        filas = ''.join(
+            f'<tr><td style="padding:6px 8px;border-top:1px solid #e3e8e3">{nombre.get(cod, cod)}<br><span style="color:#6b7a6e;font-size:12px">{cod}</span></td>'
+            f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right">{fmt(a)}</td>'
+            f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right"><b>{fmt(n)}</b></td>'
+            f'<td style="padding:6px 8px;border-top:1px solid #e3e8e3;text-align:right;color:{color};font-weight:bold">'
+            f'{"+" if n > a else ""}{f"{(n / a - 1) * 100:.1f}".replace(".", ",") if a else "—"} %</td></tr>'
+            for cod, a, n in lista[:200])
+        mas = f'<p style="font-size:13px;color:#6b7a6e">Y {len(lista) - 200} más: míralos en tu panel.</p>' if len(lista) > 200 else ''
+        return (f'<h3 style="color:{color};margin:18px 0 6px">{titulo} ({len(lista)})</h3>'
+                f'<table style="border-collapse:collapse;width:100%;font-size:14px"><tr style="background:#eef3ee;color:#5a6b60;font-size:12px">'
+                f'<th style="padding:6px 8px;text-align:left">Producto</th><th style="padding:6px 8px;text-align:right">Antes</th>'
+                f'<th style="padding:6px 8px;text-align:right">Ahora</th><th style="padding:6px 8px;text-align:right">Cambio</th></tr>{filas}</table>{mas}')
+    suben.sort(key=lambda c: -(c[2] / c[1] if c[1] else 0))
+    bajan.sort(key=lambda c: (c[2] / c[1] if c[1] else 0))
+    partes = [f'{len(suben)} {"subió" if len(suben) == 1 else "subieron"}' if suben else '', f'{len(bajan)} {"bajó" if len(bajan) == 1 else "bajaron"}' if bajan else '']
+    resumen = ' y '.join(x for x in partes if x)
     html = (f'<div style="font-family:Arial,sans-serif;color:#17241c;max-width:640px">'
-            f'<h2 style="color:#c62828;margin:0 0 6px">Actualización de precios al mayor</h2>'
-            f'<p style="margin:0 0 12px">{len(suben)} {"producto subió" if len(suben) == 1 else "productos subieron"} de precio'
-            f'{extra}. Son precios al mayor sin IVA; '
-            f'tus descuentos se aplican encima. Revisa antes de cotizar.</p>'
-            f'<table style="border-collapse:collapse;width:100%;font-size:14px"><tr style="background:#eef3ee;color:#5a6b60;font-size:12px">'
-            f'<th style="padding:6px 8px;text-align:left">Producto</th><th style="padding:6px 8px;text-align:right">Antes</th>'
-            f'<th style="padding:6px 8px;text-align:right">Ahora</th><th style="padding:6px 8px;text-align:right">Cambio</th></tr>{filas}</table>'
-            f'{"<p>Y otros más: míralos en tu panel.</p>" if len(orden) > 300 else ""}'
-            f'<p style="margin-top:16px"><a href="https://ferreteria-fermil.pages.dev" style="background:#006300;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Abrir el catálogo</a></p>'
-            f'<p style="color:#6b7a6e;font-size:12px">Ferretería Fermil · aviso automático del robot de precios</p></div>')
+            f'<div style="background:#006300;color:#fff;padding:14px 16px;border-radius:8px 8px 0 0"><b style="font-size:18px">Ferretería Fermil</b><br>'
+            f'<span style="color:#f2ce14">Resumen de precios al mayor · {dia}</span></div>'
+            f'<p style="margin:14px 0">Hoy {resumen} de precio. Son precios al mayor sin IVA; tus descuentos se aplican encima. '
+            f'Revisa antes de cotizar y actualiza tus flyers y catálogos.</p>'
+            f'{tabla(suben, "Subieron", "#c62828")}{tabla(bajan, "Bajaron", "#006300")}'
+            f'<p style="margin-top:18px"><a href="https://ferreteria-fermil.pages.dev" style="background:#006300;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Abrir mi panel</a></p>'
+            f'<p style="color:#6b7a6e;font-size:12px">Correo automático diario del robot de precios de Ferretería Fermil.</p></div>')
     enviados = 0
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=60) as smtp:
             smtp.login(usuario, clave)
             for n, c in destinos:
                 m = EmailMessage()
-                m['Subject'] = f'Fermil · Actualización de precios al mayor ({len(suben)} {"subió" if len(suben) == 1 else "subieron"})'
+                m['Subject'] = f'Fermil · Precios al mayor del {dia}: {resumen}'
                 m['From'] = f'Ferretería Fermil <{usuario}>'
                 m['To'] = f'{n} <{c}>' if n else c
-                m.set_content(f'{len(suben)} productos subieron de precio al mayor. Míralos en tu panel: https://ferreteria-fermil.pages.dev')
+                m.set_content(f'Hoy {resumen} de precio al mayor. Míralos en tu panel: https://ferreteria-fermil.pages.dev')
                 m.add_alternative(html, subtype='html')
                 smtp.send_message(m)
                 enviados += 1
-        aviso('notice', f'Aviso de precios enviado por correo a {enviados} mayoristas')
+        aviso('notice', f'Resumen diario de precios enviado por correo a {enviados} mayoristas')
+        requests.post(f'{url}/rest/v1/config?on_conflict=clave', headers=_sb_headers(key, {'Prefer': 'resolution=merge-duplicates,return=minimal'}),
+                      data=json.dumps({'clave': 'correo_precios', 'valor': {'fecha': fecha, 'enviados': enviados}}), timeout=60)
     except Exception as e:
-        aviso('warning', f'No se pudo enviar el aviso por correo: {type(e).__name__}')
+        aviso('warning', f'No se pudo enviar el resumen por correo: {type(e).__name__}')
 
 
 def main():
@@ -556,8 +604,8 @@ def main():
     (SALIDA / 'catalogo.json').write_text(json.dumps({**data, 'productos': publico}, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     log(f'Catálogo público: {len(publico)} productos · actualizado {data["generado"]}')
     aviso('notice', f'Catálogo listo: {len(publico)} productos · tasa {tasa} · {data["generado"]}')
-    cambios = subir_supabase(privados)
-    avisar_por_correo(cambios, productos)
+    subir_supabase(privados)
+    avisar_por_correo(productos)
 
 
 def solo_fotos():

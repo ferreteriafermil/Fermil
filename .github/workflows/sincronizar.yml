@@ -4,7 +4,12 @@ on:
   schedule:
     # Cada 2 horas de 7:00 a. m. a 7:00 p. m., hora de Venezuela (UTC-4)
     - cron: '0 11-23/2 * * *'
-  workflow_dispatch: {}   # botón "Run workflow" para correrlo a mano
+  workflow_dispatch:      # botón "Run workflow" para correrlo a mano
+    inputs:
+      forzar_correo:
+        description: 'Enviar ya el resumen de precios por correo (para probar)'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ['web/**', 'nube.json', 'robot/**', '.github/workflows/**']
@@ -39,7 +44,8 @@ jobs:
           PLADE_CLAVE: ${{ secrets.PLADE_CLAVE }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET: ${{ secrets.SUPABASE_SECRET }}
-          # Aviso por correo cuando sube un precio al mayor (opcional)
+          # Resumen diario de precios por correo a los mayoristas (opcional)
+          FORZAR_CORREO: ${{ inputs.forzar_correo && '1' || '' }}
           CORREO_USUARIO: ${{ secrets.CORREO_USUARIO }}
           CORREO_CLAVE: ${{ secrets.CORREO_CLAVE }}
           CORREOS_MAYORISTAS: ${{ secrets.CORREOS_MAYORISTAS }}

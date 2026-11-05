@@ -1636,16 +1636,18 @@ function tabCodigos(c, m){
 }
 function renderPanel(){
   const m = MAY[state.mid], c = cfg(state.mid);
-  if (!['precios', 'ver', 'codigos'].includes(state.panelTab)) state.panelTab = 'precios';
+  if (!['precios', 'ver', 'codigos', 'flyer', 'catalogo'].includes(state.panelTab)) state.panelTab = 'precios';
   if (state.pnScope && (pnClient(state.pnScope) || {}).modo !== 'propio') state.pnScope = '';
   const tab = state.panelTab;
-  const body = tab === 'precios' ? tabPrecios(c) : tab === 'ver' ? tabVer(c) : tabCodigos(c, m);
+  const body = tab === 'precios' ? tabPrecios(c) : tab === 'ver' ? tabVer(c) : tab === 'flyer' ? tabFlyer() : tab === 'catalogo' ? tabCatalogo() : tabCodigos(c, m);
   const top = dlgPanel.querySelector('.pn-body') ? dlgPanel.querySelector('.pn-body').scrollTop : 0;
-  dlgPanel.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Panel del mayorista</span><h2 id="pnTitle">${esc(m.nombre)}</h2></div><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+  dlgPanel.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Panel del mayorista</span><h2 id="pnTitle">${esc(m.nombre)}</h2></div><div class="pn-nav"><button type="button" class="btn pn-back" data-act="pn-home">← Volver al catálogo</button><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
     <div class="seg pn-tabs" role="group" aria-label="Secciones del panel">
       <button type="button" data-act="ptab" data-tab="precios" aria-pressed="${tab === 'precios'}">Mis precios y descuentos</button>
       <button type="button" data-act="ptab" data-tab="codigos" aria-pressed="${tab === 'codigos'}">Clientes y códigos (${c.clients.length})</button>
       <button type="button" data-act="ptab" data-tab="ver" aria-pressed="${tab === 'ver'}">Qué ven mis clientes</button>
+      <button type="button" data-act="ptab" data-tab="flyer" aria-pressed="${tab === 'flyer'}">Crear flyer</button>
+      <button type="button" data-act="ptab" data-tab="catalogo" aria-pressed="${tab === 'catalogo'}">Catálogo PDF</button>
     </div>
     <div class="pn-body">${cambiosPend().length ? `<div class="pn-alert"><span class="pa-ic" aria-hidden="true">!</span><span><b>Actualización de precios</b> · ${cambiosResumen(cambiosPend())}.</span><button type="button" class="btn sm" data-act="cambios">Ver cambios</button></div>` : ''}${body}</div>
     <div class="pn-foot"><span class="hint">${NUBE ? 'Los cambios se guardan solos en la nube.' : 'Los cambios se guardan al instante en este navegador.'}</span><button type="button" class="btn accent" data-act="preview">Ver como mi cliente</button></div>`;
@@ -1658,6 +1660,9 @@ function renderPanel(){
     let tmr; $('#pnSearch').addEventListener('input', e => { pnQuery = e.target.value.trim(); clearTimeout(tmr); tmr = setTimeout(upd, 180); });
     $('#pnFilterCat').addEventListener('change', e => { pnFilterCat = e.target.value; upd(); });
   }
+  const act = dlgPanel.querySelector('.pn-tabs [aria-pressed="true"]'); if (act && act.scrollIntoView) act.scrollIntoView({block:'nearest', inline:'nearest'});
+  if (tab === 'flyer') flyerInit();
+  if (tab === 'catalogo') catalogoInit();
   if (tab === 'ver'){
     pnCounts();
     $('#pnVisSearch').addEventListener('input', e => {
@@ -1670,6 +1675,344 @@ function renderPanel(){
   }
 }
 function rerenderKeep(){ state.pnKeepScroll = true; renderPanel(); }
+
+/* ===================== Flyers y catálogos del mayorista =====================
+   Flyer: imagen lista para los estados de WhatsApp (vertical 1080×1920 o cuadrada 1080×1080)
+   con el logo, la foto del producto, el precio y el nombre y número del mayorista.
+   Catálogo: PDF por categorías, con fotos y precios, válido solo el día en que se genera. */
+const FL = {ref:'', modo:'mayor', precio:'', etq:'', otra:'', fmt:'v', bs:false, q:''};
+const CT = {cats:new Set(), modo:'mayor', cliente:'', disp:true, fotos:true};
+const precioModos = () => {
+  const c = cfg(state.mid);
+  return [['mayor', 'Precio al mayor completo'], ['general', 'Con mis descuentos generales'],
+    ...c.clients.filter(x => x.modo === 'propio').map(x => ['c:' + x.code, 'Con los descuentos de ' + x.nombre])];
+};
+const modoOpts = sel => precioModos().map(([v, t]) => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${esc(t)}</option>`).join('');
+function precioPara(p, modo){
+  if (modo === 'mayor') return {v: p.mayor, orig: null, hidden: false};
+  const pi = clientPrice(p, state.mid, modo.startsWith('c:') ? modo.slice(2) : '');
+  return {v: pi.v, orig: pi.orig, hidden: pi.hidden};
+}
+async function saveBlob(blob, filename){
+  if (inViewer){
+    const d = dlNs || await window.claude.use('downloads');
+    if (!d) throw new Error('sin descargas');
+    await d.save({filename, data: blob}); return;
+  }
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+const fileSafe = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'cliente';
+const isoHoy = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const fechaLarga = () => new Date().toLocaleDateString('es-VE', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+/* Imágenes: la foto de PLADE o, si no hay, el dibujo de la categoría */
+const imgCache = {};
+function loadImg(src){
+  return imgCache[src] || (imgCache[src] = new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }));
+}
+const illSrc = cat => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ill(cat, true));
+async function prodImg(p){ return (FOTOS[p.ref] && await loadImg(FOTOS[p.ref])) || await loadImg(illSrc(p.cat)); }
+
+/* ---------- Flyer ---------- */
+function tabFlyer(){
+  const p = byRef[FL.ref];
+  const pick = p ? `<div class="fl-pick">${pimg(p)}<div><b>${esc(p.nombre)}</b><small>Ref. ${esc(p.ref)}${p.marca ? ' · ' + esc(p.marca) : ''}</small></div><button type="button" class="btn ghost sm" data-act="pn-fl-cambiar">Cambiar producto</button></div>`
+    : `<div class="field"><label for="flQ">Busca el producto</label><input id="flQ" type="search" autocomplete="off" placeholder="Ej.: soldadura, planta eléctrica, cemento…" value="${esc(FL.q)}"></div><div id="flRes" class="fl-res"></div>`;
+  return `<section class="pn-card fl-wrap">
+    <div class="fl-form">
+      <h3>1. Escoge el producto</h3>
+      ${pick}
+      ${p ? `<h3>2. Ajusta el flyer</h3>
+      <div class="field"><label for="flModo">Precio</label><select id="flModo">${modoOpts(FL.modo)}</select></div>
+      <div class="field"><label for="flPrecio">Precio que sale en el flyer ($)</label><input id="flPrecio" inputmode="decimal" value="${esc(FL.precio)}"><small class="hint">Ya viene calculado. Cámbialo solo si quieres otro precio.</small></div>
+      <div class="field"><span class="lbl">Etiqueta sobre la foto</span><div class="fl-etqs" role="group" aria-label="Etiqueta del flyer">${FL_ETQ.map(([v, t]) => `<button type="button" class="chip" data-act="pn-fl-etq" data-v="${v}" aria-pressed="${FL.etq === v}">${t}</button>`).join('')}</div></div>
+      ${FL.etq === 'otra' ? `<div class="field"><label for="flOtra">Tu texto (corto)</label><input id="flOtra" maxlength="20" placeholder="Ej.: SOLO HOY" value="${esc(FL.otra)}"></div>` : ''}
+      <label class="sw"><input type="checkbox" id="flBs" ${FL.bs ? 'checked' : ''}>Mostrar también el precio en bolívares</label>
+      <div class="field"><span class="lbl">Tamaño</span><div class="seg" role="group" aria-label="Tamaño del flyer"><button type="button" data-act="pn-fl-fmt" data-v="v" aria-pressed="${FL.fmt === 'v'}">Vertical (estados)</button><button type="button" data-act="pn-fl-fmt" data-v="c" aria-pressed="${FL.fmt === 'c'}">Cuadrado</button></div></div>` : ''}
+    </div>
+    ${p ? `<div class="fl-prev"><canvas id="flCanvas" aria-label="Vista previa del flyer"></canvas>
+      <div class="fl-acts"><button type="button" class="btn accent" data-act="pn-fl-share" id="flShare" hidden>Compartir en WhatsApp</button><button type="button" class="btn" data-act="pn-fl-dl">Descargar imagen</button></div></div>` : ''}
+  </section>`;
+}
+function flyerInit(){
+  const q = $('#flQ');
+  if (q){
+    const upd = () => {
+      const v = q.value.trim(); FL.q = v;
+      const res = v ? search(v, PRODUCTS).res.slice(0, 12).map(x => x.p) : [];
+      $('#flRes').innerHTML = v ? (res.length ? res.map(p => `<button type="button" class="fl-item" data-act="pn-fl-sel" data-ref="${esc(p.ref)}">${pimg(p)}<span><b>${esc(p.nombre)}</b><small>Ref. ${esc(p.ref)} · ${usd(p.mayor)}</small></span></button>`).join('') : '<p class="hint">No encontramos ese producto. Prueba con otra palabra.</p>') : '<p class="hint">Escribe el nombre y toca el producto.</p>';
+    };
+    let tmr; q.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(upd, 160); });
+    upd(); if (!FL.q) setTimeout(() => q.focus(), 50);
+    return;
+  }
+  if (!byRef[FL.ref]) return;
+  $('#flModo').addEventListener('change', e => { FL.modo = e.target.value; FL.precio = ''; rerenderKeep(); });
+  $('#flPrecio').addEventListener('input', e => { FL.precio = e.target.value; drawFlyer(); });
+  const ot = $('#flOtra'); if (ot) ot.addEventListener('input', e => { FL.otra = e.target.value; drawFlyer(); });
+  $('#flBs').addEventListener('change', e => { FL.bs = e.target.checked; drawFlyer(); });
+  if (FL.precio === '') FL.precio = fmt2.format(precioPara(byRef[FL.ref], FL.modo).v);
+  $('#flPrecio').value = FL.precio;
+  const sh = $('#flShare'); if (sh) sh.hidden = !(navigator.canShare && navigator.share && window.File);
+  drawFlyer();
+}
+const FL_ETQ = [['', 'Ninguna'], ['PROMOCIÓN', 'Promoción'], ['PRECIO ESPECIAL', 'Precio especial'], ['APROVECHA', 'Aprovecha'], ['otra', 'Otra…']];
+const flEtq = () => FL.etq === 'otra' ? FL.otra.trim().toUpperCase().slice(0, 20) : FL.etq;
+const numIn = s => { const t = String(s).trim().replace(/\s/g, ''); const n = Number(/,\d{1,2}$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '')); return n > 0 ? n : 0; };
+function rrect(x, X, Y, W, H, R){ x.beginPath(); x.moveTo(X + R, Y); x.arcTo(X + W, Y, X + W, Y + H, R); x.arcTo(X + W, Y + H, X, Y + H, R); x.arcTo(X, Y + H, X, Y, R); x.arcTo(X, Y, X + W, Y, R); x.closePath(); }
+function drawLogo(x, X, Y, w){
+  const k = w / 340;
+  x.save(); x.translate(X, Y); x.scale(k, k);
+  x.beginPath(); x.ellipse(170, 81, 166, 77, 0, 0, Math.PI * 2); x.fillStyle = '#f2ce14'; x.fill(); x.lineWidth = 6; x.strokeStyle = '#111'; x.stroke();
+  x.translate(66.5, 45); x.scale(.72, .72); x.fillStyle = '#111';
+  FM_POLYS.forEach(pl => { x.beginPath(); pl.forEach((pt, i) => i ? x.lineTo(pt[0], pt[1]) : x.moveTo(pt[0], pt[1])); x.closePath(); x.fill(); });
+  x.restore();
+}
+function wrapLines(x, text, maxW, maxLines){
+  const words = text.split(/\s+/), out = []; let line = '';
+  for (const w of words){
+    const t = line ? line + ' ' + w : w;
+    if (x.measureText(t).width <= maxW || !line) line = t; else { out.push(line); line = w; }
+  }
+  if (line) out.push(line);
+  if (out.length > maxLines){ out.length = maxLines; let l = out[maxLines - 1]; while (l && x.measureText(l + '…').width > maxW) l = l.slice(0, -1); out[maxLines - 1] = l.trim() + '…'; }
+  return out;
+}
+function fitFont(x, text, weight, family, max, maxW){ let s = max; do { x.font = `${weight} ${s}px ${family}`; s -= 4; } while (x.measureText(text).width > maxW && s > 20); return s + 4; }
+let flDrawId = 0;
+async function drawFlyer(){
+  const cv = $('#flCanvas'), p = byRef[FL.ref]; if (!cv || !p) return;
+  const id = ++flDrawId, m = MAY[state.mid];
+  const vert = FL.fmt === 'v', W = 1080, H = vert ? 1920 : 1080;
+  const DISP = '"Big Shoulders Display","Arial Narrow",Arial,sans-serif', BODY = '"IBM Plex Sans",Arial,sans-serif';
+  try { await Promise.all([document.fonts.load(`800 80px "Big Shoulders Display"`), document.fonts.load(`700 40px "IBM Plex Sans"`)]); } catch(e){}
+  const img = await prodImg(p);
+  if (id !== flDrawId || !cv.isConnected) return;
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  const valor = numIn(FL.precio), base = precioPara(p, FL.modo), etq = flEtq(), antes = etq && base.orig && base.orig > valor + 0.004 ? base.orig : null;
+  // fondo
+  x.fillStyle = '#006300'; x.fillRect(0, 0, W, H);
+  x.fillStyle = 'rgba(255,255,255,.05)'; for (let i = -H; i < W; i += 90){ x.beginPath(); x.moveTo(i, 0); x.lineTo(i + H, H); x.lineTo(i + H + 40, H); x.lineTo(i + 40, 0); x.fill(); }
+  // encabezado: logo + Ferretería Fermil
+  const hH = vert ? 250 : 170, lw = vert ? 250 : 190;
+  x.fillStyle = '#004a00'; x.fillRect(0, 0, W, hH);
+  drawLogo(x, 50, (hH - lw * 162 / 340) / 2, lw);
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left'; x.fillStyle = '#fff';
+  fitFont(x, 'FERRETERÍA FERMIL', 800, DISP, vert ? 96 : 76, W - (50 + lw + 34) - 40); x.fillText('FERRETERÍA FERMIL', 50 + lw + 34, hH / 2 + (vert ? 10 : 8));
+  x.fillStyle = '#f2ce14'; x.font = `600 ${vert ? 40 : 32}px ${BODY}`; x.fillText('¡La que vende más barato!', 50 + lw + 36, hH / 2 + (vert ? 62 : 50));
+  // tarjeta del producto
+  const card = vert ? {X:60, Y:hH + 50, W:960, H:820} : {X:50, Y:hH + 40, W:500, H:H - hH - 40 - 150};
+  x.save(); x.shadowColor = 'rgba(0,0,0,.28)'; x.shadowBlur = 40; x.shadowOffsetY = 12; rrect(x, card.X, card.Y, card.W, card.H, 36); x.fillStyle = '#fff'; x.fill(); x.restore();
+  if (img){
+    const pad = 40, bw = card.W - pad * 2, bh = card.H - pad * 2, r = Math.min(bw / img.width, bh / img.height);
+    const iw = img.width * r, ih = img.height * r;
+    x.save(); rrect(x, card.X, card.Y, card.W, card.H, 36); x.clip(); x.drawImage(img, card.X + (card.W - iw) / 2, card.Y + (card.H - ih) / 2, iw, ih); x.restore();
+  }
+  if (etq){
+    const t = etq;
+    fitFont(x, t, 800, DISP, vert ? 84 : 60, card.W - 60);
+    const tw = x.measureText(t).width + (vert ? 70 : 50), th = vert ? 112 : 82;
+    x.save(); x.translate(card.X - 14, card.Y + (vert ? 40 : 28)); rrect(x, 0, 0, tw, th, 18); x.fillStyle = '#e02718'; x.fill();
+    x.fillStyle = '#fff'; x.textBaseline = 'middle'; x.fillText(t, (vert ? 35 : 25), th / 2 + 4); x.restore(); x.textBaseline = 'alphabetic';
+  }
+  // nombre y precio
+  const area = vert ? {X:60, Y:card.Y + card.H + 50, W:960} : {X:card.X + card.W + 40, Y:hH + 60, W:W - (card.X + card.W + 40) - 50};
+  x.fillStyle = '#fff'; x.textAlign = 'left';
+  const nSize = vert ? 66 : 50; x.font = `700 ${nSize}px ${BODY}`;
+  const lines = wrapLines(x, p.nombre, area.W, vert ? 3 : 5);
+  let y = area.Y + nSize;
+  lines.forEach(l => { x.fillText(l, area.X, y); y += nSize * 1.18; });
+  x.fillStyle = 'rgba(255,255,255,.72)'; x.font = `500 ${vert ? 34 : 28}px ${BODY}`;
+  x.fillText(`Ref. ${p.ref}${p.marca ? ' · ' + p.marca : ''}`, area.X, y + (vert ? 4 : 0)); y += vert ? 50 : 40;
+  if (antes){
+    x.font = `600 ${vert ? 54 : 42}px ${BODY}`; x.fillStyle = 'rgba(255,255,255,.85)';
+    const at = 'Antes ' + usd(antes); x.fillText(at, area.X, y + (vert ? 50 : 40));
+    const aw = x.measureText(at).width, ay = y + (vert ? 32 : 26); x.strokeStyle = '#ff5a4a'; x.lineWidth = vert ? 7 : 5; x.beginPath(); x.moveTo(area.X - 4, ay); x.lineTo(area.X + aw + 4, ay); x.stroke();
+    y += vert ? 70 : 54;
+  }
+  const precioTxt = valor ? usd(valor) : 'Consultar';
+  const pSize = fitFont(x, precioTxt, 800, DISP, vert ? 230 : 150, area.W - 80);
+  x.font = `800 ${pSize}px ${DISP}`;
+  const pw = x.measureText(precioTxt).width, tagH = pSize * 1.08, tagY = y + 20;
+  x.save(); x.shadowColor = 'rgba(0,0,0,.25)'; x.shadowBlur = 24; x.shadowOffsetY = 8; rrect(x, area.X, tagY, pw + 80, tagH, 28); x.fillStyle = '#f2ce14'; x.fill(); x.restore();
+  x.fillStyle = '#1b1505'; x.textBaseline = 'middle'; x.fillText(precioTxt, area.X + 40, tagY + tagH / 2 + pSize * .06); x.textBaseline = 'alphabetic';
+  y = tagY + tagH + (vert ? 52 : 40);
+  x.fillStyle = 'rgba(255,255,255,.85)'; x.font = `500 ${vert ? 34 : 26}px ${BODY}`;
+  const sub = [`Precio por ${p.unidad}`, FL.bs && valor && CONFIG.tasaBs ? `Bs ${fmt2.format(valor * CONFIG.tasaBs)} a la tasa de hoy` : ''].filter(Boolean);
+  sub.forEach(s => { x.fillText(s, area.X, y); y += vert ? 46 : 36; });
+  // pie: mayorista pequeño
+  const fH = vert ? 150 : 110;
+  x.fillStyle = '#004a00'; x.fillRect(0, H - fH, W, fH);
+  x.fillStyle = '#f2ce14'; x.fillRect(0, H - fH, W, 6);
+  x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = `600 ${vert ? 38 : 30}px ${BODY}`;
+  x.fillText(`Pídelo a ${m.nombre}`, W / 2, H - fH + (vert ? 62 : 46));
+  x.fillStyle = '#b5d1b2'; x.font = `500 ${vert ? 34 : 27}px ${BODY}`;
+  x.fillText(`WhatsApp ${telTxt(m.whatsapp)} · Precios sujetos a disponibilidad`, W / 2, H - fH + (vert ? 112 : 86));
+  x.textAlign = 'left';
+}
+function flyerBlob(){ return new Promise(res => $('#flCanvas').toBlob(res, 'image/jpeg', 0.92)); }
+const flyerName = () => `Flyer-${fileSafe(byRef[FL.ref].nombre)}-${isoHoy()}.jpg`;
+async function flyerDl(btn){
+  const old = btn.textContent; btn.disabled = true;
+  try { await saveBlob(await flyerBlob(), flyerName()); btn.textContent = 'Imagen lista ✓'; }
+  catch(e){ toast('No se pudo descargar la imagen.'); }
+  finally { btn.disabled = false; setTimeout(() => { btn.textContent = old; }, 1800); }
+}
+async function flyerShare(){
+  try {
+    const file = new File([await flyerBlob()], flyerName(), {type:'image/jpeg'});
+    if (navigator.canShare && navigator.canShare({files:[file]})) await navigator.share({files:[file]});
+    else toast('Tu teléfono no permite compartir directo: usa "Descargar imagen".');
+  } catch(e){ if (!e || e.name !== 'AbortError') toast('No se pudo compartir. Usa "Descargar imagen".'); }
+}
+
+/* ---------- Catálogo en PDF ---------- */
+function ctLista(){
+  const c = cfg(state.mid);
+  return PRODUCTS.filter(p => CT.cats.has(p.cat) && !c.hiddenProducts.includes(p.ref) && (!CT.disp || (p.e.mayorista || 0) >= 10));
+}
+function tabCatalogo(){
+  const c = cfg(state.mid), cuenta = {};
+  PRODUCTS.forEach(p => { if (!c.hiddenProducts.includes(p.ref) && (!CT.disp || (p.e.mayorista || 0) >= 10)) cuenta[p.cat] = (cuenta[p.cat] || 0) + 1; });
+  const n = ctLista().length;
+  return `<section class="pn-card">
+    <h3>1. Escoge las categorías</h3>
+    <div class="ct-cats">${CATS.filter(k => cuenta[k.id]).map(k => `<label class="ct-cat"><input type="checkbox" data-ctcat="${k.id}" ${CT.cats.has(k.id) ? 'checked' : ''}><span class="ct-ic">${ill(k.id)}</span><span>${esc(k.nombre)}<small>${fmt0.format(cuenta[k.id])} productos</small></span></label>`).join('')}</div>
+    <div class="ct-row"><button type="button" class="btn ghost sm" data-act="pn-ct-todas">Marcar todas</button><button type="button" class="btn ghost sm" data-act="pn-ct-ninguna">Quitar todas</button></div>
+    <label class="sw"><input type="checkbox" id="ctDisp" ${CT.disp ? 'checked' : ''}>Solo productos con existencia</label>
+  </section>
+  <section class="pn-card">
+    <h3>2. Para quién es</h3>
+    <div class="field"><label for="ctCliente">Nombre del cliente (opcional)</label><input id="ctCliente" autocomplete="off" placeholder="Ej.: Ferretería Javier" value="${esc(CT.cliente)}"></div>
+    <div class="field"><label for="ctModo">Precio</label><select id="ctModo">${modoOpts(CT.modo)}</select></div>
+    <p>El catálogo sale con tu nombre y tu WhatsApp, y dice que es válido solo hoy, ${esc(fechaLarga())}.</p>
+  </section>
+  <section class="pn-card ct-go">
+    <div><b id="ctCount">${n ? `${fmt0.format(n)} productos en el catálogo` : 'Marca al menos una categoría'}</b><small class="hint" id="ctMsg"></small></div>
+    <button type="button" class="btn accent" data-act="pn-ct-pdf" ${n ? '' : 'disabled'}>Crear catálogo en PDF</button>
+  </section>`;
+}
+function catalogoInit(){
+  $('#ctCliente').addEventListener('input', e => { CT.cliente = e.target.value; });
+  $('#ctModo').addEventListener('change', e => {
+    CT.modo = e.target.value;
+    if (CT.modo.startsWith('c:') && !CT.cliente.trim()){ const cl = pnClient(CT.modo.slice(2)); if (cl){ CT.cliente = cl.nombre; $('#ctCliente').value = cl.nombre; } }
+  });
+  $('#ctDisp').addEventListener('change', e => { CT.disp = e.target.checked; rerenderKeep(); });
+}
+async function jpgData(src, max){
+  const img = await loadImg(src); if (!img) return null;
+  try {
+    const r = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.width * r)); c.height = Math.max(1, Math.round(img.height * r));
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    return {d: c.toDataURL('image/jpeg', 0.8), w: c.width, h: c.height};
+  } catch(e){ return null; }
+}
+async function buildCatalogo(onProg){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const W = 210, M = 12, G = [0,99,0], Y = [242,206,20], INK = [23,36,28], MUT = [90,107,96], LINE = [214,221,214], RED = [185,49,31];
+  const m = MAY[state.mid], lista = ctLista(), hoy = today();
+  const cats = CATS.filter(k => CT.cats.has(k.id));
+  // imágenes en grupos de 8 para no trabar el teléfono
+  const imgs = {};
+  for (let i = 0; i < lista.length; i += 8){
+    await Promise.all(lista.slice(i, i + 8).map(async p => { imgs[p.ref] = FOTOS[p.ref] ? await jpgData(FOTOS[p.ref], 360) : null; }));
+    onProg(`Preparando fotos… ${Math.min(i + 8, lista.length)} de ${lista.length}`);
+  }
+  const ilus = {};
+  for (const k of cats) ilus[k.id] = await jpgData(illSrc(k.id), 300);
+  onProg('Armando el PDF…');
+  const pie = () => {
+    const n = doc.getNumberOfPages();
+    for (let i = 1; i <= n; i++){
+      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...MUT);
+      doc.text(`Ferretería Fermil · ${m.nombre} · WhatsApp ${telTxt(m.whatsapp)}`, M, 290);
+      doc.setTextColor(...RED); doc.setFont('helvetica', 'bold'); doc.text(`Válido solo el ${hoy}`, W / 2 + 18, 290, {align:'center'});
+      doc.setTextColor(...MUT); doc.setFont('helvetica', 'normal'); doc.text(`Página ${i} de ${n}`, W - M, 290, {align:'right'});
+    }
+  };
+  // portada en la primera página
+  doc.setFillColor(...G); doc.rect(0, 0, W, 52, 'F');
+  pdfLogo(doc, M, 10, 40);
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.text('FERRETERÍA FERMIL', M + 46, 21);
+  doc.setFontSize(11); doc.setTextColor(...Y); doc.text('CATÁLOGO DE PRODUCTOS', M + 46, 29);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(196, 216, 202);
+  doc.text(doc.splitTextToSize(cats.map(k => k.nombre).join(' · '), W - M * 2 - 46).slice(0, 2), M + 46, 36);
+  let y = 60;
+  const info = [['Para', CT.cliente.trim() || 'Cliente'], ['Mayorista', m.nombre], ['WhatsApp', telTxt(m.whatsapp)], ['Fecha', hoy]];
+  doc.setFontSize(10);
+  info.forEach(([k, v], i) => { const x = i % 2 ? 110 : M, yy = y + Math.floor(i / 2) * 7; doc.setFont('helvetica', 'normal'); doc.setTextColor(...MUT); doc.text(k + ':', x, yy); doc.setFont('helvetica', 'bold'); doc.setTextColor(...INK); doc.text(String(v).slice(0, 40), x + 22, yy); });
+  y += 18;
+  doc.setFillColor(255, 238, 236); doc.setDrawColor(...RED); doc.setLineWidth(0.4); doc.roundedRect(M, y - 5, W - M * 2, 12, 2, 2, 'FD');
+  doc.setTextColor(...RED); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text(`VÁLIDO SOLO HOY, ${hoy}. Los precios y la existencia pueden cambiar mañana.`, W / 2, y + 2.6, {align:'center'});
+  y += 14;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...MUT);
+  doc.text(`Precios en dólares, sin IVA. Para pedir, escríbele a ${m.nombre} por WhatsApp: ${telTxt(m.whatsapp)}. Bs a la tasa del día de pago (hoy Bs ${fmt2.format(CONFIG.tasaBs)}).`, M, y, {maxWidth: W - M * 2});
+  y += 10;
+  const COLS = 3, GAP = 5, CW = (W - M * 2 - GAP * (COLS - 1)) / COLS, CH = 60, IMH = 34, BOTTOM = 282;
+  const encabezado = () => { doc.setFillColor(...G); doc.rect(0, 0, W, 14, 'F'); pdfLogo(doc, M, 2.6, 18); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.text('FERRETERÍA FERMIL · CATÁLOGO', M + 22, 9); doc.setTextColor(...Y); doc.text(`Válido solo el ${hoy}`, W - M, 9, {align:'right'}); };
+  const nueva = () => { doc.addPage(); encabezado(); y = 22; };
+  for (const k of cats){
+    const items = lista.filter(p => p.cat === k.id);
+    if (!items.length) continue;
+    if (y + 12 + CH > BOTTOM) nueva();
+    doc.setFillColor(...Y); doc.rect(M, y, 3, 8, 'F');
+    doc.setTextColor(...INK); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.text(k.nombre.toUpperCase(), M + 6, y + 6.2);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...MUT); doc.text(`${items.length} productos`, W - M, y + 6.2, {align:'right'});
+    y += 12;
+    for (let i = 0; i < items.length; i++){
+      const col = i % COLS;
+      if (col === 0 && i && (y += CH + GAP) + CH > BOTTOM){ nueva(); }
+      if (col === 0 && !i && y + CH > BOTTOM) nueva();
+      const p = items[i], x = M + col * (CW + GAP), pr = precioPara(p, CT.modo);
+      doc.setDrawColor(...LINE); doc.setLineWidth(0.25); doc.setFillColor(255, 255, 255); doc.roundedRect(x, y, CW, CH, 2, 2, 'FD');
+      const im = imgs[p.ref] || ilus[p.cat];
+      if (im){ const r = Math.min((CW - 6) / im.w, (IMH - 4) / im.h), iw = im.w * r, ih = im.h * r; try { doc.addImage(im.d, 'JPEG', x + (CW - iw) / 2, y + 2 + (IMH - 4 - ih) / 2, iw, ih, undefined, 'FAST'); } catch(e){} }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...INK);
+      doc.text(doc.splitTextToSize(p.nombre, CW - 6).slice(0, 3), x + 3, y + IMH + 3.5);
+      doc.setFont('courier', 'normal'); doc.setFontSize(6.8); doc.setTextColor(...MUT);
+      doc.text(`Ref. ${p.ref}${p.marca ? ' · ' + p.marca : ''}`.slice(0, 40), x + 3, y + CH - 11);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...G);
+      doc.text(pr.hidden ? 'A consultar' : '$' + fmt2.format(pr.v), x + 3, y + CH - 3.5);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...MUT); doc.text(p.unidad.slice(0, 14), x + CW - 3, y + CH - 3.5, {align:'right'});
+    }
+    y += CH + GAP + 4;
+  }
+  pie();
+  return doc.output('blob');
+}
+async function catalogoPdf(btn){
+  const msg = $('#ctMsg'), say = s => { if (msg && msg.isConnected) msg.textContent = s; };
+  if (!window.jspdf){ say('No se pudo cargar el generador de PDF. Revisa tu conexión.'); return; }
+  const old = btn.textContent; btn.disabled = true; btn.textContent = 'Creando…';
+  try {
+    const blob = await buildCatalogo(say);
+    await saveBlob(blob, `Catalogo-Fermil-${fileSafe(CT.cliente || MAY[state.mid].corto)}-${isoHoy()}.pdf`);
+    say('Listo. Ya puedes enviarlo o imprimirlo.'); btn.textContent = 'Catálogo listo ✓';
+  } catch(e){ say('No se pudo crear el catálogo. Intenta con menos categorías.'); }
+  finally { btn.disabled = false; setTimeout(() => { btn.textContent = old; }, 2200); }
+}
+dlgPanel.addEventListener('click', e => {
+  const el = e.target.closest('[data-act^="pn-fl-"],[data-act^="pn-ct-"],[data-act="pn-home"]'); if (!el) return;
+  const a = el.dataset.act;
+  if (a === 'pn-home'){ dlgPanel.close(); state.cat = 'todas'; state.q = ''; render(); window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); }
+  else if (a === 'pn-fl-sel'){ FL.ref = el.dataset.ref; FL.precio = ''; rerenderKeep(); }
+  else if (a === 'pn-fl-cambiar'){ FL.ref = ''; rerenderKeep(); }
+  else if (a === 'pn-fl-etq'){ const was = FL.etq; FL.etq = el.dataset.v; if ((was === 'otra') !== (FL.etq === 'otra')) rerenderKeep(); else { $$('[data-act="pn-fl-etq"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === FL.etq)); drawFlyer(); } }
+  else if (a === 'pn-fl-fmt'){ FL.fmt = el.dataset.v; $$('[data-act="pn-fl-fmt"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === FL.fmt)); drawFlyer(); }
+  else if (a === 'pn-fl-dl') flyerDl(el);
+  else if (a === 'pn-fl-share') flyerShare();
+  else if (a === 'pn-ct-todas' || a === 'pn-ct-ninguna'){ $$('[data-ctcat]').forEach(i => { if (a === 'pn-ct-todas') CT.cats.add(i.dataset.ctcat); else CT.cats.delete(i.dataset.ctcat); }); rerenderKeep(); }
+  else if (a === 'pn-ct-pdf') catalogoPdf(el);
+});
+document.addEventListener('click', e => { if (e.target.closest('[data-act="ad-home"]')){ const d = e.target.closest('dialog'); if (d) d.close(); window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); } });
+dlgPanel.addEventListener('change', e => { const t = e.target; if (t.dataset && t.dataset.ctcat){ if (t.checked) CT.cats.add(t.dataset.ctcat); else CT.cats.delete(t.dataset.ctcat); rerenderKeep(); } });
 dlgPanel.addEventListener('click', e => {
   const el = e.target.closest('[data-act^="pn-"]'); if (!el) return;
   const a = el.dataset.act, id = el.dataset.chain, R = () => scopeReglas();
@@ -2243,7 +2586,7 @@ async function saveBanners(next){
   }
 }
 function renderAdminLogin(){
-  dlgAdmin.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Administrar página</span><h2 id="adTitle">Entrar como administradora</h2></div><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+  dlgAdmin.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Administrar página</span><h2 id="adTitle">Entrar como administradora</h2></div><div class="pn-nav"><button type="button" class="btn pn-back" data-act="ad-home">← Volver al catálogo</button><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
     <div class="pn-body"><section class="pn-card">
       <form id="adLogin" class="ad-form" novalidate>
         <div class="field"><label for="adEmail">Correo</label><input id="adEmail" type="email" autocomplete="username" required></div>
@@ -2273,7 +2616,7 @@ dlgAdmin.addEventListener('submit', async e => {
 function renderAdmin(){
   if (NUBE && !ADMIN.can){ renderAdminLogin(); return; }
   const items = BANNERS.items;
-  dlgAdmin.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Administrar página</span><h2 id="adTitle">Banners de la portada</h2></div><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+  dlgAdmin.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Administrar página</span><h2 id="adTitle">Banners de la portada</h2></div><div class="pn-nav"><button type="button" class="btn pn-back" data-act="ad-home">← Volver al catálogo</button><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
     <div class="pn-body">
       <section class="pn-card">
         <h3>Subir un banner nuevo</h3>

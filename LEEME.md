@@ -25,8 +25,23 @@ El precio al mayor solo lo entrega Supabase a quien escribe un código válido.
 | CLOUDFLARE_API_TOKEN | token con permiso Cloudflare Pages: Edit |
 | SUPABASE_URL | Project URL de Supabase |
 | SUPABASE_SECRET | Secret key de Supabase (sb_secret_...) |
+| CORREO_USUARIO | Gmail que envía el resumen diario de precios (administracionfermil@gmail.com) |
+| CORREO_CLAVE | Contraseña de aplicación de ese Gmail (16 letras) |
+| CORREOS_MAYORISTAS | Correos de los mayoristas: `Manuel Pérez <correo>, Leonardo Rojas <correo>, Noel Villavicencio <correo>` |
 
 En `nube.json` van la Project URL y la Publishable key de Supabase: son públicas por diseño.
+
+## Resumen diario de precios por correo
+En la última corrida del día (7:00 p. m.) el robot envía un solo correo a cada mayorista con los precios al
+mayor que subieron y bajaron ese día. Para probarlo ya: Actions → **Sincronizar con PLADE** → **Run workflow**
+→ marcar "Enviar ya el resumen de precios por correo".
+
+## Flyers y catálogos (panel del mayorista)
+- **Crear flyer**: el mayorista busca un producto, escoge su precio (al mayor, con sus descuentos o los de un
+  cliente), una etiqueta (Promoción, Precio especial, Aprovecha u otra) y el tamaño (vertical o cuadrado).
+  Lo descarga o lo comparte directo a WhatsApp.
+- **Catálogo PDF**: escoge categorías, nombre del cliente y precio. Sale con fotos, su nombre y WhatsApp,
+  y dice que es válido solo el día en que se crea.
 
 ## Correr el robot a mano
 Actions → **Sincronizar con PLADE** → **Run workflow**.

@@ -327,3 +327,49 @@ button.ci-name:hover{color:var(--green);text-decoration:underline}
 @media (max-width:1250px){.suc-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:800px){.suc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.suc-grid{grid-template-columns:1fr}}
+
+/* Panel del mayorista: navegación, flyers y catálogo PDF */
+.pn-nav{display:flex;align-items:center;gap:8px;flex:none}
+.pn-back{background:var(--tag);color:var(--tag-ink);border-color:var(--tag);font-weight:600;white-space:nowrap}
+.pn-back:hover{filter:brightness(1.05)}
+.pn-tabs{display:flex;overflow-x:auto;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.pn-tabs button{white-space:nowrap;flex:none}
+.pn-card .sw{font-size:.88rem;color:var(--ink);white-space:normal}
+.pn-card .lbl{display:block;font-size:.82rem;font-weight:600;margin-bottom:6px}
+.fl-wrap{grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:18px;align-items:start}
+.fl-form{display:grid;gap:12px;min-width:0}
+.fl-form .field select,.fl-form .field input,.pn-card .field select{width:100%}
+.fl-res{display:grid;gap:6px;max-height:380px;overflow:auto}
+.fl-item{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:6px;cursor:pointer;color:var(--ink);font:inherit}
+.fl-item:hover,.fl-item:focus-visible{border-color:var(--green)}
+.fl-item .pimg,.fl-pick .pimg{border-radius:6px;overflow:hidden}
+.fl-item .pimg img,.fl-pick .pimg img{width:100%;height:100%;object-fit:contain}
+.fl-item b,.fl-pick b{display:block;font-size:.88rem;line-height:1.25}
+.fl-item small,.fl-pick small{color:var(--muted);font-size:.78rem}
+.fl-pick{display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px}
+.fl-etqs{display:flex;flex-wrap:wrap;gap:6px}
+.fl-etqs .chip[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--on-green)}
+.fl-prev{position:sticky;top:0;display:grid;gap:10px;justify-items:center}
+.fl-prev canvas{width:100%;max-height:62vh;object-fit:contain;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);background:var(--tile)}
+.fl-acts{display:grid;gap:8px;width:100%}
+.ct-cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.ct-cat{display:grid;grid-template-columns:auto 40px 1fr;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:.88rem;font-weight:600;line-height:1.2}
+.ct-cat:has(input:checked){border-color:var(--green);background:color-mix(in srgb,var(--green) 9%,var(--surface))}
+.ct-cat input{width:18px;height:18px;accent-color:var(--green)}
+.ct-cat small{display:block;font-weight:400;color:var(--muted);font-size:.76rem}
+.ct-ic svg{width:40px;height:30px}
+.ct-row{display:flex;gap:8px;flex-wrap:wrap}
+.ct-go{grid-template-columns:1fr auto;align-items:center}
+.ct-go small{display:block;margin-top:2px}
+@media (max-width:720px){
+  .fl-wrap{grid-template-columns:1fr}
+  .fl-prev{position:static}
+  .fl-prev canvas{max-height:70vh}
+  .fl-pick{grid-template-columns:60px 1fr}
+  .fl-pick .btn{grid-column:1 / -1}
+  .ct-go{grid-template-columns:1fr}
+  .pn-back{padding:6px 10px;font-size:.82rem}
+  .pn-head{flex-wrap:wrap}
+  .pn-head h2{font-size:1.7rem}
+  .pn-nav{width:100%;justify-content:space-between;order:-1}
+}
