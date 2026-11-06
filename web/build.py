@@ -76,6 +76,11 @@ def nube(args):
             fotos[cod] = 'fotos/' + archivo.name
     if (base / 'media').exists():
         shutil.copytree(base / 'media', salida / 'media')
+    # Páginas aparte (invitaciones, etc.): cada carpeta de web/paginas/ sale en /<carpeta>/
+    if (base / 'paginas').exists():
+        for carpeta in (base / 'paginas').iterdir():
+            if carpeta.is_dir():
+                shutil.copytree(carpeta, salida / carpeta.name)
     html = armar(catalogo, fotos, cfg)
     (salida / 'index.html').write_text(html, encoding='utf-8')
     (salida / '_headers').write_text('/fotos/*\n  Cache-Control: public, max-age=604800\n/media/*\n  Cache-Control: public, max-age=86400\n/index.html\n  Cache-Control: no-cache\n', encoding='utf-8')
