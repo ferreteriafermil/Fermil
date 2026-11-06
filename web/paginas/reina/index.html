@@ -72,7 +72,11 @@ a{color:inherit}
 
 /* ---------- Portada abierta: casa + frase + fotos ---------- */
 #hero{position:relative;min-height:100svh;display:grid;place-items:center;overflow:hidden;isolation:isolate;padding-block:64px 80px}
-#hero .bg{position:absolute;inset:-4%;background:var(--paper-2) url("img/casa-fondo.jpg") center/cover;transform:scale(1.08);z-index:-2}
+#hero .bg{position:absolute;inset:-4%;background:var(--paper-2) center/cover no-repeat;transform:scale(1.08);z-index:-2;transition:opacity 2.4s ease}
+#hero .bg1{background-image:url("img/casanoche.jpg")}
+#hero .bg2{background-image:url("img/casadia.jpg");opacity:0}
+#hero.dia .bg1{opacity:0}
+#hero.dia .bg2{opacity:1}
 #hero.play .bg{animation:drift 22s ease-in-out infinite alternate}
 @keyframes drift{to{transform:scale(1.16) translate(-1.5%,-1%)}}
 #hero::after{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(90% 70% at 50% 45%,rgba(239,230,216,.12),rgba(239,230,216,.42) 80%),linear-gradient(180deg,rgba(239,230,216,0) 72%,var(--paper))}
@@ -255,7 +259,8 @@ footer{padding-block:28px 60px;text-align:center}
 
 <!-- ================= ENTRADA: CASA + FRASE + FOTOS ================= -->
 <header id="hero" class="wrap">
-  <div class="bg" aria-hidden="true"></div>
+  <div class="bg bg1" aria-hidden="true"></div>
+  <div class="bg bg2" aria-hidden="true"></div>
   <div class="hero-in">
     <h1 class="phrase reveal d1">
       <span class="l1">La vida comienza a los 40</span>
@@ -457,7 +462,7 @@ document.documentElement.classList.add('js');
     if(cover.classList.contains('open'))return;
     cover.classList.add('open');
     if(hasSong){mbtn.hidden=false;song.play().then(function(){mbtn.classList.add('playing');}).catch(function(){});}
-    setTimeout(function(){document.body.classList.remove('locked');hero.classList.add('play');startFrames();},1100);
+    setTimeout(function(){document.body.classList.remove('locked');hero.classList.add('play');startFrames();setTimeout(function(){hero.classList.add('dia');},5500);},1100);
   }
   document.getElementById('seal').addEventListener('click',abrir);
   cover.addEventListener('click',function(e){if(e.target===cover)abrir();});
