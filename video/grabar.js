@@ -79,7 +79,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     at('carrito'); await tap(page.locator('[data-act="cart"]:visible').first(), { wait: 1300 }); await shot('6-carrito');
     at('pedido'); await tap('[data-act="type"][data-type="pedido"]', { wait: 900 });
     await scroll(420, 1300); await sleep(300);
-    const nom = page.locator('#fNombre'); if (await nom.isVisible().catch(() => false)) { await tap(nom, { wait: 200 }); await slowType('#fNombre', 'Ferretería Javier'); await sleep(500); }
+    const nom = page.locator('#fNombre'); if (await nom.isVisible().catch(() => false)) { await nom.fill(''); await tap(nom, { wait: 200 }); await slowType('#fNombre', 'Ferretería Javier'); await sleep(500); }
     await scroll(500, 1300); await sleep(500);
     await tap('[data-act="wa"]', { click: false, wait: 1200 }); await shot('7-pedido');
     at('presupuesto'); await page.evaluate(() => { const el = document.querySelector('dialog[open] .drawer-body'); if (el) el.scrollTop = 0; }); await sleep(500);
