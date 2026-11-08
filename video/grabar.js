@@ -11,8 +11,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, locale: 'es-VE', timezoneId: 'America/Caracas', acceptDownloads: true,
     userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36' });
   await ctx.route(/wa\.me|api\.whatsapp\.com/, r => r.abort());
-  ctx.on('page', p => { if (p !== page) p.close().catch(() => {}); });
   const page = await ctx.newPage();
+  ctx.on('page', p => { if (p !== page) p.close().catch(() => {}); });
   page.on('console', m => m.type() === 'error' && console.log('consola:', m.text().slice(0, 160)));
   const cdp = await ctx.newCDPSession(page);
   let n = 0, t0 = 0, rec = false;
