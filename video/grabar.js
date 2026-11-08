@@ -28,19 +28,45 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   });
   const mark = (id) => { const t = frames.length ? frames[frames.length - 1].t : 0; marks.push({ id, t: Date.now() }); console.log('paso', id); };
   const shot = async id => page.screenshot({ path: `${OUT}/paso-${id}.jpg`, type: 'jpeg', quality: 80 }).catch(() => {});
-  const css = `.__tap{position:fixed;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(242,206,20,.55);border:3px solid #f2ce14;z-index:2147483647;pointer-events:none;animation:__t .7s ease-out forwards}@keyframes __t{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.5);opacity:0}}`;
-  const prep = async () => page.evaluate(c => { if (!document.getElementById('__tapcss')) { const s = document.createElement('style'); s.id = '__tapcss'; s.textContent = c; document.head.appendChild(s); } }, css);
+  const css = `#__ptr{position:fixed;left:0;top:0;width:0;height:0;z-index:2147483647;pointer-events:none}
+#__ptr .g{position:absolute;left:-26px;top:-26px;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,rgba(34,197,94,.55) 0%,rgba(34,197,94,.28) 45%,rgba(34,197,94,0) 72%);transition:transform .18s}
+#__ptr svg{position:absolute;left:-3px;top:-2px;width:30px;height:30px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));transition:transform .15s;transform-origin:3px 2px}
+#__ptr.down svg{transform:scale(.82)} #__ptr.down .g{transform:scale(1.35)}
+.__rip{position:fixed;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:4px solid #22c55e;background:rgba(34,197,94,.25);z-index:2147483647;pointer-events:none;animation:__r .65s ease-out forwards}
+@keyframes __r{0%{transform:scale(.6);opacity:1}100%{transform:scale(3.4);opacity:0}}`;
+  const prep = async () => page.evaluate(c => {
+    if (!document.getElementById('__tapcss')) { const s = document.createElement('style'); s.id = '__tapcss'; s.textContent = c; document.head.appendChild(s); }
+    if (!document.getElementById('__ptr')) {
+      const d = document.createElement('div'); d.id = '__ptr';
+      d.innerHTML = '<div class="g"></div><svg viewBox="0 0 24 24"><path d="M3 2 L3 20 L8 15.5 L11.5 22.5 L14.6 21 L11.2 14.2 L18 14 Z" fill="#fff" stroke="#0b3d12" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+      document.body.appendChild(d); window.__px = 250; window.__py = 520;
+    }
+    const top = l => { const ds = [...document.querySelectorAll('dialog[open]')]; return ds.length ? ds[ds.length - 1] : document.body; };
+    window.__place = (el, x, y) => { const host = top(); if (el.parentNode !== host) host.appendChild(el); el.style.left = x + 'px'; el.style.top = y + 'px'; const r = el.getBoundingClientRect(); const dx = r.left - x, dy = r.top - y; if (Math.abs(dx) > .5 || Math.abs(dy) > .5) { el.style.left = (x - dx) + 'px'; el.style.top = (y - dy) + 'px'; } };
+    window.__move = (x, y, ms) => new Promise(res => { const el = document.getElementById('__ptr'), sx = window.__px, sy = window.__py, t = performance.now(); const f = now => { const k = Math.min(1, (now - t) / ms), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; const cx = sx + (x - sx) * e, cy = sy + (y - sy) * e - Math.sin(Math.PI * k) * 18; window.__place(el, cx, cy); k < 1 ? requestAnimationFrame(f) : (window.__px = x, window.__py = y, res()); }; requestAnimationFrame(f); });
+    window.__press = () => { const el = document.getElementById('__ptr'); el.classList.add('down'); const r = document.createElement('div'); r.className = '__rip'; document.body.appendChild(r); window.__place(r, window.__px, window.__py); el.parentNode.appendChild(el); setTimeout(() => r.remove(), 700); setTimeout(() => el.classList.remove('down'), 220); };
+    window.__place(document.getElementById('__ptr'), window.__px, window.__py);
+  }, css);
   async function tap(loc, { click = true, wait = 700 } = {}) {
     loc = typeof loc === 'string' ? page.locator(loc).first() : loc;
     await loc.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {});
-    await sleep(350);
+    await sleep(120);
+    await prep();
     const b = await loc.boundingBox();
-    if (b) await page.evaluate(([x, y]) => { const d = document.createElement('div'); d.className = '__tap'; d.style.left = x + 'px'; d.style.top = y + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 800); }, [b.x + b.width / 2, b.y + b.height / 2]);
-    await sleep(260);
+    if (b) {
+      const x = b.x + Math.min(b.width / 2, 140), y = b.y + b.height / 2;
+      const dist = await page.evaluate(([x, y]) => Math.hypot(x - window.__px, y - window.__py), [x, y]);
+      await page.evaluate(([x, y, ms]) => window.__move(x, y, ms), [x, y, Math.round(Math.min(900, Math.max(380, dist * 1.6)))]);
+      await sleep(140);
+      await page.evaluate(() => window.__press());
+      await sleep(180);
+    }
     if (click) await loc.click({ timeout: 8000 });
+    await prep();
     await sleep(wait);
   }
   async function scroll(px, ms = 1200) {
+    await prep();
     await page.evaluate(([px, ms]) => new Promise(res => { const el = document.querySelector('dialog[open] .drawer-body') || document.scrollingElement; const s = el.scrollTop, t = performance.now(); const f = now => { const k = Math.min(1, (now - t) / ms), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; el.scrollTop = s + px * e; k < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); }), [px, ms]);
     await sleep(250);
   }
