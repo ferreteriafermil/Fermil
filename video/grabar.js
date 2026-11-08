@@ -30,15 +30,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const shot = async id => page.screenshot({ path: `${OUT}/paso-${id}.jpg`, type: 'jpeg', quality: 80 }).catch(() => {});
   const css = `#__ptr{position:fixed;left:0;top:0;width:0;height:0;z-index:2147483647;pointer-events:none}
 #__ptr .g{position:absolute;left:-26px;top:-26px;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,rgba(34,197,94,.55) 0%,rgba(34,197,94,.28) 45%,rgba(34,197,94,0) 72%);transition:transform .18s}
-#__ptr svg{position:absolute;left:-3px;top:-2px;width:30px;height:30px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));transition:transform .15s;transform-origin:3px 2px}
-#__ptr.down svg{transform:scale(.82)} #__ptr.down .g{transform:scale(1.35)}
+#__ptr .a{position:absolute!important;display:block!important;left:-4px;top:-3px;width:34px!important;height:34px!important;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 2 L3 20 L8 15.5 L11.5 22.5 L14.6 21 L11.2 14.2 L18 14 Z' fill='%23fff' stroke='%230b3d12' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat 0 0/100% 100%!important;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));transition:transform .15s;transform-origin:4px 3px}
+#__ptr.down .a{transform:scale(.82)} #__ptr.down .g{transform:scale(1.35)}
 .__rip{position:fixed;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:4px solid #22c55e;background:rgba(34,197,94,.25);z-index:2147483647;pointer-events:none;animation:__r .65s ease-out forwards}
 @keyframes __r{0%{transform:scale(.6);opacity:1}100%{transform:scale(3.4);opacity:0}}`;
   const prep = async () => page.evaluate(c => {
     if (!document.getElementById('__tapcss')) { const s = document.createElement('style'); s.id = '__tapcss'; s.textContent = c; document.head.appendChild(s); }
     if (!document.getElementById('__ptr')) {
       const d = document.createElement('div'); d.id = '__ptr';
-      d.innerHTML = '<div class="g"></div><svg viewBox="0 0 24 24"><path d="M3 2 L3 20 L8 15.5 L11.5 22.5 L14.6 21 L11.2 14.2 L18 14 Z" fill="#fff" stroke="#0b3d12" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+      d.innerHTML = '<div class="g"></div><i class="a"></i>';
       document.body.appendChild(d); window.__px = 250; window.__py = 520;
     }
     const top = l => { const ds = [...document.querySelectorAll('dialog[open]')]; return ds.length ? ds[ds.length - 1] : document.body; };
