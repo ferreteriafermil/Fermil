@@ -46,6 +46,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   }
   const slowType = async (loc, txt) => { await page.locator(loc).first().pressSequentially(txt, { delay: 110 }); };
   const closeExtras = async () => { for (const s of ['[data-act="cambiosok"]']) { const l = page.locator(s); if (await l.count() && await l.first().isVisible()) { await l.first().click().catch(() => {}); await sleep(400); } } };
+  async function buscar(){
+    const b = page.locator('#searchForm button[type="submit"], #searchForm .btn').first();
+    if (await b.count()) await tap(b, { wait: 300 }); else await page.keyboard.press('Enter');
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.evaluate(() => { document.activeElement && document.activeElement.blur(); const s = document.getElementById('sugg'); if (s) s.hidden = true; });
+    await sleep(1500);
+  }
   const sec = {};
   const at = id => { sec[id] = frames.length ? frames[frames.length - 1].t : 0; console.log('paso', id, sec[id].toFixed(2)); };
   try {
@@ -55,20 +62,20 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     rec = true; await sleep(300);
     // keep frames flowing while static: tiny invisible animation
     await page.evaluate(() => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;z-index:2147483647;pointer-events:none'; document.body.appendChild(d); let i = 0; (function f(){ d.style.background = (i++ % 2) ? 'rgba(0,0,0,.01)' : 'rgba(0,0,0,.02)'; requestAnimationFrame(f); })(); });
-    at('inicio'); await sleep(2200); await scroll(380, 1400); await sleep(700); await scroll(-380, 900); await sleep(400); await shot('1-inicio');
+    at('inicio'); await sleep(3200); await scroll(560, 2600); await sleep(1100); await scroll(700, 2600); await sleep(1100); await scroll(-1260, 2200); await sleep(1300); await shot('1-inicio');
     at('login'); await tap('#btnLogin'); await sleep(400);
     await tap('#cCode', { wait: 300 }); await slowType('#cCode', CODE); await sleep(500);
     await page.keyboard.press('Enter'); await sleep(2600); await closeExtras(); await prep(); await shot('2-dentro');
     at('dentro'); await sleep(1200); await scroll(520, 1500); await sleep(900); await shot('3-precios');
     at('buscar'); await page.evaluate(() => window.scrollTo({ top: 0 })); await sleep(400);
-    await tap('#q', { wait: 300 }); await slowType('#q', 'cemento'); await sleep(400); await page.keyboard.press('Enter'); await sleep(1800);
+    await tap('#q', { wait: 300 }); await slowType('#q', 'cemento'); await sleep(400); await buscar();
     await scroll(300, 1000); await sleep(800); await shot('4-busqueda');
     at('agregar'); await tap(page.locator('[data-act="add"]:visible').first(), { wait: 900 });
     const inc = page.locator('[data-act="inc"]:visible').first();
     if (await inc.count()) { await tap(inc, { wait: 450 }); await tap(inc, { wait: 700 }); }
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' })); await sleep(700);
-    await page.locator('#q').fill(''); await tap('#q', { wait: 200 }); await slowType('#q', 'cabilla'); await page.keyboard.press('Enter'); await sleep(1700);
-    await tap(page.locator('[data-act="add"]:visible').first(), { wait: 1100 }); await shot('5-agregado');
+    await page.locator('#q').fill(''); await tap('#q', { wait: 200 }); await slowType('#q', 'cabilla'); await sleep(300); await buscar();
+    await tap(page.locator('[data-act="add"]:visible').first(), { wait: 1100 }).catch(e => console.log('aviso agregar 2', e.message.slice(0,80))); await shot('5-agregado');
     at('carrito'); await tap(page.locator('[data-act="cart"]:visible').first(), { wait: 1300 }); await shot('6-carrito');
     at('pedido'); await tap('[data-act="type"][data-type="pedido"]', { wait: 900 });
     await scroll(420, 1300); await sleep(300);
