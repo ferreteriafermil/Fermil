@@ -1,0 +1,30 @@
+name: Grabar video tutorial
+on:
+  push:
+    branches: [video-tutorial]
+    paths: ['video/grabar.js', '.github/workflows/grabar-video.yml']
+permissions:
+  contents: write
+jobs:
+  grabar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y ffmpeg fonts-noto-color-emoji >/dev/null
+      - name: Grabar
+        env: { CODIGO: 'MANUEL-PSBF-YPV2' }
+        run: node video/grabar.js
+      - name: Armar video
+        run: |
+          cd video/out
+          ffmpeg -y -loglevel error -f concat -safe 0 -i lista.txt -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=white,fps=30,format=yuv420p" -c:v libx264 -crf 18 -preset veryfast crudo.mp4
+          ffprobe -v error -show_entries format=duration -of csv=p=0 crudo.mp4
+          rm -rf frames lista.txt
+      - name: Guardar en la rama
+        run: |
+          git config user.name "Claude" && git config user.email "noreply@anthropic.com"
+          git add -f video/out && git commit -q -m "Grabación del recorrido [skip ci]" && git push -q
