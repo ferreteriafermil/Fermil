@@ -221,6 +221,7 @@
     <p>Si eres mayorista de Ferretería Fermil, o cliente de uno de ellos, escribe tu código.</p>
     <label class="sr" for="cCode">Código</label>
     <input id="cCode" autocomplete="off" placeholder="Código">
+    <p class="hint">Solo la primera vez: este teléfono te recuerda por 30 días. Si es un teléfono prestado, toca "Salir" al terminar.</p>
     <p id="cErr" class="err" hidden>Ese código no existe. Revísalo o pídeselo a tu vendedor.</p>
     <!--PRUEBA--><p class="hint">Prueba como mayorista: <code>MANUEL-01</code> · <code>LEONARDO-02</code> · <code>NOEL-03</code>. Los códigos de clientes los crea cada mayorista en su panel.</p><!--/PRUEBA-->
     <div class="btns"><button type="button" class="btn ghost" data-act="close">Cancelar</button><button type="submit" class="btn accent">Entrar</button></div>
@@ -1348,6 +1349,12 @@ function aplicarPrecios(lista){
   const m = new Map(lista.map(x => [String(x[0]), x]));
   for (const p of PRODUCTS){ const x = m.get(p.ref); if (!x) continue; const v = Number(x[1]); if (v > 0) p.mayor = v; p.e.mayorista = Number(x[2]) || 0; if (x.length > 3){ p.e.alm9 = Number(x[3]) || 0; p.e.alm17 = Number(x[4]) || 0; } }
 }
+/* Recordar el código en este teléfono 30 días (se renueva cada vez que entra; "Salir" lo borra) */
+const RECORDAR_DIAS = 30;
+const recordar = {
+  get(){ const v = store.get('fermil_recordar', null); if (!v || !v.code || !(v.exp > Date.now())){ if (v) store.set('fermil_recordar', null); return ''; } return v.code; },
+  set(code){ store.set('fermil_recordar', code ? {code, exp: Date.now() + RECORDAR_DIAS * 864e5} : null); }
+};
 async function loginNube(code){
   code = String(code || '').trim().toUpperCase();
   if (!code) return false;
@@ -1359,9 +1366,10 @@ async function loginNube(code){
   if (r.rol === 'mayorista'){ NUBE_CODE = code; Object.assign(state, {role:'mayorista', mid:r.mid, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); }
   else { NUBE_CODE = ''; Object.assign(state, {role:'cliente', mid:r.mid, ccode:r.ccode, cname:r.cname || '', preview:false}); if (!$('#fNombre').value) $('#fNombre').value = r.cname || ''; }
   sess.set('fermil_code', code);
+  recordar.set(code);
   return true;
 }
-function logout(){ NUBE_CODE = ''; CAMBIOS = []; sess.set('fermil_code', null); Object.assign(state, {role:'publico', mid:null, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); ldisc = {}; saveCart(); applyRole(); toast('Volviste al catálogo general'); }
+function logout(){ NUBE_CODE = ''; CAMBIOS = []; sess.set('fermil_code', null); recordar.set(null); Object.assign(state, {role:'publico', mid:null, ccode:null, cname:'', preview:false, mPriceMode:'mayor', mClient:''}); ldisc = {}; saveCart(); applyRole(); toast('Volviste al catálogo general'); }
 function applyRole(){
   saveSession();
   const band = $('#roleBand'), r = state.role;
@@ -2785,7 +2793,7 @@ renderType();
 applyRole();
 initCaps();
 renderIG();
-if (NUBE){ const c0 = sess.get('fermil_code', null); if (c0) loginNube(c0).then(ok => { if (ok) applyRole(); }).catch(() => {}); }
+if (NUBE){ const c0 = sess.get('fermil_code', null) || recordar.get(); if (c0) loginNube(c0).then(ok => { if (ok) applyRole(); else { sess.set('fermil_code', null); recordar.set(null); } }).catch(() => {}); }
 if (location.hash === '#admin'){ renderAdmin(); if (!dlgAdmin.open) dlgAdmin.showModal(); }
 window.addEventListener('hashchange', () => { if (location.hash === '#admin'){ renderAdmin(); if (!dlgAdmin.open) dlgAdmin.showModal(); } });
 })();
