@@ -60,13 +60,14 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: bash web/publicar.sh
 
-      - name: Buscar fotos nuevas en PLADE
+      - name: Buscar fotos y pesos nuevos en PLADE
         continue-on-error: true
         env:
           PLADE_URL: ${{ secrets.PLADE_URL }}
           PLADE_USUARIO: ${{ secrets.PLADE_USUARIO }}
           PLADE_CLAVE: ${{ secrets.PLADE_CLAVE }}
           FOTOS_MINUTOS: '45'   # las fotos que falten siguen en la próxima corrida
+          PESOS_MINUTOS: '25'   # pesos de los productos para el panel de tabulaciones
         run: python robot/sync.py fotos
 
       - name: Publicar otra vez con las fotos nuevas
@@ -83,7 +84,7 @@ jobs:
         run: |
           git config user.name "Robot Fermil"
           git config user.email "robot-fermil@users.noreply.github.com"
-          for f in fotos fotos_cache.json ids_plade.json; do [ -e "$f" ] && git add "$f"; done; true
+          for f in fotos fotos_cache.json ids_plade.json pesos_plade.json; do [ -e "$f" ] && git add "$f"; done; true
           if git diff --cached --quiet; then echo "Sin fotos nuevas"; else
             git commit -m "Fotos nuevas de PLADE $(date -u +'%Y-%m-%d %H:%M') UTC"
             git pull --rebase --autostash || true

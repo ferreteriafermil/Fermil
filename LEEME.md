@@ -51,3 +51,18 @@ La primera corrida tarda de 2 a 3 horas porque baja todas las fotos; si no termi
 - Corrida en rojo: abrir la corrida y leer el último paso con error.
 - "No se pudo entrar a PLADE": revisar PLADE_USUARIO y PLADE_CLAVE.
 - "Solo llegaron N productos": PLADE respondió incompleto; la página no se toca y se reintenta en 2 horas.
+
+## Panel de tabulaciones (administración de fletes)
+Un código aparte (`ADMIN-XXXX-XXXX`, tabla `tabulador_admins` en Supabase) abre el panel administrativo en
+**Mayoristas → código**. No ve lo mismo que un mayorista: abre la calculadora de fletes.
+- **Calcular viaje**: vendedor, camión, chofer y paradas en orden. En cada parada se escriben los códigos de los
+  productos y la cantidad: el precio al mayor y el peso salen solos (peso de la ficha de PLADE). Da km, días,
+  ocupación, costo del flete, venta mínima y si el viaje se aprueba. Compara todos los camiones y marca el más barato
+  que aprueba. Imprime la orden en blanco y negro (o PDF).
+- **Tabulador**: venta mínima por pueblo para camión pequeño, mediano y gandola.
+- **Lugares y km**: para un pueblo nuevo se pegan sus coordenadas de Google Maps y los km por carretera hasta todos los
+  demás se miden solos (OpenStreetMap/OSRM). Después: **Guardar cambios**.
+- **Costos y flota**: gasoil, viáticos, hotel, topes, peajes, camiones y choferes. La tasa BCV es la del día de PLADE.
+- Los cálculos son los mismos del Excel `SISTEMA_ERP_FERMIL_TABULACIONES_ADMINISTRATIVO`.
+- El robot baja el peso de cada producto poco a poco (25 minutos por corrida) y lo guarda en `pesos_plade.json`.
+- Para activarlo hay que correr una vez `supabase-actualizacion-2.sql` (al final muestra el código de administración).

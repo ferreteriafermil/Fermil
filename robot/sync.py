@@ -48,6 +48,9 @@ SALIDA = RAIZ / os.environ.get('SALIDA', 'salida')
 FOTOS = RAIZ / 'fotos'
 CACHE_FOTOS = RAIZ / 'fotos_cache.json'
 CACHE_IDS = RAIZ / 'ids_plade.json'   # id interno de PLADE de cada código (no cambia)
+CACHE_PESOS = RAIZ / 'pesos_plade.json'  # peso en kg de cada código (lo usa el panel de tabulaciones)
+PESOS_MINUTOS = float(os.environ.get('PESOS_MINUTOS', '20'))
+PESOS_DIAS = 30  # cada cuántos días se vuelve a revisar el peso de un producto
 IDS_MINUTOS = float(os.environ.get('IDS_MINUTOS', '30'))
 FOTOS_MINUTOS = float(os.environ.get('FOTOS_MINUTOS', '150'))
 MINIMO_PRODUCTOS = int(os.environ.get('MINIMO_PRODUCTOS', '1000'))
@@ -277,6 +280,52 @@ def diagnostico_fotos():
             break
 
 
+def peso_kg(prod):
+    """Peso de la ficha de PLADE pasado a kg (la ficha trae 'peso' y 'unidad_peso')."""
+    try:
+        v = float(str(prod.get('peso') or 0).replace(',', '.'))
+    except ValueError:
+        return 0.0
+    u = str(prod.get('unidad_peso') or 'kg').strip().upper()
+    if u in ('G', 'GR', 'GRS', 'GRAMOS'):
+        v /= 1000
+    elif u in ('LB', 'LBS', 'LIBRAS'):
+        v *= 0.45359237
+    elif u in ('TON', 'T', 'TONELADAS'):
+        v *= 1000
+    return round(v, 4)
+
+
+def actualizar_pesos(s, productos):
+    """Baja el peso de cada producto desde su ficha en PLADE, poco a poco (PESOS_MINUTOS por corrida)."""
+    pesos = json.loads(CACHE_PESOS.read_text()) if CACHE_PESOS.exists() else {}
+    ids = (json.loads(CACHE_IDS.read_text()) if CACHE_IDS.exists() else {}).get('ids', {})
+    hoy = time.strftime('%Y-%m-%d', time.gmtime())
+    limite_viejo = time.strftime('%Y-%m-%d', time.gmtime(time.time() - PESOS_DIAS * 86400))
+    pendientes = [p['c'] for p in productos if p['c'] in ids and (p['c'] not in pesos or pesos[p['c']][1] < limite_viejo)]
+    pendientes.sort(key=lambda c: (c in pesos, pesos.get(c, [0, ''])[1]))  # primero los que nunca se han revisado
+    limite = time.time() + PESOS_MINUTOS * 60
+    hechos = errores = 0
+    for cod in pendientes:
+        if time.time() > limite:
+            break
+        try:
+            r = s.post(f'{BASE}/panel/ajax_php.php', data={'modulo': 'productos', 'tipo': 'buscarProducto', 'por_id': 1,
+                                                          'idc': ids[cod], 'solo_modal_resumen': 1}, timeout=60)
+            pesos[cod] = [peso_kg(r.json().get('producto') or {}), hoy]
+            hechos += 1
+        except Exception as e:  # se reintenta en la próxima corrida
+            errores += 1
+            log(f'peso {cod}: {e}')
+        if hechos and hechos % 300 == 0:
+            CACHE_PESOS.write_text(json.dumps(pesos, sort_keys=True))
+    CACHE_PESOS.write_text(json.dumps(pesos, sort_keys=True))
+    con = sum(1 for c in (p['c'] for p in productos) if pesos.get(c, [0])[0] > 0)
+    faltan = sum(1 for p in productos if p['c'] not in pesos)
+    aviso('notice', f'Pesos: {hechos} revisados en esta corrida · {con} productos con peso en PLADE · faltan por revisar {faltan}'
+                    + (f' · {errores} con error' if errores else ''))
+
+
 def minutos_para_fotos():
     """De día cada corrida dedica FOTOS_MINUTOS a fotos. De noche (7 p. m. a 7 a. m. en Venezuela) no hay corridas
     programadas, así que se aprovecha hasta las 6:40 a. m. (máximo 4 horas) para no atrasar los precios de las 7."""
@@ -445,6 +494,11 @@ def subir_supabase(filas):
     if not url or not key:
         log('Supabase no configurado: no se suben los precios al mayor')
         return cambios
+    hay_peso = requests.get(f'{url}/rest/v1/precios_mayor?select=peso&limit=1', headers=_sb_headers(key), timeout=60).status_code < 300
+    if not hay_peso:
+        aviso('warning', 'Supabase todavía no tiene la columna peso (falta correr supabase-actualizacion-2.sql): se suben los precios sin peso.')
+        for f in filas:
+            f.pop('peso', None)
     antes = precios_guardados(url, key)
     if antes is None:
         aviso('warning', 'Supabase todavía no tiene las columnas nuevas (falta correr supabase-actualizacion-1.sql): '
@@ -591,13 +645,14 @@ def main():
     productos = data['productos']
     if len(productos) < MINIMO_PRODUCTOS:
         falla(f'Solo llegaron {len(productos)} productos: no se publica para no dañar la página.')
+    pesos = json.loads(CACHE_PESOS.read_text()) if CACHE_PESOS.exists() else {}
     privados = []
     for p in productos:
         if not p.get('y'):
             continue
         pr, un = p['e'].get('principal', 0), p['e'].get('almunda', 0)
         privados.append({'cod': p['c'], 'mayor': p['y'], 'stock_mayorista': round(pr + un, 2),
-                         'stock_principal': pr, 'stock_unda': un})
+                         'stock_principal': pr, 'stock_unda': un, 'peso': (pesos.get(p['c']) or [None])[0]})
     publico = []
     for p in productos:
         q = {k: v for k, v in p.items() if k != 'y'}
@@ -620,6 +675,10 @@ def solo_fotos():
     nuevas = sum(1 for k, v in cache.items() if v and not antes.get(k))
     if nuevas:
         (SALIDA / 'fotos_nuevas').write_text(str(nuevas))
+    try:
+        actualizar_pesos(s, productos)
+    except Exception as e:  # los pesos nunca detienen la corrida
+        aviso('warning', f'Pesos: se detuvo por {type(e).__name__}: {tapar(str(e))[:300]}')
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 base = Path(__file__).parent
-CSS_EXTRA = ['extra.css', 'v4.css', 'v5.css']
+CSS_EXTRA = ['extra.css', 'v4.css', 'v5.css', 'tabulador.css']
 
 
 def safe(obj):
@@ -33,7 +33,9 @@ def armar(catalogo, fotos, nube=None):
         tpl = re.sub(r"codigo:'[^']*'", "codigo:''", tpl)
         tpl = re.sub(r'<!--PRUEBA-->.*?<!--/PRUEBA-->', '<p class="hint">Tu código te lo da Ferretería Fermil o tu vendedor mayorista.</p>', tpl, flags=re.S)
         nube_js = 'window.FERMIL_NUBE = ' + safe({'url': nube['supabase_url'].rstrip('/'), 'key': nube['supabase_key']}) + ';'
-    return (tpl.replace('/*__BASECSS__*/', css)
+    tab_js = (base / 'tabulador.js').read_text(encoding='utf-8')
+    return (tpl.replace('/*__TABULADOR__*/', tab_js)
+               .replace('/*__BASECSS__*/', css)
                .replace('/*__EXTRACSS__*/', extra)
                .replace('/*__NUBE__*/', nube_js)
                .replace('__CATALOGO__', safe(catalogo))

@@ -1359,6 +1359,7 @@ async function loginNube(code){
   code = String(code || '').trim().toUpperCase();
   if (!code) return false;
   const r = await rpc('fermil_entrar', {p_codigo: code});
+  if (r && r.rol === 'tabulador'){ TAB.cargar(r, code); sess.set('fermil_code', code); recordar.set(code); return 'tab'; }
   if (!r || !MAY[r.mid]) return false;
   aplicarPrecios(Array.isArray(r.precios) ? r.precios : []);
   CFG[r.mid] = (r.cfg && typeof r.cfg === 'object') ? r.cfg : {};
@@ -2322,6 +2323,7 @@ $('#codeForm').addEventListener('submit', async e => {
     catch(err){ $('#cErr').textContent = err.message; $('#cErr').hidden = false; return; }
     finally { if (sb){ sb.disabled = false; sb.textContent = lbl; } }
   } else ok = login($('#cCode').value);
+  if (ok === 'tab'){ $('#dlgCode').close(); TAB.abrir('viaje'); toast('Panel de tabulaciones abierto'); return; }
   if (ok){
     $('#dlgCode').close(); state.cat = 'todas'; applyRole();
     toast(state.role === 'mayorista' ? `Hola, ${MAY[state.mid].corto}. Ya ves precios al mayor.` : `Bienvenido al catálogo de ${MAY[state.mid].corto}`);
@@ -2787,13 +2789,14 @@ else if (s0 && s0.role === 'cliente' && MAY[s0.mid] && cfg(s0.mid).clients.some(
 const h0 = decodeURIComponent(location.hash.slice(1));
 if (CAT[h0]) state.cat = h0;
 $('#tasaTop').textContent = 'Bs ' + fmt2.format(CONFIG.tasaBs);
+/*__TABULADOR__*/
 $('#tbWa').textContent = 'WhatsApp ' + CONFIG.telefono; $('#tbWa').href = waStore();
 $('#fabWa').href = waStore();
 renderType();
 applyRole();
 initCaps();
 renderIG();
-if (NUBE){ const c0 = sess.get('fermil_code', null) || recordar.get(); if (c0) loginNube(c0).then(ok => { if (ok) applyRole(); else { sess.set('fermil_code', null); recordar.set(null); } }).catch(() => {}); }
+if (NUBE){ const c0 = sess.get('fermil_code', null) || recordar.get(); if (c0) loginNube(c0).then(ok => { if (ok === 'tab') return; if (ok) applyRole(); else { sess.set('fermil_code', null); recordar.set(null); } }).catch(() => {}); }
 if (location.hash === '#admin'){ renderAdmin(); if (!dlgAdmin.open) dlgAdmin.showModal(); }
 window.addEventListener('hashchange', () => { if (location.hash === '#admin'){ renderAdmin(); if (!dlgAdmin.open) dlgAdmin.showModal(); } });
 })();
