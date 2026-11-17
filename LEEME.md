@@ -62,6 +62,7 @@ Un código aparte (`ADMIN-XXXX-XXXX`, tabla `tabulador_admins` en Supabase) abre
 - **Tabulador**: venta mínima por pueblo para camión pequeño, mediano y gandola.
 - **Lugares y km**: para un pueblo nuevo se pegan sus coordenadas de Google Maps y los km por carretera hasta todos los
   demás se miden solos (OpenStreetMap/OSRM). Después: **Guardar cambios**.
+- **Pesos**: productos que no tienen peso en PLADE; se les pone un peso manual o se descarga la lista para cargarla en PLADE.
 - **Costos y flota**: gasoil, viáticos, hotel, topes, peajes, camiones y choferes. La tasa BCV es la del día de PLADE.
 - Los cálculos son los mismos del Excel `SISTEMA_ERP_FERMIL_TABULACIONES_ADMINISTRATIVO`.
 - El robot baja el peso de cada producto poco a poco (25 minutos por corrida) y lo guarda en `pesos_plade.json`.

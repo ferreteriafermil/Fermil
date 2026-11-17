@@ -200,11 +200,11 @@ const TAB = (() => {
   const ESTADO = {ok: ['✅ VIAJE APROBADO', 'ok'], exceso: ['❌ RECHAZADO: la carga pasa la capacidad del camión', 'no'], vacio: ['❌ RECHAZADO: el camión va muy vacío', 'no'], flete: ['❌ RECHAZADO: el flete es muy alto para esta venta', 'no']};
 
   function pintar(){
-    const tabs = [['viaje', '🧮 Calcular viaje'], ['tabulador', '📊 Tabulador'], ['lugares', '🗺️ Lugares y km'], ['ajustes', '⚙️ Costos y flota']];
+    const tabs = [['viaje', '🧮 Calcular viaje'], ['tabulador', '📊 Tabulador'], ['lugares', '🗺️ Lugares y km'], ['pesos', '⚖️ Pesos'], ['ajustes', '⚙️ Costos y flota']];
     dlg.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Panel administrativo · ${esc(NOMBRE)}</span><h2 id="tabTitle">Tabulaciones</h2></div>
       <div class="pn-nav">${dirty ? '<button type="button" class="btn accent" data-t="guardar">Guardar cambios</button>' : ''}<button type="button" class="btn pn-back" data-t="salir">Salir</button><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
       <div class="seg pn-tabs tab-tabs" role="tablist">${tabs.map(([k, t]) => `<button type="button" role="tab" data-t="vista" data-v="${k}" aria-pressed="${vista === k}">${t}</button>`).join('')}</div>
-      <div class="pn-body">${dirty ? '<p class="tab-aviso">Tienes cambios sin guardar. Toca <b>Guardar cambios</b> para que queden para todos.</p>' : ''}${({viaje: pViaje, tabulador: pTabulador, lugares: pLugares, ajustes: pAjustes}[vista])()}</div>`;
+      <div class="pn-body">${dirty ? '<p class="tab-aviso">Tienes cambios sin guardar. Toca <b>Guardar cambios</b> para que queden para todos.</p>' : ''}${({viaje: pViaje, tabulador: pTabulador, lugares: pLugares, pesos: pPesos, ajustes: pAjustes}[vista])()}</div>`;
   }
 
   function pViaje(){
@@ -328,6 +328,39 @@ const TAB = (() => {
       <p class="tab-muted">Km por carretera de OpenStreetMap (OSRM). Pueden variar unos km con lo que diga Google Maps.</p></section>`;
   }
 
+  /* Productos sin peso: PLADE no tiene el peso de muchos productos. Aquí se ven, se filtran,
+     se les pone un peso manual (queda guardado para todos) o se descarga la lista para cargarla en PLADE. */
+  let filtroPeso = '', catPeso = '';
+  function sinPeso(){
+    return PRODUCTS.filter(p => { const x = PREC.get(p.ref); return !(x && n(x.peso) > 0) && !n((D.pesos_manual || {})[p.ref]); });
+  }
+  function pPesos(){
+    const todos = sinPeso(), f = norm(filtroPeso);
+    const cats = [...new Set(todos.map(p => p.cat))].map(c => [c, (CAT[c] || {}).nombre || c]);
+    const lista = todos.filter(p => (!catPeso || p.cat === catPeso) && (!f || p._name.includes(f) || p._ref.includes(f)));
+    const conStock = p => { const x = PREC.get(p.ref); return x ? n(x.stock) : 0; };
+    lista.sort((a, b) => conStock(b) - conStock(a));
+    return `<section class="pn-card"><h3>Productos sin peso (${fmt0.format(todos.length)} de ${fmt0.format(PRODUCTS.length)})</h3>
+      <p>El peso sale de la ficha del producto en PLADE. Estos no lo tienen: el panel no puede calcular el peso del viaje con ellos. Lo mejor es cargarlo en PLADE (el robot lo trae solo en la próxima corrida); mientras tanto puedes escribirlo aquí y queda guardado para todos.</p>
+      <div class="tab-grid3"><label>Categoría<select data-f="catpeso"><option value="">Todas</option>${cats.map(([c, nm]) => `<option value="${esc(c)}"${c === catPeso ? ' selected' : ''}>${esc(nm)}</option>`).join('')}</select></label>
+      <label>Buscar<input data-f="filtropeso" value="${esc(filtroPeso)}" placeholder="Código o nombre"></label>
+      <div class="tab-acts"><button type="button" class="btn ghost" data-t="csvpeso">⬇️ Descargar lista (Excel/CSV)</button></div></div>
+      <div class="tab-scroll"><table class="tab-tbl"><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Existencia mayorista</th><th>Peso kg (manual)</th></tr></thead><tbody>
+      ${lista.slice(0, 150).map(p => `<tr><td class="tab-cod">${esc(p.ref)}</td><td>${esc(p.nombre)}</td><td>${esc((CAT[p.cat] || {}).nombre || '')}</td><td class="num">${fmt0.format(conStock(p))}</td>
+        <td><input type="number" min="0" step="any" placeholder="kg" data-f="pesoman" data-cod="${esc(p.ref)}"></td></tr>`).join('')}
+      </tbody></table></div><p class="tab-muted">${lista.length > 150 ? `Se muestran 150 de ${fmt0.format(lista.length)} (primero los que tienen más existencia). Usa el buscador o descarga la lista completa.` : ''} Después de escribir pesos, toca <b>Guardar cambios</b>.</p></section>`;
+  }
+  function descargarSinPeso(){
+    const filas = [['Codigo', 'Producto', 'Categoria', 'Existencia mayorista', 'Peso kg (llenar en PLADE)']]
+      .concat(sinPeso().map(p => [p.ref, p.nombre, (CAT[p.cat] || {}).nombre || '', String((PREC.get(p.ref) || {}).stock ?? ''), '']));
+    const csv = '\ufeff' + filas.map(f => f.map(x => `"${String(x).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
+    a.download = 'productos-sin-peso-fermil.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
   function campo(path, val, tipo){
     if (tipo === 'tam') return `<select data-p="${path}" data-tipo="txt">${opt(TAMANOS, val, null)}</select>`;
     if (tipo === 'tipo') return `<select data-p="${path}" data-tipo="txt">${opt(['Camion', 'Gandola'], val, null)}</select>`;
@@ -401,6 +434,7 @@ const TAB = (() => {
     else if (t === 'sugerir'){ sugerir = !sugerir; pintar(); }
     else if (t === 'imprimir') imprimirViaje();
     else if (t === 'imprimirtab') imprimirTab();
+    else if (t === 'csvpeso') descargarSinPeso();
     else if (t === 'borrar'){ if (confirmar('¿Borrar este renglón?')){ D[b.dataset.l].splice(i, 1); dirty = true; pintar(); } }
     else if (t === 'nuevo'){
       if (b.dataset.l === 'flota') D.flota.push({modelo: 'NUEVO', desc: '', tamano: 'MEDIANO', tipo: 'Camion', capacidad: 8000, ejes: 2, cat_peaje: '2 ejes', n_cauchos: 6, precio_caucho: 310, vida_cauchos: 50000, precio_paila: 115.45, litros_paila: 19, litros_motor: 15, rend: 4.5, mant: 0.15, factor: 1.5});
@@ -428,12 +462,14 @@ const TAB = (() => {
     else if (f === 'parada') V.paradas[i].lugar = el.value;
     else if (f === 'venta' || f === 'peso') V.paradas[i][f] = el.value;
     else if (f === 'cant') V.paradas[i].items[Number(el.dataset.k)].cant = el.value;
-    else if (f === 'pesoman'){ D.pesos_manual[el.dataset.cod] = n(el.value); dirty = true; }
+    else if (f === 'pesoman'){ if (n(el.value) > 0) D.pesos_manual[el.dataset.cod] = n(el.value); else delete D.pesos_manual[el.dataset.cod]; dirty = true; }
+    else if (f === 'catpeso') catPeso = el.value;
     else if (f === 'vendtab') vendTab = el.value;
     else if (f === 'filtrotab') filtroTab = el.value;
     guardarViaje(); pintar();
   });
   dlg.addEventListener('input', e => {
+    if (e.target.dataset.f === 'filtropeso'){ filtroPeso = e.target.value; const pos = e.target.selectionStart; pintar(); const q = dlg.querySelector('[data-f="filtropeso"]'); if (q){ q.focus(); q.setSelectionRange(pos, pos); } return; }
     if (e.target.dataset.f === 'filtrotab'){ filtroTab = e.target.value; const pos = e.target.selectionStart; pintar(); const q = dlg.querySelector('[data-f="filtrotab"]'); if (q){ q.focus(); q.setSelectionRange(pos, pos); } }
   });
   dlg.addEventListener('submit', async e => {
