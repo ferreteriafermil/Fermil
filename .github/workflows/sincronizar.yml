@@ -84,12 +84,17 @@ jobs:
         run: |
           git config user.name "Robot Fermil"
           git config user.email "robot-fermil@users.noreply.github.com"
-          for f in fotos fotos_cache.json ids_plade.json pesos_plade.json; do [ -e "$f" ] && git add "$f"; done; true
-          if git diff --cached --quiet; then echo "Sin fotos nuevas"; else
-            git commit -m "Fotos nuevas de PLADE $(date -u +'%Y-%m-%d %H:%M') UTC"
-            # Solo se sube el commit del robot encima de lo último que haya en main
-            for i in 1 2 3; do
-              git fetch origin main && git rebase --onto origin/main HEAD~1 && git push origin HEAD:main && break
-              git rebase --abort 2>/dev/null; sleep 5
-            done
-          fi
+          # Se guarda lo de esta corrida aparte, se baja lo último de main y se juntan las memorias
+          # (así una corrida que arrancó antes de la anterior nunca choca ni pierde trabajo)
+          mkdir -p /tmp/robot
+          for f in fotos fotos_cache.json ids_plade.json pesos_plade.json; do [ -e "$f" ] && cp -r "$f" /tmp/robot/; done; true
+          for i in 1 2 3; do
+            git fetch -q origin main && git checkout -q -f origin/main || { sleep 5; continue; }
+            [ -d /tmp/robot/fotos ] && mkdir -p fotos && cp -rn /tmp/robot/fotos/. fotos/
+            python robot/unir_caches.py /tmp/robot
+            for f in fotos fotos_cache.json ids_plade.json pesos_plade.json; do [ -e "$f" ] && git add "$f"; done; true
+            if git diff --cached --quiet; then echo "Sin fotos ni pesos nuevos"; break; fi
+            git commit -q -m "Fotos y pesos de PLADE $(date -u +'%Y-%m-%d %H:%M') UTC"
+            git push origin HEAD:main && break
+            sleep 5
+          done
