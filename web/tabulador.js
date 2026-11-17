@@ -258,8 +258,8 @@ const TAB = (() => {
         <div class="tab-acts"><button type="button" class="btn accent" data-t="imprimir">🖨️ Imprimir / PDF (blanco y negro)</button><button type="button" class="btn ghost" data-t="sugerir">${sugerir ? 'Ocultar comparación' : '🚛 Comparar todos los camiones'}</button></div>
         ${sugerir ? pSugerencia(ps) : ''}
       </div>` : '<p class="tab-muted">Escoge un vehículo y al menos una parada para ver el cálculo.</p>';
-    return `<datalist id="tabCodigos">${codigosLista()}</datalist>
-      <section class="pn-card"><h3>1. Vendedor, vehículo y chofer</h3>
+    codigosLista();
+    return `<section class="pn-card"><h3>1. Vendedor, vehículo y chofer</h3>
         <div class="tab-grid3">
           <label>Vendedor<select data-f="vendedor">${opt(D.vendedores, V.vendedor, 'Todos')}</select></label>
           <label>Vehículo<select data-f="vehiculo">${opt(vehs, V.vehiculo, 'Escoge…')}</select></label>
@@ -272,11 +272,13 @@ const TAB = (() => {
       </section>
       <section class="pn-card"><h3>3. Resultado</h3>${det}</section>`;
   }
-  let _codigos = '';
+  /* La lista de códigos (miles de productos) se arma una sola vez fuera del panel, para no redibujarla en cada cambio */
   function codigosLista(){
-    if (_codigos) return _codigos;
-    _codigos = PRODUCTS.map(p => `<option value="${esc(p.ref)}">${esc(p.nombre)}</option>`).join('');
-    return _codigos;
+    if (document.getElementById('tabCodigos')) return;
+    const dl = document.createElement('datalist');
+    dl.id = 'tabCodigos';
+    dl.innerHTML = PRODUCTS.map(p => `<option value="${esc(p.ref)}">${esc(p.nombre)}</option>`).join('');
+    document.body.appendChild(dl);
   }
   function pSugerencia(ps){
     const filas = D.flota.map(v => calcular(ps, v.modelo, '')).filter(Boolean);
