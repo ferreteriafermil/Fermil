@@ -267,6 +267,9 @@ def diagnostico_fotos():
                     j = rr.json()
                     prod = j.get('producto') or {}
                     aviso('notice', f'Foto de {cod}: claves {sorted(j)[:15]} · producto {sorted(prod)[:25]} · img_inv: {"sí" if prod.get("img_inv") else "no"}')
+                    aviso('notice', f'Todas las claves de producto: {sorted(prod)}')
+                    medidas = {k: prod.get(k) for k in prod if any(x in k.lower() for x in ('peso', 'kg', 'alto', 'ancho', 'largo', 'volumen', 'unidad', 'presentacion', 'empaque'))}
+                    aviso('notice', f'Peso y medidas de {cod}: {medidas}')
                 except ValueError:
                     aviso('warning', f'Foto de {cod}: no llegó JSON · {pistas(rr)} · {tapar(rr.text[:200])}')
             except requests.RequestException as e:
