@@ -87,6 +87,9 @@ jobs:
           for f in fotos fotos_cache.json ids_plade.json pesos_plade.json; do [ -e "$f" ] && git add "$f"; done; true
           if git diff --cached --quiet; then echo "Sin fotos nuevas"; else
             git commit -m "Fotos nuevas de PLADE $(date -u +'%Y-%m-%d %H:%M') UTC"
-            git pull --rebase --autostash || true
-            git push
+            # Solo se sube el commit del robot encima de lo último que haya en main
+            for i in 1 2 3; do
+              git fetch origin main && git rebase --onto origin/main HEAD~1 && git push origin HEAD:main && break
+              git rebase --abort 2>/dev/null; sleep 5
+            done
           fi
