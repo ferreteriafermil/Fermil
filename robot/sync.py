@@ -302,7 +302,9 @@ def actualizar_pesos(s, productos):
     ids = (json.loads(CACHE_IDS.read_text()) if CACHE_IDS.exists() else {}).get('ids', {})
     hoy = time.strftime('%Y-%m-%d', time.gmtime())
     limite_viejo = time.strftime('%Y-%m-%d', time.gmtime(time.time() - PESOS_DIAS * 86400))
-    pendientes = [p['c'] for p in productos if p['c'] in ids and (p['c'] not in pesos or pesos[p['c']][1] < limite_viejo)]
+    limite_cero = time.strftime('%Y-%m-%d', time.gmtime(time.time() - 3 * 86400))  # sin peso: se revisa cada 3 días por si ya lo cargaron
+    pendientes = [p['c'] for p in productos if p['c'] in ids and (
+        p['c'] not in pesos or pesos[p['c']][1] < (limite_viejo if pesos[p['c']][0] > 0 else limite_cero))]
     pendientes.sort(key=lambda c: (c in pesos, pesos.get(c, [0, ''])[1]))  # primero los que nunca se han revisado
     limite = time.time() + PESOS_MINUTOS * 60
     hechos = errores = 0
