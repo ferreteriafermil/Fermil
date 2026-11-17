@@ -65,4 +65,4 @@ Un código aparte (`ADMIN-XXXX-XXXX`, tabla `tabulador_admins` en Supabase) abre
 - **Costos y flota**: gasoil, viáticos, hotel, topes, peajes, camiones y choferes. La tasa BCV es la del día de PLADE.
 - Los cálculos son los mismos del Excel `SISTEMA_ERP_FERMIL_TABULACIONES_ADMINISTRATIVO`.
 - El robot baja el peso de cada producto poco a poco (25 minutos por corrida) y lo guarda en `pesos_plade.json`.
-- Para activarlo hay que correr una vez `supabase-actualizacion-2.sql` (al final muestra el código de administración).
+- Para activarlo hay que correr una vez el archivo privado `supabase-actualizacion-2-CON-DATOS.sql` (lo tiene la administración; trae costos y nómina, por eso no está aquí). Al final muestra el código de administración.
