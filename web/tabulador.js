@@ -224,7 +224,7 @@ const TAB = (() => {
           <button type="button" class="btn link" data-t="quitar" data-i="${i}">Quitar</button></div>
         <div class="tab-items">
           ${items.map((it, k) => { const q = precioDe(it.cod); return `<div class="tab-item">
-            <span class="tab-cod">${esc(it.cod)}</span><span class="tab-nom">${q.existe ? esc(q.nombre) : '<em>Código no encontrado</em>'}${q.stock != null ? ` <small>· existencia ${fmt0.format(q.stock)}</small>` : ''}</span>
+            <span class="tab-cod">${esc(it.cod)}</span><span class="tab-nom">${q.existe ? esc(q.nombre) : '<em>Código no encontrado</em>'}${q.stock != null ? ` <small>· existencia ${fmt0.format(q.stock)}</small>` : ''}${q.stock != null && n(it.cant) > q.stock ? ` <small class="tab-falta">⚠️ pides más de lo que hay</small>` : ''}</span>
             <label>Cant. <input type="number" min="0" step="any" value="${esc(it.cant)}" data-f="cant" data-i="${i}" data-k="${k}"></label>
             <span>${usd(q.mayor)} c/u</span>
             ${q.peso ? `<span>${fmt0.format(q.peso)} kg c/u <small>(${q.pesoOrigen})</small></span>` : `<label class="tab-falta">Peso kg c/u <input type="number" min="0" step="any" placeholder="falta" data-f="pesoman" data-cod="${esc(it.cod)}"></label>`}
