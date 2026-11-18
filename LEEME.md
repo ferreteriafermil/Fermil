@@ -72,6 +72,8 @@ Un código aparte (`ADMIN-XXXX-XXXX`, tabla `tabulador_admins` en Supabase) abre
 Con su propio código, cada mayorista tiene el botón **🚚 Calcular viaje** (arriba, junto a "Mi panel").
 Solo ve los pueblos de su ruta; agrega productos por código (precio al mayor de hoy) y el sistema recomienda
 el camión (lo puede cambiar). El cálculo corre en Supabase (`fermil_viaje_vendedor`), así que nunca recibe
-costos, km ni fletes: solo si el viaje sale y qué le falta (venta, carga) o cuánto se pasa de peso.
+costos, km, nómina, hospedaje ni fletes. Sí ve, para su ruta y paradas, la **meta de cada camión**: venta
+mínima, carga mínima y carga máxima, cuánto le falta o cuánto se pasa, y en qué camión sí podría salir
+si llega a cierta venta y carga. Toca cualquier camión de la lista para usarlo.
 Los productos se pueden pasar a su presupuesto con un toque. Se activa corriendo `supabase-actualizacion-3.sql`.
 La ruta de cada mayorista se cambia en el panel de tabulaciones → Costos y flota → Vendedores mayoristas.

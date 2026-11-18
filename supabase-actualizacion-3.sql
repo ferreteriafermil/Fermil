@@ -4,8 +4,8 @@
 --  Qué agrega: la CALCULADORA DE VIAJES PARA LOS MAYORISTAS.
 --  Cada mayorista (Leo, Nohel, Manuel) arma su viaje solo con los pueblos de SU ruta y con
 --  los productos por código. El cálculo se hace aquí, en la base de datos, para que nunca
---  vean costos, nómina, km ni fletes: solo si el viaje se aprueba y qué le falta
---  (venta o carga) o cuánto se pasa de peso. Usa los mismos datos del panel de tabulaciones.
+--  vean costos, nómina, hospedaje, km ni fletes. Sí ven, por cada camión, la META de esa
+--  ruta: venta mínima, carga mínima y carga máxima, y qué les falta o cuánto se pasan. Usa los mismos datos del panel de tabulaciones.
 --
 --  Cómo correrlo: Supabase → SQL Editor → New query → pega todo esto → Run.
 --  Se puede correr más de una vez. No cambia nada de lo que ya existe.
@@ -130,12 +130,18 @@ begin
     ocup := peso / nullif((v->>'capacidad')::numeric, 0);
     estado := case when ocup > 1 then 'exceso' when ocup < (p->>'ocupacion_min')::numeric then 'vacio' when venta < vmin then 'flete' else 'ok' end;
     evals := evals || jsonb_build_object('modelo', v->>'modelo', 'tamano', v->>'tamano', 'capacidad', (v->>'capacidad')::numeric,
-                                         'total', total, 'vmin', vmin, 'ocup', ocup, 'estado', estado);
+                                         'total', total, 'vmin', vmin, 'ocup', ocup, 'estado', estado,
+                                         'kg_min', ceil((p->>'ocupacion_min')::numeric * (v->>'capacidad')::numeric),
+                                         'venta_min', ceil(vmin),
+                                         'falta_venta', greatest(0, ceil(vmin - venta)),
+                                         'falta_kg', greatest(0, ceil((p->>'ocupacion_min')::numeric * (v->>'capacidad')::numeric - peso)),
+                                         'exceso_kg', greatest(0, ceil(peso - (v->>'capacidad')::numeric)));
   end loop;
 
-  -- Recomendado: el aprobado más barato; si ninguno aprueba, el más barato donde cabe la carga; si no cabe en ninguno, el más grande
+  -- Recomendado: el aprobado más barato; si ninguno aprueba, el más barato donde la carga queda bien (solo falta venta);
+  -- luego el más barato donde cabe; si no cabe en ninguno, el más grande
   select e->>'modelo' into recomendado from jsonb_array_elements(evals) e
-   order by (e->>'estado' = 'ok') desc, ((e->>'ocup')::numeric <= 1) desc,
+   order by (e->>'estado' = 'ok') desc, (e->>'estado' = 'flete') desc, ((e->>'ocup')::numeric <= 1) desc,
             case when (e->>'ocup')::numeric <= 1 then (e->>'total')::numeric else -(e->>'capacidad')::numeric end
    limit 1;
   select e into elegido from jsonb_array_elements(evals) e where e->>'modelo' = coalesce(p_vehiculo, recomendado);
@@ -145,10 +151,11 @@ begin
     'vendedor', vend, 'lugares', mis, 'paradas', paradas, 'venta', round(venta, 2), 'peso', round(peso, 2), 'sin_peso', sin_peso,
     'recomendado', recomendado, 'vehiculo', elegido->>'modelo', 'tamano', elegido->>'tamano', 'capacidad', (elegido->>'capacidad')::numeric,
     'ocupacion', round((elegido->>'ocup')::numeric, 4), 'estado', elegido->>'estado', 'ocupacion_min', (p->>'ocupacion_min')::numeric,
-    'falta_venta', case when elegido->>'estado' = 'flete' then ceil((elegido->>'vmin')::numeric - venta) else 0 end,
-    'falta_kg', round(greatest(0, (p->>'ocupacion_min')::numeric * (elegido->>'capacidad')::numeric - peso)),
-    'exceso_kg', round(greatest(0, peso - (elegido->>'capacidad')::numeric)),
-    'vehiculos', (select jsonb_agg(jsonb_build_object('modelo', e->>'modelo', 'tamano', e->>'tamano', 'capacidad', (e->>'capacidad')::numeric, 'estado', e->>'estado')) from jsonb_array_elements(evals) e));
+    'venta_min', (elegido->>'venta_min')::numeric, 'kg_min', (elegido->>'kg_min')::numeric,
+    'falta_venta', (elegido->>'falta_venta')::numeric, 'falta_kg', (elegido->>'falta_kg')::numeric, 'exceso_kg', (elegido->>'exceso_kg')::numeric,
+    -- Todos los camiones con su meta (venta mínima y carga mínima/máxima) para esta ruta. Sin costos.
+    'vehiculos', (select jsonb_agg(e - 'total' - 'vmin' - 'ocup' || jsonb_build_object('ocupacion', round((e->>'ocup')::numeric, 4))
+                                   order by (e->>'capacidad')::numeric, (e->>'venta_min')::numeric) from jsonb_array_elements(evals) e));
 end $$;
 
 revoke all on function public.fermil_viaje_vendedor(text, jsonb, text, numeric) from public;

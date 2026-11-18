@@ -512,7 +512,8 @@ const TAB = (() => {
 
 /* ===================== Calculadora de viajes del mayorista =====================
    Solo con los pueblos de SU ruta. El cálculo se hace en Supabase (fermil_viaje_vendedor):
-   el mayorista nunca recibe costos, km ni fletes; solo si el viaje se aprueba y qué le falta. */
+   el mayorista nunca recibe costos, km, nómina ni hospedaje; sí la meta de cada camión
+   (venta mínima, carga mínima y máxima) y qué le falta. */
 const VEND = (() => {
   let V = sess.get('fermil_vend_viaje', null) || {vehiculo: '', paradas: [{lugar: '', items: [], venta: '', peso: ''}]};
   let INFO = null, R = null, cargando = false, pendiente = null;
@@ -554,12 +555,53 @@ const VEND = (() => {
     if (!dlg.open) dlg.showModal();
     await calcular();
   }
-  const MSG = {
-    ok: r => `✅ ¡Viaje aprobado! Va en ${esc(r.vehiculo)} (camión ${esc((r.tamano || '').toLowerCase())}).`,
-    exceso: r => `❌ Te pasas por <b>${kg(r.exceso_kg)}</b>: el ${esc(r.vehiculo)} carga ${kg(r.capacidad)}. Escoge un camión más grande o quita carga.`,
-    vacio: r => `❌ Te faltan <b>${kg(r.falta_kg)}</b> de carga para llenar el camión (mínimo ${fmt0.format(Math.round(n(r.ocupacion_min) * 100))} %).`,
-    flete: r => `❌ Te faltan <b>${usd(r.falta_venta)}</b> de venta para que el viaje se pueda despachar.`,
-  };
+  // Qué le falta en un camión, en palabras (sin costos)
+  function queFalta(v){
+    if (v.estado === 'ok') return '✅ Sale';
+    if (v.estado === 'exceso') return `❌ No cabe: te pasas ${kg(v.exceso_kg)}`;
+    const f = [];
+    if (n(v.falta_venta) > 0) f.push(`${usd(v.falta_venta)} de venta`);
+    if (n(v.falta_kg) > 0) f.push(`${kg(v.falta_kg)} de carga`);
+    return '⚠️ Faltan ' + f.join(' y ');
+  }
+  function barra(actual, meta, max){
+    const tope = max || meta || 1, pct = Math.max(0, Math.min(100, actual / tope * 100)), m = max && meta ? meta / max * 100 : null;
+    const cls = max && actual > max ? 'mal' : actual >= meta ? 'bien' : 'falta';
+    return `<div class="vd-barra ${cls}"><i style="width:${pct.toFixed(1)}%"></i>${m != null ? `<em style="left:${m.toFixed(1)}%"></em>` : ''}</div>`;
+  }
+  function meta(r){
+    const vOk = n(r.falta_venta) <= 0, kOk = n(r.falta_kg) <= 0 && n(r.exceso_kg) <= 0;
+    return `<div class="vd-meta">
+      <h4>🎯 Meta para salir en el <b>${esc(r.vehiculo)}</b> <small>(${esc((r.tamano || '').toLowerCase())}, carga hasta ${kg(r.capacidad)})</small></h4>
+      <div class="vd-fila"><div class="vd-lbl"><span>💵 Venta</span><b>${usd(r.venta)}</b><small>de ${usd(r.venta_min)} mínimo</small></div>
+        ${barra(n(r.venta), n(r.venta_min))}
+        <p class="${vOk ? 'si' : 'no'}">${vOk ? `✔ Venta cumplida${n(r.venta) > n(r.venta_min) ? ` (te sobran ${usd(Math.floor(n(r.venta) - n(r.venta_min)))})` : ''}` : `Te faltan <b>${usd(r.falta_venta)}</b> de venta`}</p></div>
+      <div class="vd-fila"><div class="vd-lbl"><span>📦 Carga</span><b>${kg(r.peso)}</b><small>entre ${kg(r.kg_min)} y ${kg(r.capacidad)}</small></div>
+        ${barra(n(r.peso), n(r.kg_min), n(r.capacidad))}
+        <p class="${kOk ? 'si' : 'no'}">${n(r.exceso_kg) > 0 ? `Te pasas por <b>${kg(r.exceso_kg)}</b>: no cabe` : n(r.falta_kg) > 0 ? `Te faltan <b>${kg(r.falta_kg)}</b> para llenar el camión` : `✔ Carga bien (te quedan ${kg(n(r.capacidad) - n(r.peso))} libres)`}</p></div>
+    </div>`;
+  }
+  function consejo(r){
+    const vs = r.vehiculos || [];
+    if (r.estado === 'ok'){
+      const mas = vs.filter(v => v.estado === 'ok' && v.modelo !== r.vehiculo).map(v => v.modelo);
+      return mas.length ? `<p class="tab-muted">También sale en: ${mas.map(esc).join(', ')}.</p>` : '';
+    }
+    const rec = vs.find(v => v.modelo === r.recomendado);
+    if (rec && rec.modelo !== r.vehiculo){
+      return `<p class="vd-tip"><span>💡 <b>No sale en el ${esc(r.vehiculo)}, pero sí puede salir en el ${esc(rec.modelo)}</b> si llegas a <b>${usd(rec.venta_min)}</b> de venta con una carga entre <b>${kg(rec.kg_min)}</b> y <b>${kg(rec.capacidad)}</b>. ${rec.estado === 'ok' ? '¡Y con lo que llevas ya sale!' : 'Ahí te faltarían ' + queFalta(rec).replace('⚠️ Faltan ', '') + '.'}</span>
+        <button type="button" class="btn ghost" data-vt="usar" data-m="${esc(rec.modelo)}">Usar ${esc(rec.modelo)}</button></p>`;
+    }
+    return '';  // el elegido ya es el recomendado: la meta de arriba dice exactamente qué le falta
+  }
+  function tablaCamiones(r){
+    return `<details class="vd-camiones" open><summary>🚛 Todos los camiones para esta ruta (toca uno para usarlo)</summary>
+      <div class="vd-lista">${(r.vehiculos || []).map(v => `<button type="button" class="vd-cam ${v.estado}${v.modelo === r.vehiculo ? ' sel' : ''}" data-vt="usar" data-m="${esc(v.modelo)}">
+        <span class="vd-cn"><b>${esc(v.modelo)}</b>${v.modelo === r.recomendado ? ' <small class="vd-rec">recomendado</small>' : ''}<small>${esc((v.tamano || '').toLowerCase())}</small></span>
+        <span><small>Venta mínima</small><b>${usd(v.venta_min)}</b></span>
+        <span><small>Carga</small><b>${fmt0.format(v.kg_min)} – ${kg(v.capacidad)}</b></span>
+        <span class="vd-est">${queFalta(v)}</span></button>`).join('')}</div></details>`;
+  }
   function pintar(){
     if (!INFO) return;
     const lugares = INFO.lugares || [];
@@ -579,13 +621,16 @@ const VEND = (() => {
           : `<label>Venta $ <input type="number" min="0" step="any" value="${esc(pa.venta)}" data-v="venta" data-i="${i}"></label><label>Peso kg <input type="number" min="0" step="any" value="${esc(pa.peso)}" data-v="peso" data-i="${i}"></label><span class="tab-muted">o agrega los productos por código</span>`}</div></div>`;
     }).join('');
     const vehs = INFO.vehiculos || [];
-    const ICON = {ok: '✅', exceso: '❌ no cabe', vacio: '⚠️ muy vacío', flete: '⚠️ falta venta'};
+    const ICON = {ok: '✅ sale', exceso: '❌ no cabe', vacio: '⚠️ falta carga', flete: '⚠️ falta venta'};
+    const vacioTodo = R && !n(R.venta) && !n(R.peso);
     const res = R ? `<div class="tab-res">
-        <div class="tab-kpis"><div><span>Venta del viaje</span><b>${usd(R.venta)}</b></div><div><span>Peso de la carga</span><b>${kg(R.peso)}</b></div>
-          <div><span>Camión</span><b>${esc(R.vehiculo)}</b><small>${esc(R.tamano || '')} · carga ${kg(R.capacidad)}</small></div><div><span>Ocupación</span><b>${fmt0.format(Math.round(n(R.ocupacion) * 100))} %</b></div></div>
-        <p class="tab-estado ${R.estado === 'ok' ? 'ok' : 'no'}">${MSG[R.estado](R)}</p>
+        <div class="tab-kpis"><div><span>Venta del viaje</span><b>${usd(R.venta)}</b></div><div><span>Peso de la carga</span><b>${kg(R.peso)}</b></div></div>
+        ${vacioTodo ? `<p class="vd-tip"><span>📋 Ya tienes la ruta. Abajo ves cuánto hay que vender y cargar en cada camión para que salga. Agrega los productos y te digo cómo vas.</span></p>`
+          : `<p class="tab-estado ${R.estado === 'ok' ? 'ok' : 'no'}">${R.estado === 'ok' ? `✅ ¡Viaje aprobado en el ${esc(R.vehiculo)}!` : (R.estado === 'exceso' ? `❌ No cabe en el ${esc(R.vehiculo)}: te pasas ${kg(R.exceso_kg)}` : `❌ Todavía no sale en el ${esc(R.vehiculo)}: ${queFalta(R).replace(/^\S+ /, '').toLowerCase()}`)}</p>`}
+        ${meta(R)}
+        ${vacioTodo ? '' : consejo(R)}
         ${R.sin_peso ? `<p class="tab-falta">${R.sin_peso} producto(s) no tienen peso en el sistema, así que la carga real puede ser mayor. Avísale a administración.</p>` : ''}
-        ${R.recomendado && R.recomendado !== R.vehiculo ? `<p class="tab-muted">💡 El camión recomendado para este viaje es el <b>${esc(R.recomendado)}</b>.</p>` : ''}
+        ${tablaCamiones(R)}
         <div class="tab-acts"><button type="button" class="btn accent" data-vt="presupuesto">🧾 Llevar los productos a mi presupuesto</button></div></div>`
       : '<p class="tab-muted">Escoge al menos un pueblo y agrega la venta (o los productos) para saber si el viaje sale.</p>';
     dlg.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Ruta de ${esc(INFO.vendedor || '')}</span><h2 id="vTitle">Calcular mi viaje</h2></div><div class="pn-nav"><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
@@ -593,7 +638,7 @@ const VEND = (() => {
         <section class="pn-card"><h3>1. Tus paradas en orden</h3><p class="tab-muted">Solo aparecen los pueblos de tu ruta. Precios al mayor de hoy.</p>${paradas}
           <div class="tab-acts"><button type="button" class="btn ghost" data-vt="parada">+ Agregar parada</button><button type="button" class="btn link" data-vt="limpiar">Empezar de nuevo</button></div></section>
         <section class="pn-card"><h3>2. Camión</h3><label class="tab-grid3"><span>El sistema recomienda uno; puedes cambiarlo</span>
-          <select data-v="vehiculo"><option value="">Automático (recomendado${R && R.recomendado ? ': ' + esc(R.recomendado) : ''})</option>${vehs.map(v => `<option value="${esc(v.modelo)}"${v.modelo === V.vehiculo ? ' selected' : ''}>${esc(v.modelo)} · ${esc(v.tamano)} · ${kg(v.capacidad)}${v.estado ? ' · ' + ICON[v.estado] : ''}</option>`).join('')}</select></label></section>
+          <select data-v="vehiculo"><option value="">Automático (recomendado${R && R.recomendado ? ': ' + esc(R.recomendado) : ''})</option>${vehs.map(v => `<option value="${esc(v.modelo)}"${v.modelo === V.vehiculo ? ' selected' : ''}>${esc(v.modelo)} · ${esc(v.tamano)} · ${kg(v.capacidad)}${v.venta_min != null ? ' · mín ' + usd(v.venta_min) : ''}${v.estado ? ' · ' + ICON[v.estado] : ''}</option>`).join('')}</select></label></section>
         <section class="pn-card"><h3>3. ¿Sale el viaje?</h3>${res}</section>
       </div>`;
   }
@@ -612,6 +657,7 @@ const VEND = (() => {
     if (t === 'parada') V.paradas.push({lugar: '', items: [], venta: '', peso: ''});
     else if (t === 'quitar'){ V.paradas.splice(i, 1); if (!V.paradas.length) V.paradas.push({lugar: '', items: [], venta: '', peso: ''}); }
     else if (t === 'qitem') V.paradas[i].items.splice(Number(b.dataset.k), 1);
+    else if (t === 'usar'){ V.vehiculo = b.dataset.m; }
     else if (t === 'limpiar'){ V = {vehiculo: '', paradas: [{lugar: '', items: [], venta: '', peso: ''}]}; R = null; }
     else if (t === 'presupuesto'){
       let k = 0;

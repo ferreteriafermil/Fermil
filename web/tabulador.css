@@ -72,3 +72,26 @@ dialog.tab-panel{max-width:min(1180px,calc(100vw - 24px))}
   #tabPrint .tp-firmas{margin-top:28pt}
   #tabPrint p{margin:4pt 0;font-size:9.5pt}
 }
+
+/* Calculadora del mayorista: metas por camión */
+.vd-meta{border:2px solid var(--band);border-radius:12px;padding:12px;display:grid;gap:12px;background:var(--surface)}
+.vd-meta h4{margin:0;font-size:1rem}.vd-meta h4 small{font-weight:500;color:var(--muted)}
+.vd-fila{display:grid;gap:6px}
+.vd-lbl{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}.vd-lbl span{font-weight:700}.vd-lbl b{font-size:1.2rem;font-family:var(--f-display)}.vd-lbl small{color:var(--muted)}
+.vd-fila p{margin:0;font-weight:700;font-size:.92rem}.vd-fila p.si{color:#166534}.vd-fila p.no{color:#b45309}
+.vd-barra{position:relative;height:12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:visible}
+.vd-barra i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:#f59e0b}
+.vd-barra.bien i{background:#16a34a}.vd-barra.mal i{background:#dc2626}
+.vd-barra em{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1px;background:var(--ink);border-radius:2px}
+.vd-tip{margin:0;padding:10px 12px;border-radius:10px;background:#fef9c3;color:#713f12;font-size:.92rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vd-tip .btn{margin-left:auto}
+.vd-camiones summary{cursor:pointer;font-weight:800;padding:4px 0}
+.vd-lista{display:grid;gap:6px;margin-top:8px}
+.vd-cam{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:1.3fr 1fr 1.3fr 1.6fr;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.86rem;color:var(--ink)}
+.vd-cam span{display:grid;gap:1px}.vd-cam small{color:var(--muted);font-size:.72rem}
+.vd-cam.ok{border-color:#86efac;background:#f0fdf4}.vd-cam.exceso{opacity:.7}
+.vd-cam.sel{outline:3px solid var(--band);outline-offset:-1px}
+.vd-cam:focus-visible{outline:3px solid #f59e0b}
+.vd-rec{justify-self:start;width:max-content;display:inline-block;background:var(--band);color:var(--band-ink)!important;border-radius:999px;padding:0 6px;font-weight:700}
+.vd-est{font-weight:700}
+@media (max-width:560px){.vd-cam{grid-template-columns:1fr 1fr}.vd-est{grid-column:1/-1}}
