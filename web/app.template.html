@@ -1382,7 +1382,7 @@ function applyRole(){
     $('#rbActs').innerHTML = `<button type="button" class="solid" data-act="backpanel">Volver al panel</button><button type="button" data-act="endpreview">Terminar vista previa</button>`;
   } else if (r === 'mayorista'){
     $('#rbTxt').innerHTML = `Mayorista: ${esc(MAY[state.mid].nombre)} <span>· precios al mayor</span>`;
-    $('#rbActs').innerHTML = `<button type="button" class="solid" data-act="panel">Mi panel</button><button type="button" data-act="logout">Salir</button>`;
+    $('#rbActs').innerHTML = `<button type="button" class="solid" data-act="panel">Mi panel</button><button type="button" data-act="miviaje">🚚 Calcular viaje</button><button type="button" data-act="logout">Salir</button>`;
   } else if (r === 'cliente'){
     $('#rbTxt').innerHTML = `Catálogo de ${esc(MAY[state.mid].nombre)} <span>· cliente: ${esc(state.cname)}</span>`;
     $('#rbActs').innerHTML = `<button type="button" data-act="logout">Salir</button>`;
@@ -2209,6 +2209,7 @@ document.addEventListener('click', e => {
     case 'login': $('#cErr').hidden = true; $('#cCode').value = ''; $('#dlgCode').showModal(); break;
     case 'logout': logout(); break;
     case 'panel': case 'backpanel': openPanel(); break;
+    case 'miviaje': VEND.abrir(); break;
     case 'endpreview': state.preview = false; applyRole(); break;
     case 'preview': state.preview = true; dlgPanel.close(); state.cat = 'todas'; applyRole(); window.scrollTo({top:0, behavior: reduced() ? 'auto' : 'smooth'}); toast('Así ven tu catálogo tus clientes'); break;
     case 'ptab': state.panelTab = el.dataset.tab; renderPanel(); break;

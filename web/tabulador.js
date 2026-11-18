@@ -365,6 +365,7 @@ const TAB = (() => {
     if (tipo === 'tam') return `<select data-p="${path}" data-tipo="txt">${opt(TAMANOS, val, null)}</select>`;
     if (tipo === 'tipo') return `<select data-p="${path}" data-tipo="txt">${opt(['Camion', 'Gandola'], val, null)}</select>`;
     if (tipo === 'chof') return `<select data-p="${path}" data-tipo="txt">${opt(['Liviano', 'Pesado'], val, null)}</select>`;
+    if (tipo === 'vend') return `<select data-p="${path}" data-tipo="txt">${opt(D.vendedores, val, null)}</select>`;
     if (tipo === 'peaje') return `<select data-p="${path}" data-tipo="txt">${opt(Object.keys(D.peajes), val, null)}</select>`;
     if (tipo === 'txt') return `<input value="${esc(val ?? '')}" data-p="${path}" data-tipo="txt">`;
     if (tipo === 'pct') return `<input type="number" step="any" value="${r1(n(val) * 100)}" data-p="${path}" data-tipo="pct">`;
@@ -382,7 +383,8 @@ const TAB = (() => {
       <section class="pn-card"><h3>Choferes</h3><div class="tab-scroll"><table class="tab-tbl tab-edit"><thead><tr>${CHOF_COLS.map(c => `<th>${c[1]}</th>`).join('')}<th>Costo diario</th><th></th></tr></thead><tbody>
       ${D.choferes.map((c, i) => `<tr>${CHOF_COLS.map(([k, , t]) => `<td>${campo(`choferes.${i}.${k}`, c[k], t)}</td>`).join('')}<td class="num">${c.tipo === 'Pesado' ? usd(n(p.diario_pesado)) + ' + viaje' : usd(diarioChofer(c))}</td><td><button type="button" class="btn link" data-t="borrar" data-l="choferes" data-i="${i}">Borrar</button></td></tr>`).join('')}
       </tbody></table></div><div class="tab-acts"><button type="button" class="btn ghost" data-t="nuevo" data-l="choferes">+ Agregar chofer</button></div></section>
-      <section class="pn-card"><h3>Vendedores mayoristas</h3><p class="tab-muted">${D.vendedores.map(esc).join(' · ')}</p></section>`;
+      <section class="pn-card"><h3>Vendedores mayoristas</h3><p class="tab-muted">Cada mayorista ve en su botón <b>Calcular viaje</b> solo los pueblos de su ruta (nunca los costos). Aquí se dice qué ruta es de quién.</p>
+        <div class="tab-grid3">${Object.keys(D.vendedor_de || {}).map(id => `<label>Código de ${esc(id)}${campo('vendedor_de.' + id, D.vendedor_de[id], 'vend')}</label>`).join('') || '<p class="tab-muted">Falta correr la actualización 3 de Supabase.</p>'}</div></section>`;
   }
 
   /* ---------- imprimir en blanco y negro ---------- */
@@ -506,4 +508,131 @@ const TAB = (() => {
   });
 
   return {cargar, abrir, salir, activo: () => !!D, _calc: {calcular, tabulador}};
+})();
+
+/* ===================== Calculadora de viajes del mayorista =====================
+   Solo con los pueblos de SU ruta. El cálculo se hace en Supabase (fermil_viaje_vendedor):
+   el mayorista nunca recibe costos, km ni fletes; solo si el viaje se aprueba y qué le falta. */
+const VEND = (() => {
+  let V = sess.get('fermil_vend_viaje', null) || {vehiculo: '', paradas: [{lugar: '', items: [], venta: '', peso: ''}]};
+  let INFO = null, R = null, cargando = false, pendiente = null;
+  const dlg = document.createElement('dialog');
+  dlg.id = 'dlgViajeV'; dlg.className = 'panel tab-panel tab-vend'; dlg.setAttribute('aria-labelledby', 'vTitle');
+  document.body.appendChild(dlg);
+  const n = v => { const x = Number(String(v ?? '').replace(',', '.')); return isFinite(x) ? x : 0; };
+  const kg = v => fmt0.format(Math.round(v)) + ' kg';
+  const guardar = () => sess.set('fermil_vend_viaje', V);
+  const codigo = () => NUBE_CODE || sess.get('fermil_code', '');
+  const nombreProd = cod => (byRef[cod] || {}).nombre || '';
+
+  function listaCodigos(){
+    if (document.getElementById('tabCodigos')) return;
+    const dl = document.createElement('datalist');
+    dl.id = 'tabCodigos';
+    dl.innerHTML = PRODUCTS.map(p => `<option value="${esc(p.ref)}">${esc(p.nombre)}</option>`).join('');
+    document.body.appendChild(dl);
+  }
+  async function calcular(){
+    if (cargando){ pendiente = true; return; }
+    cargando = true;
+    try {
+      const paradas = V.paradas.filter(p => p.lugar).map(p => ({lugar: p.lugar, items: p.items || [], venta: n(p.venta), peso: n(p.peso)}));
+      const r = await rpc('fermil_viaje_vendedor', {p_codigo: codigo(), p_paradas: paradas, p_vehiculo: V.vehiculo || null, p_tasa: CONFIG.tasaBs || null});
+      if (!r){ toast('Tu código ya no es válido. Vuelve a entrar.'); return; }
+      if (r.error){ toast(r.error); }
+      INFO = INFO || {}; INFO.lugares = r.lugares || INFO.lugares || []; INFO.vendedor = r.vendedor; INFO.vehiculos = r.vehiculos || INFO.vehiculos || [];
+      R = r.estado ? r : null;
+    } catch (e){ toast('No se pudo calcular: revisa tu conexión'); }
+    finally { cargando = false; }
+    if (pendiente){ pendiente = false; return calcular(); }
+    pintar();
+  }
+  async function abrir(){
+    if (state.role !== 'mayorista' || state.preview) return;
+    listaCodigos();
+    dlg.innerHTML = '<div class="pn-head"><h2 id="vTitle">Calcular mi viaje</h2><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div><div class="pn-body"><p class="tab-muted">Cargando tu ruta…</p></div>';
+    if (!dlg.open) dlg.showModal();
+    await calcular();
+  }
+  const MSG = {
+    ok: r => `✅ ¡Viaje aprobado! Va en ${esc(r.vehiculo)} (camión ${esc((r.tamano || '').toLowerCase())}).`,
+    exceso: r => `❌ Te pasas por <b>${kg(r.exceso_kg)}</b>: el ${esc(r.vehiculo)} carga ${kg(r.capacidad)}. Escoge un camión más grande o quita carga.`,
+    vacio: r => `❌ Te faltan <b>${kg(r.falta_kg)}</b> de carga para llenar el camión (mínimo ${fmt0.format(Math.round(n(r.ocupacion_min) * 100))} %).`,
+    flete: r => `❌ Te faltan <b>${usd(r.falta_venta)}</b> de venta para que el viaje se pueda despachar.`,
+  };
+  function pintar(){
+    if (!INFO) return;
+    const lugares = INFO.lugares || [];
+    const paradas = V.paradas.map((pa, i) => {
+      const srv = R && R.paradas ? R.paradas.find(x => x.lugar === pa.lugar) : null;
+      const items = pa.items || [];
+      return `<div class="tab-parada">
+        <div class="tab-ph"><b>Parada ${i + 1}</b><select data-v="lugar" data-i="${i}" aria-label="Pueblo de la parada ${i + 1}"><option value="">Escoge el pueblo…</option>${lugares.map(l => `<option${l === pa.lugar ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
+          <button type="button" class="btn link" data-vt="quitar" data-i="${i}">Quitar</button></div>
+        <div class="tab-items">${items.map((it, k) => { const s = srv && srv.items ? srv.items.find(x => x.cod === it.cod) : null; 
+          return `<div class="tab-item"><span class="tab-cod">${esc(it.cod)}</span><span class="tab-nom">${esc(nombreProd(it.cod)) || '<em>Código no encontrado</em>'}${s && s.peso == null ? ' <small class="tab-falta">sin peso</small>' : ''}</span>
+            <label>Cant. <input type="number" min="0" step="any" value="${esc(it.cant)}" data-v="cant" data-i="${i}" data-k="${k}"></label>
+            <span>${s ? usd(n(s.mayor)) + ' c/u' : ''}</span><span>${s && s.peso ? fmt0.format(n(s.peso)) + ' kg c/u' : ''}</span><b>${s ? usd(n(s.mayor) * n(it.cant)) : ''}</b>
+            <button type="button" class="x tab-xs" data-vt="qitem" data-i="${i}" data-k="${k}" aria-label="Quitar producto">×</button></div>`; }).join('')}
+          <form class="tab-add" data-i="${i}"><input name="cod" list="tabCodigos" placeholder="Código o nombre del producto" autocomplete="off"><input name="cant" type="number" min="0" step="any" placeholder="Cant." value="1"><button class="btn ghost">Agregar</button></form></div>
+        <div class="tab-pt">${items.length ? `<span>Venta: <b>${srv ? usd(srv.venta) : '…'}</b></span><span>Peso: <b>${srv ? kg(srv.peso) : '…'}</b></span>`
+          : `<label>Venta $ <input type="number" min="0" step="any" value="${esc(pa.venta)}" data-v="venta" data-i="${i}"></label><label>Peso kg <input type="number" min="0" step="any" value="${esc(pa.peso)}" data-v="peso" data-i="${i}"></label><span class="tab-muted">o agrega los productos por código</span>`}</div></div>`;
+    }).join('');
+    const vehs = INFO.vehiculos || [];
+    const ICON = {ok: '✅', exceso: '❌ no cabe', vacio: '⚠️ muy vacío', flete: '⚠️ falta venta'};
+    const res = R ? `<div class="tab-res">
+        <div class="tab-kpis"><div><span>Venta del viaje</span><b>${usd(R.venta)}</b></div><div><span>Peso de la carga</span><b>${kg(R.peso)}</b></div>
+          <div><span>Camión</span><b>${esc(R.vehiculo)}</b><small>${esc(R.tamano || '')} · carga ${kg(R.capacidad)}</small></div><div><span>Ocupación</span><b>${fmt0.format(Math.round(n(R.ocupacion) * 100))} %</b></div></div>
+        <p class="tab-estado ${R.estado === 'ok' ? 'ok' : 'no'}">${MSG[R.estado](R)}</p>
+        ${R.sin_peso ? `<p class="tab-falta">${R.sin_peso} producto(s) no tienen peso en el sistema, así que la carga real puede ser mayor. Avísale a administración.</p>` : ''}
+        ${R.recomendado && R.recomendado !== R.vehiculo ? `<p class="tab-muted">💡 El camión recomendado para este viaje es el <b>${esc(R.recomendado)}</b>.</p>` : ''}
+        <div class="tab-acts"><button type="button" class="btn accent" data-vt="presupuesto">🧾 Llevar los productos a mi presupuesto</button></div></div>`
+      : '<p class="tab-muted">Escoge al menos un pueblo y agrega la venta (o los productos) para saber si el viaje sale.</p>';
+    dlg.innerHTML = `<div class="pn-head"><div><span class="eyebrow">Ruta de ${esc(INFO.vendedor || '')}</span><h2 id="vTitle">Calcular mi viaje</h2></div><div class="pn-nav"><button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div></div>
+      <div class="pn-body">
+        <section class="pn-card"><h3>1. Tus paradas en orden</h3><p class="tab-muted">Solo aparecen los pueblos de tu ruta. Precios al mayor de hoy.</p>${paradas}
+          <div class="tab-acts"><button type="button" class="btn ghost" data-vt="parada">+ Agregar parada</button><button type="button" class="btn link" data-vt="limpiar">Empezar de nuevo</button></div></section>
+        <section class="pn-card"><h3>2. Camión</h3><label class="tab-grid3"><span>El sistema recomienda uno; puedes cambiarlo</span>
+          <select data-v="vehiculo"><option value="">Automático (recomendado${R && R.recomendado ? ': ' + esc(R.recomendado) : ''})</option>${vehs.map(v => `<option value="${esc(v.modelo)}"${v.modelo === V.vehiculo ? ' selected' : ''}>${esc(v.modelo)} · ${esc(v.tamano)} · ${kg(v.capacidad)}${v.estado ? ' · ' + ICON[v.estado] : ''}</option>`).join('')}</select></label></section>
+        <section class="pn-card"><h3>3. ¿Sale el viaje?</h3>${res}</section>
+      </div>`;
+  }
+  dlg.addEventListener('change', e => {
+    const el = e.target, f = el.dataset.v, i = Number(el.dataset.i);
+    if (!f) return;
+    if (f === 'lugar') V.paradas[i].lugar = el.value;
+    else if (f === 'venta' || f === 'peso') V.paradas[i][f] = el.value;
+    else if (f === 'cant') V.paradas[i].items[Number(el.dataset.k)].cant = el.value;
+    else if (f === 'vehiculo') V.vehiculo = el.value;
+    guardar(); calcular();
+  });
+  dlg.addEventListener('click', e => {
+    const b = e.target.closest('[data-vt]'); if (!b) return;
+    const t = b.dataset.vt, i = Number(b.dataset.i);
+    if (t === 'parada') V.paradas.push({lugar: '', items: [], venta: '', peso: ''});
+    else if (t === 'quitar'){ V.paradas.splice(i, 1); if (!V.paradas.length) V.paradas.push({lugar: '', items: [], venta: '', peso: ''}); }
+    else if (t === 'qitem') V.paradas[i].items.splice(Number(b.dataset.k), 1);
+    else if (t === 'limpiar'){ V = {vehiculo: '', paradas: [{lugar: '', items: [], venta: '', peso: ''}]}; R = null; }
+    else if (t === 'presupuesto'){
+      let k = 0;
+      V.paradas.forEach(pa => (pa.items || []).forEach(it => { if (byRef[it.cod] && n(it.cant) > 0){ setQty(it.cod, (cart[it.cod] || 0) + n(it.cant)); k++; } }));
+      toast(k ? `Listo: ${k} producto(s) en tu presupuesto` : 'Agrega productos por código para llevarlos al presupuesto');
+      return;
+    }
+    guardar(); pintar(); calcular();
+  });
+  dlg.addEventListener('submit', e => {
+    e.preventDefault();
+    const fm = e.target; if (!fm.classList.contains('tab-add')) return;
+    const i = Number(fm.dataset.i);
+    let cod = String(fm.cod.value || '').trim().toUpperCase();
+    if (!cod) return;
+    if (!byRef[cod]){ const q = norm(fm.cod.value), hit = PRODUCTS.find(p => p._name.includes(q)); if (hit) cod = hit.ref; else { toast('No encontré ese código'); return; } }
+    const pa = V.paradas[i]; pa.items = pa.items || [];
+    const ya = pa.items.find(it => it.cod === cod);
+    if (ya) ya.cant = n(ya.cant) + (n(fm.cant.value) || 1); else pa.items.push({cod, cant: n(fm.cant.value) || 1});
+    guardar(); pintar(); calcular();
+    const nuevo = dlg.querySelectorAll('.tab-add')[i]; if (nuevo) nuevo.cod.focus();
+  });
+  return {abrir};
 })();

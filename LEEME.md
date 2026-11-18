@@ -67,3 +67,11 @@ Un código aparte (`ADMIN-XXXX-XXXX`, tabla `tabulador_admins` en Supabase) abre
 - Los cálculos son los mismos del Excel `SISTEMA_ERP_FERMIL_TABULACIONES_ADMINISTRATIVO`.
 - El robot baja el peso de cada producto poco a poco (25 minutos por corrida) y lo guarda en `pesos_plade.json`.
 - Para activarlo hay que correr una vez el archivo privado `supabase-actualizacion-2-CON-DATOS.sql` (lo tiene la administración; trae costos y nómina, por eso no está aquí). Al final muestra el código de administración.
+
+## Calculadora de viajes de los mayoristas
+Con su propio código, cada mayorista tiene el botón **🚚 Calcular viaje** (arriba, junto a "Mi panel").
+Solo ve los pueblos de su ruta; agrega productos por código (precio al mayor de hoy) y el sistema recomienda
+el camión (lo puede cambiar). El cálculo corre en Supabase (`fermil_viaje_vendedor`), así que nunca recibe
+costos, km ni fletes: solo si el viaje sale y qué le falta (venta, carga) o cuánto se pasa de peso.
+Los productos se pueden pasar a su presupuesto con un toque. Se activa corriendo `supabase-actualizacion-3.sql`.
+La ruta de cada mayorista se cambia en el panel de tabulaciones → Costos y flota → Vendedores mayoristas.
